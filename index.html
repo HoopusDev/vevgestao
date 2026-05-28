@@ -1,0 +1,1044 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>V&V Gestão</title>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&display=swap" rel="stylesheet"/>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --bg:#080e1a;--surf:#0f1724;--card:#151e2e;--brd:#1d2b40;
+  --sky:#38bdf8;--mint:#34d399;--rose:#f87171;--amber:#fbbf24;--lilac:#a78bfa;
+  --txt:#e8f0fe;--dim:#6b82a0;--font:'Outfit',sans-serif;
+  --sidebar:240px;
+}
+html,body{height:100%;background:var(--bg);overflow:hidden;}
+#root{height:100%;}
+*{font-family:var(--font);-webkit-tap-highlight-color:transparent;}
+
+/* ── LAYOUT DESKTOP ── */
+.app-layout{display:flex;height:100%;overflow:hidden;}
+
+/* Sidebar */
+.sidebar{width:var(--sidebar);background:var(--surf);border-right:1px solid var(--brd);display:flex;flex-direction:column;flex-shrink:0;overflow:hidden;}
+.sidebar-logo{padding:24px 20px 20px;border-bottom:1px solid var(--brd);}
+.sidebar-logo-inner{display:flex;align-items:center;gap:12px;}
+.sidebar-logo-icon{width:40px;height:40px;background:linear-gradient(135deg,#38bdf8,#a78bfa);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;}
+.sidebar-logo-text{font-size:17px;font-weight:900;color:var(--txt);letter-spacing:-.3px;line-height:1.1;}
+.sidebar-logo-sub{font-size:11px;color:var(--dim);margin-top:2px;}
+.sidebar-nav{flex:1;padding:12px 10px;display:flex;flex-direction:column;gap:2px;overflow-y:auto;}
+.sidebar-nav::-webkit-scrollbar{display:none;}
+.sni{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;cursor:pointer;border:none;background:none;color:var(--dim);font-size:13px;font-weight:600;width:100%;text-align:left;transition:all .15s;letter-spacing:-.1px;}
+.sni:hover{background:var(--card);color:var(--txt);}
+.sni.on{background:rgba(56,189,248,.12);color:var(--sky);}
+.sni-icon{font-size:18px;width:22px;text-align:center;flex-shrink:0;}
+.sidebar-user{padding:14px 16px;border-top:1px solid var(--brd);display:flex;align-items:center;gap:10px;}
+.sidebar-avatar{width:34px;height:34px;border-radius:10px;object-fit:cover;flex-shrink:0;background:var(--card);}
+.sidebar-user-info{flex:1;min-width:0;}
+.sidebar-user-name{font-size:12px;font-weight:700;color:var(--txt);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.sidebar-user-email{font-size:10px;color:var(--dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.sidebar-logout{width:30px;height:30px;border-radius:8px;border:1px solid var(--brd);background:none;cursor:pointer;color:var(--dim);font-size:14px;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .15s;}
+.sidebar-logout:hover{background:rgba(248,113,113,.1);color:var(--rose);border-color:rgba(248,113,113,.3);}
+
+/* Main content */
+.main-content{flex:1;display:flex;flex-direction:column;overflow:hidden;}
+.page{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;}
+.page::-webkit-scrollbar{width:4px;}
+.page::-webkit-scrollbar-track{background:transparent;}
+.page::-webkit-scrollbar-thumb{background:var(--brd);border-radius:2px;}
+
+/* ── MOBILE LAYOUT ── */
+@media(max-width:768px){
+  .sidebar{display:none;}
+  .app-layout{flex-direction:column;}
+  .main-content{height:100%;}
+  .page{padding-bottom:70px;}
+  .mobile-nav{display:flex !important;}
+}
+.mobile-nav{display:none;position:fixed;bottom:0;left:0;right:0;background:var(--surf);border-top:1px solid var(--brd);z-index:100;padding:6px 0 calc(6px + env(safe-area-inset-bottom));}
+.mni{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;cursor:pointer;padding:4px 2px;border:none;background:none;color:var(--dim);font-size:10px;font-weight:600;transition:color .15s;}
+.mni.on{color:var(--sky);}
+.mni-icon{font-size:19px;line-height:1.2;}
+
+/* ── TOP BAR ── */
+.topbar{padding:20px 28px 16px;background:var(--surf);border-bottom:1px solid var(--brd);display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:50;}
+.topbar h1{font-size:22px;font-weight:900;color:var(--txt);letter-spacing:-.4px;flex:1;}
+.topbar-sub{font-size:12px;color:var(--dim);margin-top:2px;}
+.back-btn{width:36px;height:36px;border-radius:10px;border:1px solid var(--brd);background:var(--card);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:16px;color:var(--txt);flex-shrink:0;}
+@media(max-width:768px){
+  .topbar{padding:12px 16px 12px;}
+  .topbar h1{font-size:19px;}
+}
+
+/* ── CARDS & GRID ── */
+.stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;padding:24px 28px 0;}
+.stat-card{background:var(--card);border:1px solid var(--brd);border-radius:14px;padding:16px;}
+.stat-label{font-size:10px;font-weight:700;color:var(--dim);text-transform:uppercase;letter-spacing:.5px;}
+.stat-value{font-size:26px;font-weight:900;color:var(--txt);margin-top:5px;letter-spacing:-.5px;}
+.stat-sub{font-size:11px;color:var(--dim);margin-top:2px;}
+@media(max-width:1100px){.stats-grid{grid-template-columns:repeat(2,1fr);}}
+@media(max-width:768px){.stats-grid{grid-template-columns:repeat(2,1fr);padding:14px 14px 0;gap:10px;}.stat-value{font-size:22px;}}
+
+/* Section */
+.section{padding:20px 28px 0;}
+.section-title{font-size:11px;font-weight:700;color:var(--dim);text-transform:uppercase;letter-spacing:.5px;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center;}
+@media(max-width:768px){.section{padding:14px 14px 0;}}
+
+/* Viagem cards grid */
+.viagens-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px;}
+@media(max-width:768px){.viagens-grid{grid-template-columns:1fr;}}
+
+/* ── VIAGEM CARD ── */
+.vc{background:var(--card);border:1px solid var(--brd);border-radius:14px;padding:16px;cursor:pointer;transition:border-color .15s;}
+.vc:hover{border-color:rgba(56,189,248,.4);}
+.vc-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;}
+.vc-name{font-size:16px;font-weight:800;color:var(--txt);letter-spacing:-.2px;}
+.vc-meta{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:10px;}
+.vc-meta span{font-size:12px;color:var(--dim);}
+.vc-bar{height:4px;background:var(--brd);border-radius:2px;overflow:hidden;}
+.vc-fill{height:100%;background:linear-gradient(90deg,var(--sky),var(--lilac));border-radius:2px;}
+.vc-foot{display:flex;justify-content:space-between;font-size:11px;color:var(--dim);margin-top:4px;}
+.vc-actions{display:flex;gap:6px;margin-top:12px;padding-top:12px;border-top:1px solid var(--brd);}
+
+/* ── BADGE ── */
+.bdg{display:inline-flex;align-items:center;padding:3px 9px;border-radius:20px;font-size:10px;font-weight:700;letter-spacing:.2px;}
+
+/* ── BUTTONS ── */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:10px 18px;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;border:none;transition:all .15s;color:var(--txt);letter-spacing:-.1px;}
+.btn-primary{background:var(--sky);color:#080e1a;}
+.btn-primary:hover{opacity:.88;}
+.btn-ghost{background:transparent;color:var(--dim);border:1px solid var(--brd);}
+.btn-ghost:hover{background:var(--card);color:var(--txt);}
+.btn-danger{background:rgba(248,113,113,.1);color:var(--rose);border:1px solid rgba(248,113,113,.2);}
+.btn-danger:hover{background:rgba(248,113,113,.2);}
+.btn-sm{padding:7px 13px;font-size:12px;border-radius:8px;}
+.btn-icon{padding:8px;border-radius:9px;width:34px;height:34px;}
+.btn-full{width:100%;}
+.fab{position:fixed;bottom:80px;right:24px;width:52px;height:52px;border-radius:16px;background:var(--sky);color:#080e1a;font-size:26px;display:flex;align-items:center;justify-content:center;cursor:pointer;border:none;box-shadow:0 4px 20px rgba(56,189,248,.4);z-index:90;font-weight:900;transition:transform .15s;}
+.fab:hover{transform:scale(1.05);}
+@media(min-width:769px){.fab{bottom:24px;right:28px;}}
+
+/* ── SEARCH ── */
+.search-box{position:relative;padding:16px 28px 0;}
+.search-box input{padding-left:40px !important;}
+.search-icon{position:absolute;left:42px;top:50%;transform:translateY(-20%);font-size:15px;pointer-events:none;}
+@media(max-width:768px){.search-box{padding:12px 14px 0;}.search-icon{left:26px;}}
+
+/* ── TABS ── */
+.tabs{display:flex;padding:0 28px;border-bottom:1px solid var(--brd);overflow-x:auto;}
+.tabs::-webkit-scrollbar{display:none;}
+.tab{padding:13px 14px;font-size:13px;font-weight:700;cursor:pointer;border:none;background:none;color:var(--dim);border-bottom:2px solid transparent;margin-bottom:-1px;white-space:nowrap;transition:color .15s;}
+.tab.on{color:var(--sky);border-bottom-color:var(--sky);}
+@media(max-width:768px){.tabs{padding:0 14px;}}
+
+/* ── FORMS ── */
+.form-section{display:flex;flex-direction:column;gap:14px;padding:0 20px;}
+.fg{display:flex;flex-direction:column;gap:5px;}
+.fl{font-size:10px;font-weight:800;color:var(--dim);text-transform:uppercase;letter-spacing:.6px;}
+.fi,.fsel,.fta{background:var(--surf);border:1.5px solid var(--brd);border-radius:10px;padding:12px 14px;font-size:14px;color:var(--txt);outline:none;-webkit-appearance:none;width:100%;font-weight:500;}
+.fi:focus,.fsel:focus,.fta:focus{border-color:var(--sky);}
+.fgrid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.fta{resize:none;}
+
+/* ── MODAL ── */
+.mo{position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:200;display:flex;align-items:flex-end;backdrop-filter:blur(4px);}
+@media(min-width:769px){
+  .mo{align-items:center;justify-content:center;}
+  .md{border-radius:18px !important;max-width:520px;width:100%;margin:20px;}
+}
+.md{background:var(--surf);border:1px solid var(--brd);border-radius:20px 20px 0 0;width:100%;max-height:92vh;overflow-y:auto;}
+.md::-webkit-scrollbar{display:none;}
+.mhdl{width:36px;height:4px;background:var(--brd);border-radius:2px;margin:12px auto 0;}
+@media(min-width:769px){.mhdl{display:none;}}
+.mhd{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;}
+.mtit{font-size:18px;font-weight:900;color:var(--txt);letter-spacing:-.3px;}
+.mbdy{padding:0 0 16px;}
+.mact{padding:14px 20px 10px;display:flex;gap:10px;border-top:1px solid var(--brd);}
+
+/* ── RESERVA CARD ── */
+.rc{background:var(--card);border:1px solid var(--brd);border-radius:13px;padding:14px;margin:0 28px 10px;}
+@media(max-width:768px){.rc{margin:0 14px 10px;}}
+.rn{font-size:15px;font-weight:800;color:var(--txt);margin-bottom:3px;}
+.rm{font-size:12px;color:var(--dim);}
+.rpw{flex:1;height:5px;background:var(--brd);border-radius:3px;overflow:hidden;}
+.rp{height:100%;border-radius:3px;transition:width .3s;}
+
+/* ── PAX CARD ── */
+.pcard{background:var(--card);border:1px solid var(--brd);border-radius:13px;padding:14px;margin:0 28px 10px;display:flex;align-items:center;gap:12px;}
+@media(max-width:768px){.pcard{margin:0 14px 10px;}}
+.avt{width:42px;height:42px;border-radius:12px;background:linear-gradient(135deg,var(--sky),var(--lilac));display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:900;color:#080e1a;flex-shrink:0;}
+
+/* ── FINANCEIRO ── */
+.fcard{padding:14px 28px;border-bottom:1px solid var(--brd);cursor:pointer;transition:background .15s;}
+.fcard:hover{background:var(--card);}
+@media(max-width:768px){.fcard{padding:13px 14px;}}
+.fname{font-size:14px;font-weight:800;color:var(--txt);margin-bottom:6px;}
+.frow{display:flex;justify-content:space-between;font-size:12px;color:var(--dim);margin-bottom:2px;}
+.frow span:last-child{color:var(--txt);font-weight:700;}
+
+/* ── SEAT MAP ── */
+.seat{width:34px;height:34px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;cursor:pointer;border:1.5px solid transparent;transition:all .15s;flex-shrink:0;}
+.seat-free{background:var(--card);border-color:var(--brd);color:var(--dim);}
+.seat-occ{background:rgba(56,189,248,.15);border-color:var(--sky);color:var(--sky);}
+.seat-sel{background:var(--sky);color:#080e1a;border-color:var(--sky);}
+
+/* ── PAYMENT ── */
+.pit{background:var(--card);border:1px solid var(--brd);border-radius:11px;padding:14px;margin-bottom:8px;}
+.pmet{display:flex;align-items:center;gap:7px;font-size:13px;font-weight:800;color:var(--txt);margin-bottom:3px;}
+.pval{font-size:21px;font-weight:900;color:var(--mint);letter-spacing:-.5px;}
+.mg{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:0 20px 8px;}
+.mbtn{background:var(--card);border:1.5px solid var(--brd);border-radius:12px;padding:14px 10px;text-align:center;cursor:pointer;transition:all .15s;}
+.mbtn:hover,.mbtn.on{border-color:var(--sky);background:rgba(56,189,248,.1);}
+.chip{display:inline-flex;align-items:center;gap:5px;background:rgba(56,189,248,.1);border:1px solid rgba(56,189,248,.2);border-radius:20px;padding:4px 10px;font-size:12px;color:var(--sky);font-weight:700;}
+
+/* ── EMPTY / LOADING ── */
+.empty{text-align:center;padding:56px 20px;color:var(--dim);}
+.eico{font-size:44px;margin-bottom:14px;}
+.loading-screen{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:18px;color:var(--dim);}
+.spinner{width:38px;height:38px;border:3px solid var(--brd);border-top-color:var(--sky);border-radius:50%;animation:spin .8s linear infinite;}
+
+/* ── LOGIN ── */
+.login-wrap{display:flex;align-items:center;justify-content:center;height:100%;background:var(--bg);padding:20px;}
+.login-card{background:var(--surf);border:1px solid var(--brd);border-radius:20px;padding:40px 36px;max-width:400px;width:100%;text-align:center;}
+.login-logo{width:64px;height:64px;background:linear-gradient(135deg,#38bdf8,#a78bfa);border-radius:18px;display:flex;align-items:center;justify-content:center;font-size:32px;margin:0 auto 20px;}
+.login-title{font-size:26px;font-weight:900;color:var(--txt);letter-spacing:-.5px;margin-bottom:6px;}
+.login-sub{font-size:14px;color:var(--dim);margin-bottom:32px;line-height:1.5;}
+.google-btn{display:flex;align-items:center;justify-content:center;gap:12px;width:100%;padding:14px 20px;background:#fff;border:none;border-radius:12px;font-size:15px;font-weight:700;color:#1f1f1f;cursor:pointer;transition:all .15s;letter-spacing:-.1px;}
+.google-btn:hover{background:#f1f3f4;transform:translateY(-1px);box-shadow:0 4px 16px rgba(0,0,0,.2);}
+.google-btn:active{transform:translateY(0);}
+.google-icon{width:22px;height:22px;}
+
+@keyframes spin{to{transform:rotate(360deg);}}
+@keyframes up{from{opacity:0;transform:translateY(16px);}to{opacity:1;transform:translateY(0);}}
+.ani{animation:up .22s ease;}
+select option{background:var(--surf);color:var(--txt);}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script>
+// ── FIREBASE CONFIG ──────────────────────────────────────────────────────────
+firebase.initializeApp({
+  apiKey: "AIzaSyAfJPVhhTD5rdxZJBXuA69RyURrtw2ohIA",
+  authDomain: "vev-gestao.firebaseapp.com",
+  projectId: "vev-gestao",
+  storageBucket: "vev-gestao.firebasestorage.app",
+  messagingSenderId: "451734336937",
+  appId: "1:451734336937:web:967b31f72f74151b2c80b8",
+  measurementId: "G-E7L780LGFG"
+});
+const db = firebase.firestore();
+const auth = firebase.auth();
+const googleProvider = new firebase.auth.GoogleAuthProvider();
+</script>
+<script type="text/babel">
+const { useState, useRef, useEffect, useCallback } = React;
+
+// ── HELPERS ──────────────────────────────────────────────────────────────────
+const genId = () => Math.random().toString(36).slice(2) + Date.now().toString(36);
+const sumPgto = r => (r.pagamentos||[]).reduce((s,p)=>s+Number(p.valor||0),0);
+const R$ = v => `R$ ${Number(v||0).toLocaleString("pt-BR",{minimumFractionDigits:2})}`;
+const dt = d => d ? new Date(d+"T12:00:00").toLocaleDateString("pt-BR") : "—";
+const SV = { aberta:{l:"Aberta",c:"#34d399"}, confirmada:{l:"Confirmada",c:"#60a5fa"}, encerrada:{l:"Encerrada",c:"#6b7280"} };
+const SR = { confirmada:{l:"Confirmada",c:"#34d399"}, pendente:{l:"Pendente",c:"#fbbf24"}, cancelada:{l:"Cancelada",c:"#f87171"} };
+const METODOS = [
+  {id:"credito",label:"Cartão de Crédito",icon:"💳"},
+  {id:"debito",label:"Cartão de Débito",icon:"🏧"},
+  {id:"pix",label:"Pix",icon:"⚡"},
+  {id:"pix_parcelado",label:"Pix Parcelado",icon:"⚡"},
+  {id:"dinheiro",label:"Dinheiro",icon:"💵"},
+];
+const METODOS_LABEL = {credito:"Cartão de Crédito",debito:"Cartão de Débito",pix:"Pix",pix_parcelado:"Pix Parcelado",dinheiro:"Dinheiro"};
+
+// ── FIRESTORE HOOKS ───────────────────────────────────────────────────────────
+function useCol(col) {
+  const [docs, setDocs] = useState(null);
+  useEffect(() => {
+    const unsub = db.collection(col).onSnapshot(snap => {
+      setDocs(snap.docs.map(d => ({id:d.id,...d.data()})));
+    }, () => setDocs([]));
+    return unsub;
+  }, [col]);
+  return docs;
+}
+
+async function fsSet(col, id, obj) {
+  const {id:_,...rest} = obj;
+  await db.collection(col).doc(id).set(rest, {merge:true});
+}
+async function fsDel(col, id) {
+  await db.collection(col).doc(id).delete();
+}
+
+// ── ROOT ──────────────────────────────────────────────────────────────────────
+function App() {
+  const [user, setUser] = useState(undefined); // undefined = loading
+  const [page, setPage] = useState("dashboard");
+  const [ctx, setCtx] = useState({});
+  const viagens = useCol("viagens");
+  const passageiros = useCol("passageiros");
+
+  useEffect(() => {
+    return auth.onAuthStateChanged(u => setUser(u));
+  }, []);
+
+  const go = (p, c={}) => { setPage(p); setCtx(c); };
+  const login = () => auth.signInWithPopup(googleProvider).catch(console.error);
+  const logout = () => auth.signOut();
+
+  const saveViagem = async v => { await fsSet("viagens", v.id, v); };
+  const addViagem = async v => { const id = genId(); await fsSet("viagens", id, {...v, id, reservas:[]}); };
+  const deleteViagem = async id => { await fsDel("viagens", id); };
+  const savePassageiro = async p => { await fsSet("passageiros", p.id, p); return p; };
+  const addPassageiro = async p => { const id = genId(); const np = {...p, id}; await fsSet("passageiros", id, np); return np; };
+  const deletePassageiro = async id => { await fsDel("passageiros", id); };
+  const updViagem = async v => { await saveViagem(v); if(ctx.viagem?.id===v.id) setCtx(c=>({...c,viagem:v})); };
+
+  // Loading auth
+  if (user === undefined) return (
+    <div className="loading-screen">
+      <div className="spinner"/>
+      <span>Carregando...</span>
+    </div>
+  );
+
+  // Not logged in
+  if (!user) return <LoginScreen onLogin={login} />;
+
+  // Loading data
+  if (viagens === null || passageiros === null) return (
+    <div className="loading-screen">
+      <div className="spinner"/>
+      <span>Conectando ao banco de dados...</span>
+    </div>
+  );
+
+  const navPages = ["dashboard","viagens","passageiros","financeiro","relatorios"];
+  const activeNav = navPages.includes(page) ? page : page==="viagem" ? "viagens" : page;
+  const curViagem = page==="viagem" ? viagens.find(v=>v.id===ctx.viagem?.id)||ctx.viagem : null;
+
+  const navItems = [
+    ["dashboard","🏠","Início"],
+    ["viagens","🚌","Viagens"],
+    ["passageiros","👥","Passageiros"],
+    ["financeiro","💰","Financeiro"],
+    ["relatorios","📊","Relatórios"],
+  ];
+
+  const pageEl = () => {
+    if(page==="dashboard")   return <Dashboard viagens={viagens} passageiros={passageiros} go={go}/>;
+    if(page==="viagens")     return <Viagens viagens={viagens} addViagem={addViagem} saveViagem={saveViagem} deleteViagem={deleteViagem} go={go}/>;
+    if(page==="viagem")      return <ViagemDetail viagens={viagens} passageiros={passageiros} addPassageiro={addPassageiro} viagem={curViagem} updViagem={updViagem} go={go}/>;
+    if(page==="passageiros") return <Passageiros passageiros={passageiros} viagens={viagens} savePassageiro={savePassageiro} addPassageiro={addPassageiro} deletePassageiro={deletePassageiro}/>;
+    if(page==="financeiro")  return <Financeiro viagens={viagens} go={go}/>;
+    if(page==="relatorios")  return <Relatorios viagens={viagens}/>;
+  };
+
+  return (
+    <div className="app-layout">
+      {/* Sidebar desktop */}
+      <aside className="sidebar">
+        <div className="sidebar-logo">
+          <div className="sidebar-logo-inner">
+            <div className="sidebar-logo-icon">✈️</div>
+            <div>
+              <div className="sidebar-logo-text">V&V Gestão</div>
+              <div className="sidebar-logo-sub">Gestão de Viagens</div>
+            </div>
+          </div>
+        </div>
+        <nav className="sidebar-nav">
+          {navItems.map(([id,ic,lb]) => (
+            <button key={id} className={`sni ${activeNav===id?"on":""}`} onClick={()=>go(id)}>
+              <span className="sni-icon">{ic}</span>
+              <span>{lb}</span>
+            </button>
+          ))}
+        </nav>
+        <div className="sidebar-user">
+          {user.photoURL
+            ? <img src={user.photoURL} className="sidebar-avatar" alt=""/>
+            : <div className="sidebar-avatar" style={{display:"flex",alignItems:"center",justifyContent:"center",fontSize:14,fontWeight:900,color:"var(--sky)"}}>{user.displayName?.[0]||"?"}</div>
+          }
+          <div className="sidebar-user-info">
+            <div className="sidebar-user-name">{user.displayName||"Usuário"}</div>
+            <div className="sidebar-user-email">{user.email}</div>
+          </div>
+          <button className="sidebar-logout" onClick={logout} title="Sair">⏏</button>
+        </div>
+      </aside>
+
+      {/* Main */}
+      <div className="main-content">
+        <div className="page">
+          {pageEl()}
+        </div>
+        {/* Mobile nav */}
+        <nav className="mobile-nav">
+          {navItems.map(([id,ic,lb]) => (
+            <button key={id} className={`mni ${activeNav===id?"on":""}`} onClick={()=>go(id)}>
+              <span className="mni-icon">{ic}</span>
+              <span>{lb}</span>
+            </button>
+          ))}
+        </nav>
+      </div>
+    </div>
+  );
+}
+
+// ── LOGIN ─────────────────────────────────────────────────────────────────────
+function LoginScreen({onLogin}) {
+  return (
+    <div className="login-wrap">
+      <div className="login-card ani">
+        <div className="login-logo">✈️</div>
+        <div className="login-title">V&V Gestão</div>
+        <div className="login-sub">Sistema de gestão de viagens.<br/>Faça login para continuar.</div>
+        <button className="google-btn" onClick={onLogin}>
+          <svg className="google-icon" viewBox="0 0 48 48">
+            <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
+            <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
+            <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
+            <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
+          </svg>
+          Entrar com Google
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ── DASHBOARD ─────────────────────────────────────────────────────────────────
+function Dashboard({viagens, passageiros, go}) {
+  const ativas = viagens.filter(v=>v.status!=="encerrada");
+  const totalRec = viagens.reduce((s,v)=>s+(v.reservas||[]).reduce((ss,r)=>ss+sumPgto(r),0),0);
+  const totalEsp = viagens.reduce((s,v)=>s+(v.reservas?.length||0)*Number(v.valor||0),0);
+  const pendentes = viagens.reduce((s,v)=>s+(v.reservas||[]).filter(r=>sumPgto(r)<Number(v.valor||0)).length,0);
+  return (
+    <div className="ani">
+      <div className="topbar"><h1>Dashboard</h1></div>
+      <div className="stats-grid">
+        <div className="stat-card"><div className="stat-label">Viagens Ativas</div><div className="stat-value">{ativas.length}</div><div className="stat-sub">{viagens.length} total</div></div>
+        <div className="stat-card"><div className="stat-label">Passageiros</div><div className="stat-value">{passageiros.length}</div><div className="stat-sub">cadastrados</div></div>
+        <div className="stat-card"><div className="stat-label">Total Recebido</div><div className="stat-value" style={{fontSize:18,color:"var(--mint)"}}>{R$(totalRec)}</div><div className="stat-sub">de {R$(totalEsp)} esperado</div></div>
+        <div className="stat-card"><div className="stat-label">Pagtos Pendentes</div><div className="stat-value" style={{color:pendentes>0?"var(--rose)":"var(--mint)"}}>{pendentes}</div><div className="stat-sub">passageiros em aberto</div></div>
+      </div>
+      <div className="section" style={{marginTop:24}}>
+        <div className="section-title"><span>Viagens Ativas</span></div>
+        {ativas.length===0
+          ? <div className="empty"><div className="eico">🚌</div><p>Nenhuma viagem ativa</p></div>
+          : <div className="viagens-grid">{ativas.map(v=><VCard key={v.id} v={v} onClick={()=>go("viagem",{viagem:v})}/>)}</div>
+        }
+      </div>
+    </div>
+  );
+}
+
+function VCard({v, onClick, onEdit, onDel}) {
+  const ocp=v.reservas?.length||0, cap=Math.max(1,v.capacidade||1), pct=Math.round((ocp/cap)*100);
+  const s=SV[v.status]||SV.aberta;
+  return (
+    <div className="vc" onClick={onClick}>
+      <div className="vc-header">
+        <span className="vc-name">{v.nome}</span>
+        <span className="bdg" style={{background:s.c+"22",color:s.c}}>{s.l}</span>
+      </div>
+      <div className="vc-meta">
+        <span>📅 {dt(v.dataIda)}</span>
+        <span>🚌 {cap} lugares</span>
+        {v.valor&&<span>💰 {R$(v.valor)}</span>}
+      </div>
+      <div className="vc-bar"><div className="vc-fill" style={{width:pct+"%"}}/></div>
+      <div className="vc-foot"><span>{ocp} reservados</span><span>{cap-ocp} livres • {pct}%</span></div>
+      {(onEdit||onDel)&&(
+        <div className="vc-actions" onClick={e=>e.stopPropagation()}>
+          <button className="btn btn-ghost btn-sm" onClick={onEdit}>✏️ Editar</button>
+          <button className="btn btn-danger btn-sm" onClick={onDel}>🗑️ Excluir</button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── VIAGENS ───────────────────────────────────────────────────────────────────
+function Viagens({viagens, addViagem, saveViagem, deleteViagem, go}) {
+  const [modal,setModal]=useState(false);
+  const [editing,setEditing]=useState(null);
+  const [search,setSearch]=useState("");
+  const filtered = viagens.filter(v=>v.nome?.toLowerCase().includes(search.toLowerCase())).sort((a,b)=>(a.dataIda||"")>(b.dataIda||"")?1:-1);
+  const onSave = async f => { if(editing) await saveViagem({...editing,...f}); else await addViagem(f); setModal(false);setEditing(null); };
+  const onDel = async id => { if(confirm("Excluir viagem?")) await deleteViagem(id); };
+  return (
+    <div className="ani">
+      <div className="topbar"><h1>Viagens</h1><span className="bdg" style={{background:"rgba(56,189,248,.1)",color:"var(--sky)"}}>{viagens.length}</span></div>
+      <div className="search-box"><span className="search-icon">🔍</span><input className="fi" placeholder="Buscar viagem..." value={search} onChange={e=>setSearch(e.target.value)}/></div>
+      <div className="section" style={{marginTop:16}}>
+        {filtered.length===0
+          ? <div className="empty"><div className="eico">🚌</div><p>Nenhuma viagem encontrada</p></div>
+          : <div className="viagens-grid">{filtered.map(v=><VCard key={v.id} v={v} onClick={()=>go("viagem",{viagem:v})} onEdit={()=>{setEditing(v);setModal(true);}} onDel={()=>onDel(v.id)}/>)}</div>
+        }
+      </div>
+      <button className="fab" onClick={()=>{setEditing(null);setModal(true);}}>+</button>
+      {modal&&<ModalViagem initial={editing} onSave={onSave} onClose={()=>{setModal(false);setEditing(null);}}/>}
+    </div>
+  );
+}
+
+function ModalViagem({initial, onSave, onClose}) {
+  const [f,setF]=useState(initial||{nome:"",dataIda:"",dataVolta:"",capacidade:44,valor:"",entrada:"",status:"aberta",descricao:""});
+  const s=(k,v)=>setF(x=>({...x,[k]:v}));
+  return (
+    <div className="mo" onClick={e=>e.target===e.currentTarget&&onClose()}>
+      <div className="md ani">
+        <div className="mhdl"/><div className="mhd"><span className="mtit">{initial?"Editar Viagem":"Nova Viagem"}</span><button className="btn btn-ghost btn-icon" onClick={onClose}>✕</button></div>
+        <div className="mbdy"><div className="form-section">
+          <div className="fg"><label className="fl">Destino *</label><input className="fi" value={f.nome} onChange={e=>s("nome",e.target.value)} placeholder="Ex: Aparecida do Norte"/></div>
+          <div className="fgrid">
+            <div className="fg"><label className="fl">Ida</label><input type="date" className="fi" value={f.dataIda} onChange={e=>s("dataIda",e.target.value)}/></div>
+            <div className="fg"><label className="fl">Volta</label><input type="date" className="fi" value={f.dataVolta} onChange={e=>s("dataVolta",e.target.value)}/></div>
+          </div>
+          <div className="fg"><label className="fl">Capacidade (lugares)</label><input type="number" className="fi" value={f.capacidade} onChange={e=>s("capacidade",Number(e.target.value))}/></div>
+          <div className="fgrid">
+            <div className="fg"><label className="fl">Valor/pessoa</label><input type="number" className="fi" value={f.valor} onChange={e=>s("valor",e.target.value)} placeholder="0,00"/></div>
+            <div className="fg"><label className="fl">Entrada mínima</label><input type="number" className="fi" value={f.entrada} onChange={e=>s("entrada",e.target.value)} placeholder="0,00"/></div>
+          </div>
+          <div className="fg"><label className="fl">Status</label>
+            <select className="fsel" value={f.status} onChange={e=>s("status",e.target.value)}>
+              {Object.entries(SV).map(([k,v])=><option key={k} value={k}>{v.l}</option>)}
+            </select>
+          </div>
+          <div className="fg"><label className="fl">Observações</label><textarea className="fta" rows={3} value={f.descricao} onChange={e=>s("descricao",e.target.value)}/></div>
+        </div></div>
+        <div className="mact">
+          <button className="btn btn-ghost btn-full" onClick={onClose}>Cancelar</button>
+          <button className="btn btn-primary btn-full" onClick={()=>{if(!f.nome)return alert("Informe o destino");onSave(f);}}>Salvar</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── VIAGEM DETALHE ────────────────────────────────────────────────────────────
+function ViagemDetail({viagens, passageiros, addPassageiro, viagem, updViagem, go}) {
+  const [tab,setTab]=useState("reservas");
+  if(!viagem){go("viagens");return null;}
+  const s=SV[viagem.status]||SV.aberta;
+  return (
+    <div className="ani">
+      <div className="topbar">
+        <div className="back-btn" onClick={()=>go("viagens")}>←</div>
+        <div style={{flex:1}}>
+          <div style={{display:"flex",alignItems:"center",gap:8}}>
+            <span style={{fontWeight:900,fontSize:18,color:"var(--txt)"}}>{viagem.nome}</span>
+            <span className="bdg" style={{background:s.c+"22",color:s.c}}>{s.l}</span>
+          </div>
+          <div className="topbar-sub">{dt(viagem.dataIda)} • {viagem.reservas?.length||0}/{viagem.capacidade||0} vagas • {R$(viagem.valor)}/pessoa</div>
+        </div>
+      </div>
+      <div className="tabs">
+        {[["reservas","👥 Reservas"],["mapa","🚌 Mapa do Ônibus"],["pagamentos","💰 Pagamentos"]].map(([id,lb])=>(
+          <button key={id} className={`tab ${tab===id?"on":""}`} onClick={()=>setTab(id)}>{lb}</button>
+        ))}
+      </div>
+      {tab==="reservas"   && <TabReservas viagem={viagem} passageiros={passageiros} addPassageiro={addPassageiro} updViagem={updViagem}/>}
+      {tab==="mapa"       && <TabMapa viagem={viagem} updViagem={updViagem}/>}
+      {tab==="pagamentos" && <TabPagamentos viagem={viagem} updViagem={updViagem}/>}
+    </div>
+  );
+}
+
+// ── TAB RESERVAS ──────────────────────────────────────────────────────────────
+function TabReservas({viagem, passageiros, addPassageiro, updViagem}) {
+  const [modal,setModal]=useState(false);
+  const [editing,setEditing]=useState(null);
+  const reservas=viagem.reservas||[];
+  const onSave = async r => {
+    const newR=editing?reservas.map(x=>x.id===editing.id?{...editing,...r}:x):[...reservas,{...r,id:genId(),pagamentos:[]}];
+    await updViagem({...viagem,reservas:newR}); setModal(false);setEditing(null);
+  };
+  const onDel = async id => { if(confirm("Remover reserva?")) await updViagem({...viagem,reservas:reservas.filter(r=>r.id!==id)}); };
+  return (
+    <>
+      <div style={{padding:"16px 28px 8px",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+        <span style={{fontSize:13,color:"var(--dim)"}}>{reservas.length}/{viagem.capacidade||0} • {(viagem.capacidade||0)-reservas.length} vagas livres</span>
+        {reservas.length<(viagem.capacidade||0)&&<button className="btn btn-primary btn-sm" onClick={()=>{setEditing(null);setModal(true);}}>+ Adicionar Reserva</button>}
+      </div>
+      {reservas.length===0
+        ?<div className="empty"><div className="eico">👥</div><p>Nenhuma reserva ainda</p></div>
+        :reservas.map(r=>{
+          const pago=sumPgto(r),total=Number(viagem.valor||0),falta=total-pago,pct=total>0?Math.min(100,Math.round((pago/total)*100)):0;
+          const sr=SR[r.status]||SR.pendente;
+          return (
+            <div key={r.id} className="rc">
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}>
+                <div><div className="rn">{r.nomeAvulso||"—"}</div><div className="rm">{r.assento?`Assento ${r.assento} • `:""}<span className="bdg" style={{background:sr.c+"22",color:sr.c}}>{sr.l}</span>{r.obs&&<span style={{marginLeft:6,fontSize:11,color:"var(--dim)"}}>{r.obs}</span>}</div></div>
+                <div style={{display:"flex",gap:4}}>
+                  <button className="btn btn-ghost btn-icon btn-sm" onClick={()=>{setEditing(r);setModal(true);}}>✏️</button>
+                  <button className="btn btn-danger btn-icon btn-sm" onClick={()=>onDel(r.id)}>🗑️</button>
+                </div>
+              </div>
+              <div style={{display:"flex",justifyContent:"space-between",fontSize:12,marginTop:8}}>
+                <span style={{color:"var(--mint)"}}>Pago: {R$(pago)}</span>
+                <span style={{color:falta>0?"var(--rose)":"var(--dim)"}}>{falta>0?`Falta: ${R$(falta)}`:"✓ Quitado"}</span>
+              </div>
+              <div style={{display:"flex",alignItems:"center",gap:8,marginTop:6}}>
+                <div className="rpw"><div className="rp" style={{width:pct+"%",background:pct>=100?"var(--mint)":"var(--sky)"}}/></div>
+                <span style={{fontSize:11,color:"var(--dim)",width:28}}>{pct}%</span>
+              </div>
+            </div>
+          );
+        })
+      }
+      {modal&&<ModalReserva initial={editing} viagem={viagem} passageiros={passageiros} onSave={onSave} onClose={()=>{setModal(false);setEditing(null);}} addPassageiro={addPassageiro}/>}
+    </>
+  );
+}
+
+function ModalReserva({initial, viagem, passageiros, onSave, onClose, addPassageiro}) {
+  const [f,setF]=useState(initial||{passageiroId:"",nomeAvulso:"",assento:"",status:"confirmada",obs:""});
+  const [newP,setNewP]=useState(false);
+  const [pf,setPf]=useState({nome:"",telefone:"",cpf:""});
+  const set=(k,v)=>setF(x=>({...x,[k]:v}));
+  const ocup=(viagem.reservas||[]).filter(r=>r.id!==initial?.id).map(r=>r.assento).filter(Boolean);
+  const handleSave = async () => {
+    let fd={...f};
+    if(newP){if(!pf.nome)return alert("Informe o nome");const p=await addPassageiro(pf);fd.passageiroId=p.id;fd.nomeAvulso=pf.nome;}
+    else if(f.passageiroId){const p=passageiros.find(x=>x.id===f.passageiroId);fd.nomeAvulso=p?.nome||"";}
+    if(!fd.passageiroId&&!fd.nomeAvulso)return alert("Informe o passageiro");
+    await onSave(fd);
+  };
+  return (
+    <div className="mo" onClick={e=>e.target===e.currentTarget&&onClose()}>
+      <div className="md ani">
+        <div className="mhdl"/><div className="mhd"><span className="mtit">{initial?"Editar Reserva":"Nova Reserva"}</span><button className="btn btn-ghost btn-icon" onClick={onClose}>✕</button></div>
+        <div className="mbdy"><div className="form-section">
+          {!newP?<>
+            <div className="fg"><label className="fl">Passageiro cadastrado</label>
+              <select className="fsel" value={f.passageiroId} onChange={e=>set("passageiroId",e.target.value)}>
+                <option value="">Selecionar...</option>
+                {passageiros.map(p=><option key={p.id} value={p.id}>{p.nome}</option>)}
+              </select>
+            </div>
+            <div style={{textAlign:"center",color:"var(--dim)",fontSize:12}}>— ou —</div>
+            {!f.passageiroId&&<div className="fg"><label className="fl">Nome avulso</label><input className="fi" value={f.nomeAvulso} onChange={e=>set("nomeAvulso",e.target.value)} placeholder="Nome do passageiro"/></div>}
+            <button className="btn btn-ghost btn-sm" style={{alignSelf:"flex-start"}} onClick={()=>setNewP(true)}>+ Cadastrar novo passageiro</button>
+          </>:(
+            <div style={{background:"var(--card)",border:"1px solid var(--brd)",borderRadius:12,padding:14}}>
+              <div style={{fontSize:10,color:"var(--sky)",fontWeight:800,marginBottom:10,textTransform:"uppercase",letterSpacing:".5px"}}>Novo Passageiro</div>
+              <div style={{display:"flex",flexDirection:"column",gap:10}}>
+                <div className="fg"><label className="fl">Nome *</label><input className="fi" value={pf.nome} onChange={e=>setPf(x=>({...x,nome:e.target.value}))}/></div>
+                <div className="fgrid">
+                  <div className="fg"><label className="fl">Telefone</label><input className="fi" value={pf.telefone} onChange={e=>setPf(x=>({...x,telefone:e.target.value}))}/></div>
+                  <div className="fg"><label className="fl">CPF / RG</label><input className="fi" value={pf.cpf} onChange={e=>setPf(x=>({...x,cpf:e.target.value}))}/></div>
+                </div>
+              </div>
+              <button className="btn btn-ghost btn-sm" style={{marginTop:10}} onClick={()=>setNewP(false)}>← Voltar</button>
+            </div>
+          )}
+          <div className="fgrid">
+            <div className="fg"><label className="fl">Assento</label><input className="fi" value={f.assento} onChange={e=>set("assento",e.target.value)} placeholder="Ex: 12"/>{ocup.includes(f.assento)&&f.assento&&<span style={{fontSize:11,color:"var(--rose)"}}>Assento ocupado!</span>}</div>
+            <div className="fg"><label className="fl">Status</label>
+              <select className="fsel" value={f.status} onChange={e=>set("status",e.target.value)}>
+                {Object.entries(SR).map(([k,v])=><option key={k} value={k}>{v.l}</option>)}
+              </select>
+            </div>
+          </div>
+          <div className="fg"><label className="fl">Observações</label><input className="fi" value={f.obs} onChange={e=>set("obs",e.target.value)} placeholder="Preferências, necessidades especiais..."/></div>
+        </div></div>
+        <div className="mact">
+          <button className="btn btn-ghost btn-full" onClick={onClose}>Cancelar</button>
+          <button className="btn btn-primary btn-full" onClick={handleSave}>Salvar Reserva</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── TAB PAGAMENTOS ────────────────────────────────────────────────────────────
+function TabPagamentos({viagem, updViagem}) {
+  const [sel,setSel]=useState(null);
+  const reservas=viagem.reservas||[];
+  const totalEsp=reservas.length*Number(viagem.valor||0);
+  const totalRec=reservas.reduce((s,r)=>s+sumPgto(r),0);
+  const reserva=reservas.find(r=>r.id===sel);
+  const updR = async r => await updViagem({...viagem,reservas:reservas.map(x=>x.id===r.id?r:x)});
+  if(sel&&reserva) return <PgtoDetalhe reserva={reserva} viagem={viagem} onBack={()=>setSel(null)} onUpdate={updR}/>;
+  return (
+    <>
+      <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:12,padding:"16px 28px 0"}}>
+        <div style={{background:"var(--card)",border:"1px solid var(--brd)",borderRadius:14,padding:16}}><div style={{fontSize:10,fontWeight:700,color:"var(--dim)",textTransform:"uppercase",letterSpacing:".5px"}}>Esperado</div><div style={{fontSize:20,fontWeight:900,color:"var(--txt)",marginTop:4}}>{R$(totalEsp)}</div></div>
+        <div style={{background:"var(--card)",border:"1px solid var(--brd)",borderRadius:14,padding:16}}><div style={{fontSize:10,fontWeight:700,color:"var(--dim)",textTransform:"uppercase",letterSpacing:".5px"}}>Recebido</div><div style={{fontSize:20,fontWeight:900,color:"var(--mint)",marginTop:4}}>{R$(totalRec)}</div></div>
+        <div style={{background:"var(--card)",border:"1px solid var(--brd)",borderRadius:14,padding:16}}><div style={{fontSize:10,fontWeight:700,color:"var(--dim)",textTransform:"uppercase",letterSpacing:".5px"}}>Em Aberto</div><div style={{fontSize:20,fontWeight:900,color:(totalEsp-totalRec)>0?"var(--rose)":"var(--dim)",marginTop:4}}>{R$(totalEsp-totalRec)}</div></div>
+      </div>
+      <div style={{padding:"16px 28px 6px",fontSize:12,color:"var(--dim)"}}>Clique num passageiro para ver e registrar pagamentos:</div>
+      {reservas.length===0?<div className="empty"><div className="eico">💰</div><p>Nenhuma reserva</p></div>
+        :reservas.map(r=>{
+          const pago=sumPgto(r),total=Number(viagem.valor||0),falta=total-pago,pct=total>0?Math.min(100,Math.round((pago/total)*100)):0;
+          return (
+            <div key={r.id} className="rc" style={{cursor:"pointer"}} onClick={()=>setSel(r.id)}>
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+                <div><div className="rn">{r.nomeAvulso||"Passageiro"}</div><div className="rm">{(r.pagamentos||[]).length} pagamento(s)</div></div>
+                <span style={{color:"var(--sky)",fontSize:22}}>›</span>
+              </div>
+              <div style={{display:"flex",justifyContent:"space-between",fontSize:12,marginTop:6}}>
+                <span style={{color:"var(--mint)"}}>{R$(pago)}</span>
+                <span style={{color:falta>0?"var(--rose)":"var(--dim)"}}>{falta>0?`falta ${R$(falta)}`:"✓ Quitado"}</span>
+              </div>
+              <div style={{display:"flex",alignItems:"center",gap:8,marginTop:6}}>
+                <div className="rpw"><div className="rp" style={{width:pct+"%",background:pct>=100?"var(--mint)":"var(--sky)"}}/></div>
+                <span style={{fontSize:11,color:"var(--dim)",width:28}}>{pct}%</span>
+              </div>
+            </div>
+          );
+        })
+      }
+    </>
+  );
+}
+
+function PgtoDetalhe({reserva, viagem, onBack, onUpdate}) {
+  const [modal,setModal]=useState(false);
+  const [editP,setEditP]=useState(null);
+  const pagamentos=reserva.pagamentos||[];
+  const total=Number(viagem.valor||0),pago=sumPgto(reserva),falta=total-pago,pct=total>0?Math.min(100,Math.round((pago/total)*100)):0;
+  const savePgto = async p => {
+    const newP=editP?pagamentos.map(x=>x.id===editP.id?{...editP,...p}:x):[...pagamentos,{...p,id:genId()}];
+    await onUpdate({...reserva,pagamentos:newP});setModal(false);setEditP(null);
+  };
+  const delPgto = async id => { if(confirm("Excluir pagamento?")) await onUpdate({...reserva,pagamentos:pagamentos.filter(p=>p.id!==id)}); };
+  return (
+    <>
+      <div style={{padding:"14px 28px 0"}}><button className="btn btn-ghost btn-sm" onClick={onBack}>← Voltar</button></div>
+      <div className="rc" style={{marginTop:12}}>
+        <div className="rn">{reserva.nomeAvulso||"Passageiro"}</div>
+        <div style={{display:"flex",justifyContent:"space-between",fontSize:13,margin:"8px 0 4px"}}>
+          <span>Total: <strong>{R$(total)}</strong></span>
+          <span style={{color:"var(--mint)"}}>Pago: <strong>{R$(pago)}</strong></span>
+        </div>
+        <div style={{fontSize:12,marginBottom:6,color:falta>0?"var(--rose)":"var(--dim)"}}>{falta>0?`Falta: ${R$(falta)}`:"✓ Totalmente quitado"}</div>
+        <div style={{display:"flex",alignItems:"center",gap:8}}>
+          <div className="rpw"><div className="rp" style={{width:pct+"%",background:pct>=100?"var(--mint)":"var(--sky)"}}/></div>
+          <span style={{fontSize:11,color:"var(--dim)",width:28}}>{pct}%</span>
+        </div>
+      </div>
+      <div style={{padding:"12px 28px 4px",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+        <span style={{fontSize:12,fontWeight:700,color:"var(--dim)",textTransform:"uppercase",letterSpacing:".4px"}}>Pagamentos</span>
+        <button className="btn btn-primary btn-sm" onClick={()=>{setEditP(null);setModal(true);}}>+ Registrar</button>
+      </div>
+      {pagamentos.length===0?<div className="empty" style={{padding:"30px 20px"}}><div className="eico">💳</div><p>Nenhum pagamento ainda</p></div>
+        :<div style={{padding:"4px 28px"}}>
+          {pagamentos.map(p=>{const m=METODOS.find(x=>x.id===p.metodo);return(
+            <div key={p.id} className="pit">
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}>
+                <div>
+                  <div className="pmet">{m?.icon||"💳"} {m?.label||p.metodo}</div>
+                  <div className="pval">{R$(p.valor)}</div>
+                  <div style={{fontSize:11,color:"var(--dim)",marginTop:2}}>{p.data?`📅 ${dt(p.data)}`:""}{p.obs?` • ${p.obs}`:""}</div>
+                </div>
+                <div style={{display:"flex",gap:4}}>
+                  <button className="btn btn-ghost btn-icon btn-sm" onClick={()=>{setEditP(p);setModal(true);}}>✏️</button>
+                  <button className="btn btn-danger btn-icon btn-sm" onClick={()=>delPgto(p.id)}>🗑️</button>
+                </div>
+              </div>
+            </div>
+          );})}
+        </div>
+      }
+      {modal&&<ModalPgto initial={editP} onSave={savePgto} onClose={()=>{setModal(false);setEditP(null);}}/>}
+    </>
+  );
+}
+
+function ModalPgto({initial, onSave, onClose}) {
+  const [step,setStep]=useState(initial?"form":"metodo");
+  const [metodo,setMetodo]=useState(initial?.metodo||"");
+  const [f,setF]=useState(initial||{valor:"",data:"",obs:""});
+  const set=(k,v)=>setF(x=>({...x,[k]:v}));
+  const m=METODOS.find(x=>x.id===metodo);
+  return (
+    <div className="mo" onClick={e=>e.target===e.currentTarget&&onClose()}>
+      <div className="md ani">
+        <div className="mhdl"/>
+        <div className="mhd"><span className="mtit">{initial?"Editar Pagamento":step==="metodo"?"Forma de Pagamento":"Registrar Pagamento"}</span><button className="btn btn-ghost btn-icon" onClick={onClose}>✕</button></div>
+        {step==="metodo"&&!initial?(
+          <>
+            <div className="mg">{METODOS.map(mt=><div key={mt.id} className={`mbtn ${metodo===mt.id?"on":""}`} onClick={()=>setMetodo(mt.id)}><div style={{fontSize:24,marginBottom:5}}>{mt.icon}</div><div style={{fontSize:12,fontWeight:700,color:"var(--txt)"}}>{mt.label}</div></div>)}</div>
+            <div className="mact"><button className="btn btn-ghost btn-full" onClick={onClose}>Cancelar</button><button className="btn btn-primary btn-full" onClick={()=>{if(!metodo)return alert("Selecione a forma");setStep("form");}}>Continuar →</button></div>
+          </>
+        ):(
+          <>
+            <div className="mbdy"><div className="form-section">
+              {!initial&&m&&<div><span className="chip">{m.icon} {m.label}</span><button style={{background:"none",border:"none",color:"var(--dim)",fontSize:12,cursor:"pointer",marginLeft:8}} onClick={()=>setStep("metodo")}>trocar</button></div>}
+              {initial&&<div className="fg"><label className="fl">Forma</label><select className="fsel" value={metodo} onChange={e=>setMetodo(e.target.value)}>{METODOS.map(mt=><option key={mt.id} value={mt.id}>{mt.icon} {mt.label}</option>)}</select></div>}
+              <div className="fg"><label className="fl">Valor *</label><input type="number" className="fi" value={f.valor} onChange={e=>set("valor",e.target.value)} placeholder="0,00"/></div>
+              <div className="fg"><label className="fl">Data do Pagamento</label><input type="date" className="fi" value={f.data} onChange={e=>set("data",e.target.value)}/></div>
+              <div className="fg"><label className="fl">Observações</label><textarea className="fta" rows={2} value={f.obs} onChange={e=>set("obs",e.target.value)} placeholder="Ex: entrada, 1ª parcela..."/></div>
+            </div></div>
+            <div className="mact">
+              {!initial&&<button className="btn btn-ghost" onClick={()=>setStep("metodo")}>← Voltar</button>}
+              {initial&&<button className="btn btn-ghost btn-full" onClick={onClose}>Cancelar</button>}
+              <button className="btn btn-primary btn-full" onClick={()=>{if(!f.valor)return alert("Informe o valor");onSave({...f,metodo});}}>Salvar Pagamento</button>
+            </div>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ── TAB MAPA ──────────────────────────────────────────────────────────────────
+function TabMapa({viagem, updViagem}) {
+  const [drag,setDrag]=useState(null);
+  const [infoSeat,setInfoSeat]=useState(null);
+  const cap=viagem.capacidade||44;
+  const reservas=viagem.reservas||[];
+  const getBySeat=n=>reservas.find(r=>r.assento===String(n));
+  const semAssento=reservas.filter(r=>!r.assento);
+  const atribuir = async (num,rid) => {
+    const newR=reservas.map(r=>{
+      if(r.id===rid)return{...r,assento:String(num)};
+      if(r.assento===String(num))return{...r,assento:""};
+      return r;
+    });
+    await updViagem({...viagem,reservas:newR});setDrag(null);
+  };
+  const desvincular = async num => {
+    await updViagem({...viagem,reservas:reservas.map(r=>r.assento===String(num)?{...r,assento:""}:r)});
+    setInfoSeat(null);
+  };
+  const rows=[];let s=1;
+  while(s<=cap){const esq=[],dir=[];
+    if(s<=cap)esq.push(s++);if(s<=cap)esq.push(s++);
+    if(s<=cap)dir.push(s++);if(s<=cap)dir.push(s++);
+    rows.push({esq,dir});}
+  const reservaModal=infoSeat?getBySeat(infoSeat):null;
+  const SeatBtn=({num})=>{
+    const r=getBySeat(num);const isSel=drag&&!r;
+    return <div className={`seat ${r?"seat-occ":isSel?"seat-sel":"seat-free"}`} onClick={()=>{if(drag){if(!r)atribuir(num,drag);else if(r.id!==drag)setInfoSeat(num);}else if(r)setInfoSeat(num);}}>
+      {r?<span style={{fontSize:9,textAlign:"center",lineHeight:1.2}}>{num}<br/>{(r.nomeAvulso||"").split(" ")[0]?.slice(0,4)||"✓"}</span>:num}
+    </div>;
+  };
+  return (
+    <>
+      <div style={{padding:"14px 28px 0",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+        <div style={{fontSize:13,color:"var(--dim)"}}>{reservas.filter(r=>r.assento).length} alocados • {semAssento.length} sem assento</div>
+        <button className="btn btn-danger btn-sm" onClick={()=>{if(confirm("Reiniciar mapa de assentos?"))updViagem({...viagem,reservas:reservas.map(r=>({...r,assento:""}))})}}>🔄 Reiniciar</button>
+      </div>
+      {semAssento.length>0&&(
+        <div style={{padding:"12px 28px 0"}}>
+          <div style={{fontSize:11,fontWeight:700,color:"var(--dim)",textTransform:"uppercase",letterSpacing:".4px",marginBottom:8}}>Selecione um passageiro, depois clique no assento:</div>
+          <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
+            {semAssento.map(r=><div key={r.id} onClick={()=>setDrag(drag===r.id?null:r.id)} style={{padding:"6px 14px",borderRadius:20,fontSize:12,fontWeight:700,cursor:"pointer",background:drag===r.id?"var(--sky)":"var(--card)",color:drag===r.id?"#080e1a":"var(--txt)",border:`1.5px solid ${drag===r.id?"var(--sky)":"var(--brd)"}`}}>{r.nomeAvulso}</div>)}
+          </div>
+          {drag&&<button className="btn btn-ghost btn-sm" style={{marginTop:8}} onClick={()=>setDrag(null)}>Cancelar seleção</button>}
+        </div>
+      )}
+      <div style={{overflowY:"auto",padding:"16px 28px",borderTop:"1px solid var(--brd)",marginTop:14}}>
+        <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:6,maxWidth:220,margin:"0 auto"}}>
+          {rows.map(({esq,dir},ri)=>(
+            <div key={ri} style={{display:"flex",gap:5,alignItems:"center"}}>
+              {esq[0]!=null?<SeatBtn num={esq[0]}/>:<div style={{width:34,height:34}}/>}
+              {esq[1]!=null?<SeatBtn num={esq[1]}/>:<div style={{width:34,height:34}}/>}
+              <div style={{width:14}}/>
+              {dir[0]!=null?<SeatBtn num={dir[0]}/>:<div style={{width:34,height:34}}/>}
+              {dir[1]!=null?<SeatBtn num={dir[1]}/>:<div style={{width:34,height:34}}/>}
+            </div>
+          ))}
+        </div>
+        <div style={{display:"flex",gap:16,justifyContent:"center",marginTop:20}}>
+          {[["var(--card)","var(--brd)","Livre"],["rgba(56,189,248,.15)","var(--sky)","Ocupado"],["var(--sky)","var(--sky)","Selecionado"]].map(([bg,brd,lb])=>(
+            <div key={lb} style={{display:"flex",alignItems:"center",gap:5,fontSize:11,color:"var(--dim)"}}><div style={{width:13,height:13,background:bg,border:`1.5px solid ${brd}`,borderRadius:3}}/>{lb}</div>
+          ))}
+        </div>
+      </div>
+      {infoSeat&&reservaModal&&(
+        <div className="mo" onClick={()=>setInfoSeat(null)}>
+          <div className="md ani" style={{maxHeight:"40vh"}}>
+            <div className="mhdl"/><div className="mhd"><span className="mtit">Assento {infoSeat}</span><button className="btn btn-ghost btn-icon" onClick={()=>setInfoSeat(null)}>✕</button></div>
+            <div style={{padding:"0 20px 20px"}}>
+              <div style={{fontSize:16,fontWeight:800,color:"var(--txt)",marginBottom:4}}>{reservaModal.nomeAvulso}</div>
+              <div style={{fontSize:13,color:"var(--dim)",marginBottom:16}}>{reservaModal.obs||"Sem observações"}</div>
+              <button className="btn btn-danger btn-full" onClick={()=>desvincular(infoSeat)}>🔓 Desvincular do assento {infoSeat}</button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
+
+// ── PASSAGEIROS ───────────────────────────────────────────────────────────────
+function Passageiros({passageiros, viagens, savePassageiro, addPassageiro, deletePassageiro}) {
+  const [modal,setModal]=useState(false);
+  const [editing,setEditing]=useState(null);
+  const [search,setSearch]=useState("");
+  const filtered=passageiros.filter(p=>p.nome?.toLowerCase().includes(search.toLowerCase())||p.cpf?.includes(search)||p.telefone?.includes(search));
+  const onSave = async f => { if(editing) await savePassageiro({...editing,...f}); else await addPassageiro(f); setModal(false);setEditing(null); };
+  const onDel = async id => { if(confirm("Excluir passageiro?")) await deletePassageiro(id); };
+  const vc=pid=>viagens.filter(v=>v.reservas?.some(r=>r.passageiroId===pid)).length;
+  return (
+    <div className="ani">
+      <div className="topbar"><h1>Passageiros</h1><span className="bdg" style={{background:"rgba(56,189,248,.1)",color:"var(--sky)"}}>{passageiros.length}</span></div>
+      <div className="search-box"><span className="search-icon">🔍</span><input className="fi" placeholder="Nome, CPF ou telefone..." value={search} onChange={e=>setSearch(e.target.value)}/></div>
+      <div style={{marginTop:14}}>
+        {filtered.length===0?<div className="empty"><div className="eico">👥</div><p>Nenhum passageiro</p></div>
+          :filtered.map(p=>(
+            <div key={p.id} className="pcard">
+              <div className="avt">{p.nome?.[0]?.toUpperCase()||"?"}</div>
+              <div style={{flex:1,minWidth:0}}>
+                <div style={{fontSize:14,fontWeight:800,color:"var(--txt)"}}>{p.nome}</div>
+                <div style={{fontSize:12,color:"var(--dim)"}}>{p.telefone||p.cpf||"Sem contato"}</div>
+                {vc(p.id)>0&&<div style={{fontSize:11,color:"var(--sky)",marginTop:2}}>{vc(p.id)} viagem(ns)</div>}
+              </div>
+              <div style={{display:"flex",gap:4}}>
+                <button className="btn btn-ghost btn-icon btn-sm" onClick={()=>{setEditing(p);setModal(true);}}>✏️</button>
+                <button className="btn btn-danger btn-icon btn-sm" onClick={()=>onDel(p.id)}>🗑️</button>
+              </div>
+            </div>
+          ))
+        }
+      </div>
+      <button className="fab" onClick={()=>{setEditing(null);setModal(true);}}>+</button>
+      {modal&&<ModalPax initial={editing} onSave={onSave} onClose={()=>{setModal(false);setEditing(null);}}/>}
+    </div>
+  );
+}
+
+function ModalPax({initial, onSave, onClose}) {
+  const [f,setF]=useState(initial||{nome:"",cpf:"",dataNasc:"",telefone:"",email:"",endereco:"",obs:""});
+  const s=(k,v)=>setF(x=>({...x,[k]:v}));
+  return (
+    <div className="mo" onClick={e=>e.target===e.currentTarget&&onClose()}>
+      <div className="md ani">
+        <div className="mhdl"/><div className="mhd"><span className="mtit">{initial?"Editar Passageiro":"Novo Passageiro"}</span><button className="btn btn-ghost btn-icon" onClick={onClose}>✕</button></div>
+        <div className="mbdy"><div className="form-section">
+          <div className="fg"><label className="fl">Nome *</label><input className="fi" value={f.nome} onChange={e=>s("nome",e.target.value)}/></div>
+          <div className="fgrid">
+            <div className="fg"><label className="fl">CPF / RG</label><input className="fi" value={f.cpf} onChange={e=>s("cpf",e.target.value)}/></div>
+            <div className="fg"><label className="fl">Nascimento</label><input type="date" className="fi" value={f.dataNasc} onChange={e=>s("dataNasc",e.target.value)}/></div>
+          </div>
+          <div className="fg"><label className="fl">Telefone / WhatsApp</label><input className="fi" value={f.telefone} onChange={e=>s("telefone",e.target.value)} placeholder="(00) 00000-0000"/></div>
+          <div className="fg"><label className="fl">E-mail</label><input className="fi" value={f.email} onChange={e=>s("email",e.target.value)}/></div>
+          <div className="fg"><label className="fl">Endereço</label><input className="fi" value={f.endereco} onChange={e=>s("endereco",e.target.value)}/></div>
+          <div className="fg"><label className="fl">Observações</label><textarea className="fta" rows={2} value={f.obs} onChange={e=>s("obs",e.target.value)}/></div>
+        </div></div>
+        <div className="mact">
+          <button className="btn btn-ghost btn-full" onClick={onClose}>Cancelar</button>
+          <button className="btn btn-primary btn-full" onClick={()=>{if(!f.nome)return alert("Informe o nome");onSave(f);}}>Salvar</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── FINANCEIRO ────────────────────────────────────────────────────────────────
+function Financeiro({viagens, go}) {
+  const totalEsp=viagens.reduce((s,v)=>s+(v.reservas?.length||0)*Number(v.valor||0),0);
+  const totalRec=viagens.reduce((s,v)=>s+(v.reservas||[]).reduce((ss,r)=>ss+sumPgto(r),0),0);
+  return (
+    <div className="ani">
+      <div className="topbar"><h1>Financeiro</h1></div>
+      <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:12,padding:"20px 28px 0"}}>
+        <div style={{background:"var(--card)",border:"1px solid var(--brd)",borderRadius:14,padding:16}}><div style={{fontSize:10,fontWeight:700,color:"var(--dim)",textTransform:"uppercase",letterSpacing:".5px"}}>Esperado Total</div><div style={{fontSize:22,fontWeight:900,color:"var(--txt)",marginTop:5}}>{R$(totalEsp)}</div></div>
+        <div style={{background:"var(--card)",border:"1px solid var(--brd)",borderRadius:14,padding:16}}><div style={{fontSize:10,fontWeight:700,color:"var(--dim)",textTransform:"uppercase",letterSpacing:".5px"}}>Recebido Total</div><div style={{fontSize:22,fontWeight:900,color:"var(--mint)",marginTop:5}}>{R$(totalRec)}</div></div>
+        <div style={{background:"var(--card)",border:"1px solid var(--brd)",borderRadius:14,padding:16}}><div style={{fontSize:10,fontWeight:700,color:"var(--dim)",textTransform:"uppercase",letterSpacing:".5px"}}>Em Aberto</div><div style={{fontSize:22,fontWeight:900,color:(totalEsp-totalRec)>0?"var(--rose)":"var(--dim)",marginTop:5}}>{R$(totalEsp-totalRec)}</div></div>
+      </div>
+      <div style={{padding:"20px 28px 8px",fontSize:11,fontWeight:700,color:"var(--dim)",textTransform:"uppercase",letterSpacing:".5px"}}>Por Viagem — clique para abrir</div>
+      {viagens.length===0?<div className="empty"><div className="eico">💰</div><p>Nenhuma viagem</p></div>
+        :viagens.map(v=>{
+          const res=v.reservas||[],esp=res.length*Number(v.valor||0),rec=res.reduce((s,r)=>s+sumPgto(r),0),ab=esp-rec,pct=esp>0?Math.min(100,Math.round((rec/esp)*100)):0;
+          return (
+            <div key={v.id} className="fcard" onClick={()=>go("viagem",{viagem:v})}>
+              <div className="fname">{v.nome} <span style={{fontSize:11,color:"var(--dim)",fontWeight:500}}>{dt(v.dataIda)}</span></div>
+              <div className="frow"><span>Passageiros</span><span>{res.length}/{v.capacidade}</span></div>
+              <div className="frow"><span>Esperado</span><span>{R$(esp)}</span></div>
+              <div className="frow"><span>Recebido</span><span style={{color:"var(--mint)"}}>{R$(rec)}</span></div>
+              <div className="frow"><span>Em aberto</span><span style={{color:ab>0?"var(--rose)":"var(--dim)"}}>{ab>0?R$(ab):"✓ Quitado"}</span></div>
+              <div style={{display:"flex",alignItems:"center",gap:8,marginTop:8}}>
+                <div style={{flex:1,height:4,background:"var(--brd)",borderRadius:2,overflow:"hidden"}}><div style={{width:pct+"%",height:"100%",background:pct>=100?"var(--mint)":"var(--sky)",borderRadius:2}}/></div>
+                <span style={{fontSize:11,color:"var(--dim)",width:28}}>{pct}%</span>
+              </div>
+            </div>
+          );
+        })
+      }
+    </div>
+  );
+}
+
+// ── RELATÓRIOS ────────────────────────────────────────────────────────────────
+function Relatorios({viagens}) {
+  const [vid,setVid]=useState("");
+  const viagem=viagens.find(v=>v.id===vid);
+  const pendentes=viagens.flatMap(v=>(v.reservas||[]).filter(r=>sumPgto(r)<Number(v.valor||0)).map(r=>({...r,vNome:v.nome,falta:Number(v.valor||0)-sumPgto(r)})));
+  const gerarPDF=()=>{
+    if(!viagem)return alert("Selecione uma viagem primeiro");
+    const reservas=viagem.reservas||[];
+    const totalEsp=reservas.length*Number(viagem.valor||0);
+    const totalRec=reservas.reduce((s,r)=>s+sumPgto(r),0);
+    const fmt=v=>`R$ ${Number(v).toLocaleString("pt-BR",{minimumFractionDigits:2})}`;
+    const linhas=reservas.map((r,i)=>{
+      const pago=sumPgto(r),falta=Number(viagem.valor||0)-pago;
+      const pgtos=(r.pagamentos||[]).map(p=>`<tr style="font-size:11px"><td></td><td colspan="2" style="padding:3px 8px;color:#666">↳ ${METODOS_LABEL[p.metodo]||p.metodo} — ${p.data?new Date(p.data+"T12:00:00").toLocaleDateString("pt-BR"):"sem data"}${p.obs?" — "+p.obs:""}</td><td style="text-align:right;padding:3px 8px;color:#16a34a">+ ${fmt(p.valor)}</td></tr>`).join("");
+      return `<tr style="background:${i%2===0?"#f9fafb":"#fff"}"><td style="padding:8px;font-weight:600">${i+1}. ${r.nomeAvulso||"—"}</td><td style="padding:8px;color:#555">${r.assento||"—"}</td><td style="padding:8px;text-align:right;color:#16a34a">${fmt(pago)}</td><td style="padding:8px;text-align:right;color:${falta>0?"#dc2626":"#6b7280"}">${falta>0?fmt(falta):"✓"}</td></tr>${pgtos}`;
+    }).join("");
+    const html=`<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"/><title>Relatório — ${viagem.nome}</title><style>body{font-family:Arial,sans-serif;color:#111;padding:32px;max-width:800px;margin:0 auto}h1{font-size:22px;margin-bottom:4px}.sub{color:#555;font-size:13px;margin-bottom:24px}.section{margin-bottom:28px}.st{font-size:14px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#374151;border-bottom:2px solid #e5e7eb;padding-bottom:6px;margin-bottom:12px}.ig{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px}.ib{background:#f3f4f6;border-radius:8px;padding:10px 14px}.il{font-size:10px;text-transform:uppercase;color:#6b7280;letter-spacing:.4px}.iv{font-size:16px;font-weight:700;margin-top:2px}table{width:100%;border-collapse:collapse;font-size:13px}th{background:#1e293b;color:#fff;padding:8px;text-align:left;font-size:11px;text-transform:uppercase}th:last-child,td:last-child{text-align:right}.tr td{font-weight:700;background:#f1f5f9;padding:10px 8px}@media print{body{padding:16px}}</style></head><body><h1>✈ ${viagem.nome}</h1><div class="sub">${viagem.dataIda?"Ida: "+new Date(viagem.dataIda+"T12:00:00").toLocaleDateString("pt-BR"):""} ${viagem.dataVolta?"| Volta: "+new Date(viagem.dataVolta+"T12:00:00").toLocaleDateString("pt-BR"):""} | Gerado em ${new Date().toLocaleDateString("pt-BR")}</div><div class="section"><div class="st">Resumo</div><div class="ig"><div class="ib"><div class="il">Passageiros</div><div class="iv">${reservas.length}/${viagem.capacidade||0}</div></div><div class="ib"><div class="il">Valor/pessoa</div><div class="iv">${fmt(viagem.valor||0)}</div></div><div class="ib"><div class="il">Total esperado</div><div class="iv">${fmt(totalEsp)}</div></div><div class="ib"><div class="il">Total recebido</div><div class="iv" style="color:#16a34a">${fmt(totalRec)}</div></div><div class="ib"><div class="il">Em aberto</div><div class="iv" style="color:${(totalEsp-totalRec)>0?"#dc2626":"#6b7280"}">${fmt(totalEsp-totalRec)}</div></div><div class="ib"><div class="il">Status</div><div class="iv">${viagem.status||"—"}</div></div></div></div><div class="section"><div class="st">Passageiros e Pagamentos</div><table><thead><tr><th>Passageiro</th><th>Assento</th><th style="text-align:right">Pago</th><th style="text-align:right">Falta</th></tr></thead><tbody>${linhas}<tr class="tr"><td colspan="2">TOTAL (${reservas.length} passageiros)</td><td style="color:#16a34a;text-align:right">${fmt(totalRec)}</td><td style="text-align:right;color:${(totalEsp-totalRec)>0?"#dc2626":"#6b7280"}">${(totalEsp-totalRec)>0?fmt(totalEsp-totalRec):"✓ Quitado"}</td></tr></tbody></table></div>${viagem.descricao?`<div class="section"><div class="st">Observações</div><p style="font-size:13px;color:#555">${viagem.descricao}</p></div>`:""}</body></html>`;
+    const win=window.open("","_blank");
+    if(!win)return alert("Permita pop-ups para gerar o PDF");
+    win.document.write(html);win.document.close();setTimeout(()=>win.print(),600);
+  };
+  return (
+    <div className="ani">
+      <div className="topbar"><h1>Relatórios</h1></div>
+      <div style={{padding:"20px 28px 0",display:"grid",gridTemplateColumns:"1fr 1fr",gap:16}}>
+        <div style={{background:"var(--card)",border:"1px solid var(--brd)",borderRadius:14,padding:16}}>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
+            <div style={{fontWeight:800,fontSize:14,color:"var(--txt)"}}>⚠️ Pagamentos Pendentes</div>
+            <span className="bdg" style={{background:"rgba(248,113,113,.1)",color:"var(--rose)"}}>{pendentes.length}</span>
+          </div>
+          {pendentes.length===0?<div style={{color:"var(--mint)",fontSize:13,fontWeight:600}}>✓ Todos os pagamentos em dia!</div>
+            :pendentes.map(r=>(
+              <div key={r.id} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"8px 0",borderBottom:"1px solid var(--brd)"}}>
+                <div><div style={{fontSize:13,fontWeight:700,color:"var(--txt)"}}>{r.nomeAvulso||"Passageiro"}</div><div style={{fontSize:11,color:"var(--dim)"}}>{r.vNome}</div></div>
+                <div style={{fontSize:13,fontWeight:800,color:"var(--rose)"}}>{R$(r.falta)}</div>
+              </div>
+            ))
+          }
+        </div>
+        <div style={{background:"var(--card)",border:"1px solid var(--brd)",borderRadius:14,padding:16}}>
+          <div style={{fontWeight:800,fontSize:14,color:"var(--txt)",marginBottom:12}}>📋 Relatório por Viagem</div>
+          <div className="fg" style={{marginBottom:12}}>
+            <select className="fsel" value={vid} onChange={e=>setVid(e.target.value)}>
+              <option value="">Selecionar viagem...</option>
+              {viagens.map(v=><option key={v.id} value={v.id}>{v.nome} — {dt(v.dataIda)}</option>)}
+            </select>
+          </div>
+          {viagem&&(viagem.reservas||[]).map((r,i)=>{const pago=sumPgto(r),q=pago>=Number(viagem.valor||0);return(
+            <div key={r.id} style={{display:"flex",alignItems:"center",gap:8,padding:"8px 0",borderBottom:"1px solid var(--brd)"}}>
+              <span style={{fontSize:11,color:"var(--dim)",width:20}}>{i+1}</span>
+              <div style={{flex:1}}><div style={{fontSize:13,fontWeight:700,color:"var(--txt)"}}>{r.nomeAvulso||"—"}</div><div style={{fontSize:11,color:"var(--dim)"}}>Assento: {r.assento||"—"}</div></div>
+              <span className="bdg" style={{background:q?"rgba(52,211,153,.1)":"rgba(248,113,113,.1)",color:q?"var(--mint)":"var(--rose)"}}>{q?"Quitado":`Falta ${R$(Number(viagem.valor||0)-pago)}`}</span>
+            </div>
+          );})}
+          {viagem&&(viagem.reservas||[]).length===0&&<div style={{color:"var(--dim)",fontSize:13,marginBottom:12}}>Nenhuma reserva nesta viagem.</div>}
+          <button className="btn btn-primary btn-full" style={{marginTop:14,opacity:viagem?1:.4}} onClick={gerarPDF}>
+            📄 Gerar PDF {viagem?`— ${viagem.nome}`:"(selecione uma viagem)"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+ReactDOM.render(<App/>, document.getElementById("root"));
+</script>
+</body>
+</html>
