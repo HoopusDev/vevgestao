@@ -219,6 +219,23 @@ html,body{height:100%;background:var(--bg);overflow:hidden;}
 @keyframes up{from{opacity:0;transform:translateY(16px);}to{opacity:1;transform:translateY(0);}}
 .ani{animation:up .22s ease;}
 select option{background:var(--surf);color:var(--txt);}
+/* ── CALCULADORA ── */
+.calc-section{padding:20px 28px 0;}
+@media(max-width:768px){.calc-section{padding:14px 14px 0;}}
+.calc-card{background:var(--card);border:1px solid var(--brd);border-radius:14px;padding:18px;margin-bottom:14px;}
+.calc-card-title{font-size:13px;font-weight:800;color:var(--txt);letter-spacing:-.1px;margin-bottom:14px;display:flex;justify-content:space-between;align-items:center;}
+.calc-item{display:grid;grid-template-columns:1fr 120px 32px;gap:8px;align-items:center;margin-bottom:10px;}
+.calc-result{background:linear-gradient(135deg,rgba(56,189,248,.08),rgba(167,139,250,.08));border:1px solid rgba(56,189,248,.2);border-radius:14px;padding:20px 24px;}
+.calc-result-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--brd);font-size:14px;}
+.calc-result-row:last-child{border-bottom:none;}
+.calc-result-label{color:var(--dim);font-weight:600;}
+.calc-result-value{font-weight:800;color:var(--txt);}
+.calc-result-highlight{font-size:22px;font-weight:900;color:var(--sky);}
+.calc-result-profit{font-size:18px;font-weight:900;color:var(--mint);}
+.ganho-toggle{display:flex;gap:6px;margin-bottom:12px;}
+.ganho-btn{flex:1;padding:8px;border-radius:8px;border:1.5px solid var(--brd);background:var(--card);color:var(--dim);font-size:12px;font-weight:700;cursor:pointer;transition:all .15s;text-align:center;}
+.ganho-btn.on{border-color:var(--sky);background:rgba(56,189,248,.1);color:var(--sky);}
+
 </style>
 </head>
 <body>
@@ -330,6 +347,7 @@ function App() {
     ["passageiros","👥","Passageiros"],
     ["financeiro","💰","Financeiro"],
     ["relatorios","📊","Relatórios"],
+    ["calculadora","🧮","Calculadora"],
   ];
 
   const pageEl = () => {
@@ -339,6 +357,7 @@ function App() {
     if(page==="passageiros") return <Passageiros passageiros={passageiros} viagens={viagens} savePassageiro={savePassageiro} addPassageiro={addPassageiro} deletePassageiro={deletePassageiro}/>;
     if(page==="financeiro")  return <Financeiro viagens={viagens} go={go}/>;
     if(page==="relatorios")  return <Relatorios viagens={viagens}/>;
+    if(page==="calculadora") return <Calculadora/>;
   };
 
   return (
@@ -541,13 +560,14 @@ function ViagemDetail({viagens, passageiros, addPassageiro, viagem, updViagem, g
         </div>
       </div>
       <div className="tabs">
-        {[["reservas","👥 Reservas"],["mapa","🚌 Mapa do Ônibus"],["pagamentos","💰 Pagamentos"]].map(([id,lb])=>(
+        {[["reservas","👥 Reservas"],["mapa","🚌 Mapa do Ônibus"],["pagamentos","💰 Pagamentos"],["orcamento","🧮 Orçamento"]].map(([id,lb])=>(
           <button key={id} className={`tab ${tab===id?"on":""}`} onClick={()=>setTab(id)}>{lb}</button>
         ))}
       </div>
       {tab==="reservas"   && <TabReservas viagem={viagem} passageiros={passageiros} addPassageiro={addPassageiro} updViagem={updViagem}/>}
       {tab==="mapa"       && <TabMapa viagem={viagem} updViagem={updViagem}/>}
       {tab==="pagamentos" && <TabPagamentos viagem={viagem} updViagem={updViagem}/>}
+      {tab==="orcamento"   && <TabOrcamento viagem={viagem} updViagem={updViagem}/>}
     </div>
   );
 }
@@ -1034,6 +1054,185 @@ function Relatorios({viagens}) {
     </div>
   );
 }
+
+
+// ── LÓGICA CALCULADORA (shared) ───────────────────────────────────────────────
+function useCalc(inicial) {
+  const [onibus, setOnibus] = React.useState(inicial?.onibus || [{id:genId(),nome:"Ônibus 1",valor:""}]);
+  const [hoteis, setHoteis] = React.useState(inicial?.hoteis || [{id:genId(),nome:"Hotel 1",valor:""}]);
+  const [passageiros, setPassageiros] = React.useState(inicial?.passageiros || "");
+  const [ganhoTipo, setGanhoTipo] = React.useState(inicial?.ganhoTipo || "pct");
+  const [ganho, setGanho] = React.useState(inicial?.ganho || "");
+
+  const addOnibus = () => setOnibus(v => [...v, {id:genId(),nome:`Ônibus ${v.length+1}`,valor:""}]);
+  const remOnibus = id => setOnibus(v => v.filter(x=>x.id!==id));
+  const updOnibus = (id,k,val) => setOnibus(v => v.map(x=>x.id===id?{...x,[k]:val}:x));
+
+  const addHotel = () => setHoteis(v => [...v, {id:genId(),nome:`Hotel ${v.length+1}`,valor:""}]);
+  const remHotel = id => setHoteis(v => v.filter(x=>x.id!==id));
+  const updHotel = (id,k,val) => setHoteis(v => v.map(x=>x.id===id?{...x,[k]:val}:x));
+
+  const custoOnibus = onibus.reduce((s,o)=>s+Number(o.valor||0),0);
+  const custoHotel = hoteis.reduce((s,h)=>s+Number(h.valor||0),0);
+  const custoTotal = custoOnibus + custoHotel;
+  const nPax = Number(passageiros||0);
+  const custoPorPax = nPax>0 ? custoTotal/nPax : 0;
+  const ganhoVal = ganhoTipo==="pct"
+    ? custoTotal * (Number(ganho||0)/100)
+    : Number(ganho||0);
+  const lucroPorPax = nPax>0 ? ganhoVal/nPax : 0;
+  const valorPorPax = custoPorPax + lucroPorPax;
+  const valorFinal = valorPorPax * nPax;
+  const lucro = ganhoVal;
+
+  const dados = {onibus,hoteis,passageiros,ganhoTipo,ganho};
+  const resultado = {custoOnibus,custoHotel,custoTotal,nPax,custoPorPax,ganhoVal,lucroPorPax,valorPorPax,valorFinal,lucro};
+
+  return {onibus,hoteis,passageiros,setPassageiros,ganhoTipo,setGanhoTipo,ganho,setGanho,
+          addOnibus,remOnibus,updOnibus,addHotel,remHotel,updHotel,resultado,dados};
+}
+
+function CalcForm({state, showResult=true}) {
+  const {onibus,hoteis,passageiros,setPassageiros,ganhoTipo,setGanhoTipo,ganho,setGanho,
+         addOnibus,remOnibus,updOnibus,addHotel,remHotel,updHotel,resultado} = state;
+  const r = resultado;
+  return (
+    <>
+      {/* Ônibus */}
+      <div className="calc-card">
+        <div className="calc-card-title">
+          <span>🚌 Ônibus</span>
+          <button className="btn btn-ghost btn-sm" onClick={addOnibus}>+ Adicionar</button>
+        </div>
+        {onibus.map(o=>(
+          <div key={o.id} className="calc-item">
+            <input className="fi" value={o.nome} onChange={e=>updOnibus(o.id,"nome",e.target.value)} placeholder="Nome"/>
+            <input type="number" className="fi" value={o.valor} onChange={e=>updOnibus(o.id,"valor",e.target.value)} placeholder="R$ valor"/>
+            {onibus.length>1&&<button className="btn btn-danger btn-icon btn-sm" onClick={()=>remOnibus(o.id)}>✕</button>}
+          </div>
+        ))}
+        <div style={{fontSize:12,color:"var(--dim)",marginTop:4}}>Subtotal: <strong style={{color:"var(--txt)"}}>{R$(r.custoOnibus)}</strong></div>
+      </div>
+
+      {/* Hotéis */}
+      <div className="calc-card">
+        <div className="calc-card-title">
+          <span>🏨 Hotéis</span>
+          <button className="btn btn-ghost btn-sm" onClick={addHotel}>+ Adicionar</button>
+        </div>
+        {hoteis.map(h=>(
+          <div key={h.id} className="calc-item">
+            <input className="fi" value={h.nome} onChange={e=>updHotel(h.id,"nome",e.target.value)} placeholder="Nome"/>
+            <input type="number" className="fi" value={h.valor} onChange={e=>updHotel(h.id,"valor",e.target.value)} placeholder="R$ valor"/>
+            {hoteis.length>1&&<button className="btn btn-danger btn-icon btn-sm" onClick={()=>remHotel(h.id)}>✕</button>}
+          </div>
+        ))}
+        <div style={{fontSize:12,color:"var(--dim)",marginTop:4}}>Subtotal: <strong style={{color:"var(--txt)"}}>{R$(r.custoHotel)}</strong></div>
+      </div>
+
+      {/* Passageiros e Ganho */}
+      <div className="calc-card">
+        <div className="calc-card-title"><span>👥 Passageiros & Ganho</span></div>
+        <div className="fgrid" style={{marginBottom:14}}>
+          <div className="fg"><label className="fl">Nº de Passageiros</label><input type="number" className="fi" value={passageiros} onChange={e=>setPassageiros(e.target.value)} placeholder="Ex: 44"/></div>
+          <div className="fg">
+            <label className="fl">Tipo de Ganho</label>
+            <div className="ganho-toggle">
+              <div className={`ganho-btn ${ganhoTipo==="pct"?"on":""}`} onClick={()=>setGanhoTipo("pct")}>% Porcentagem</div>
+              <div className={`ganho-btn ${ganhoTipo==="fixo"?"on":""}`} onClick={()=>setGanhoTipo("fixo")}>R$ Valor fixo</div>
+            </div>
+          </div>
+        </div>
+        <div className="fg">
+          <label className="fl">{ganhoTipo==="pct"?"Porcentagem de Ganho (%)":"Valor de Lucro (R$)"}</label>
+          <input type="number" className="fi" value={ganho} onChange={e=>setGanho(e.target.value)} placeholder={ganhoTipo==="pct"?"Ex: 20":"Ex: 500"}/>
+        </div>
+      </div>
+
+      {/* Resultado */}
+      {showResult && r.custoTotal>0 && r.nPax>0 && (
+        <div className="calc-result">
+          <div style={{fontSize:11,fontWeight:800,color:"var(--sky)",textTransform:"uppercase",letterSpacing:".5px",marginBottom:12}}>Resultado</div>
+          <div className="calc-result-row"><span className="calc-result-label">Custo ônibus</span><span className="calc-result-value">{R$(r.custoOnibus)}</span></div>
+          <div className="calc-result-row"><span className="calc-result-label">Custo hotel</span><span className="calc-result-value">{R$(r.custoHotel)}</span></div>
+          <div className="calc-result-row"><span className="calc-result-label">Custo total</span><span className="calc-result-value">{R$(r.custoTotal)}</span></div>
+          <div className="calc-result-row"><span className="calc-result-label">Custo por passageiro</span><span className="calc-result-value">{R$(r.custoPorPax)}</span></div>
+          <div className="calc-result-row"><span className="calc-result-label">Lucro total</span><span className="calc-result-profit">{R$(r.lucro)}</span></div>
+          <div className="calc-result-row"><span className="calc-result-label">Lucro por passageiro</span><span className="calc-result-value">{R$(r.lucroPorPax)}</span></div>
+          <div className="calc-result-row" style={{marginTop:8,paddingTop:4}}><span style={{fontSize:15,fontWeight:800,color:"var(--txt)"}}>Valor por passageiro</span><span className="calc-result-highlight">{R$(r.valorPorPax)}</span></div>
+          <div className="calc-result-row"><span style={{fontSize:15,fontWeight:800,color:"var(--txt)"}}>Valor total da viagem</span><span className="calc-result-highlight">{R$(r.valorFinal)}</span></div>
+        </div>
+      )}
+    </>
+  );
+}
+
+function gerarPDFCalc(resultado, onibus, hoteis, nomeViagem) {
+  const r = resultado;
+  const fmt = v => `R$ ${Number(v).toLocaleString("pt-BR",{minimumFractionDigits:2})}`;
+  const linhasOnibus = onibus.map(o=>`<tr><td style="padding:8px">${o.nome}</td><td style="padding:8px;text-align:right">${fmt(o.valor||0)}</td></tr>`).join("");
+  const linhasHotel = hoteis.map(h=>`<tr><td style="padding:8px">${h.nome}</td><td style="padding:8px;text-align:right">${fmt(h.valor||0)}</td></tr>`).join("");
+  const html=`<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"/><title>Orçamento${nomeViagem?" — "+nomeViagem:""}</title><style>body{font-family:Arial,sans-serif;color:#111;padding:32px;max-width:700px;margin:0 auto}h1{font-size:22px;margin-bottom:4px}.sub{color:#555;font-size:13px;margin-bottom:24px}h2{font-size:14px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#374151;border-bottom:2px solid #e5e7eb;padding-bottom:6px;margin:20px 0 10px}table{width:100%;border-collapse:collapse;font-size:13px}th{background:#1e293b;color:#fff;padding:8px;text-align:left}th:last-child,td:last-child{text-align:right}.res{background:#f8fafc;border-radius:8px;padding:16px;margin-top:20px}.res-row{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #e5e7eb;font-size:13px}.res-row:last-child{border-bottom:none}.dest{font-size:18px;font-weight:700;color:#0369a1}.dest2{font-size:22px;font-weight:700;color:#0369a1}@media print{body{padding:16px}}</style></head><body><h1>🧮 Orçamento de Viagem${nomeViagem?" — "+nomeViagem:""}</h1><div class="sub">Gerado em ${new Date().toLocaleDateString("pt-BR")}</div><h2>Ônibus</h2><table><thead><tr><th>Descrição</th><th style="text-align:right">Valor</th></tr></thead><tbody>${linhasOnibus}<tr style="background:#f1f5f9"><td style="padding:8px;font-weight:700">Subtotal Ônibus</td><td style="padding:8px;text-align:right;font-weight:700">${fmt(r.custoOnibus)}</td></tr></tbody></table><h2>Hotéis</h2><table><thead><tr><th>Descrição</th><th style="text-align:right">Valor</th></tr></thead><tbody>${linhasHotel}<tr style="background:#f1f5f9"><td style="padding:8px;font-weight:700">Subtotal Hotéis</td><td style="padding:8px;text-align:right;font-weight:700">${fmt(r.custoHotel)}</td></tr></tbody></table><div class="res"><div class="res-row"><span>Custo Total</span><span>${fmt(r.custoTotal)}</span></div><div class="res-row"><span>Nº de Passageiros</span><span>${r.nPax}</span></div><div class="res-row"><span>Custo por Passageiro</span><span>${fmt(r.custoPorPax)}</span></div><div class="res-row"><span>Lucro Total</span><span style="color:#16a34a">${fmt(r.lucro)}</span></div><div class="res-row"><span>Lucro por Passageiro</span><span style="color:#16a34a">${fmt(r.lucroPorPax)}</span></div><div class="res-row" style="margin-top:8px"><span style="font-size:15px;font-weight:700">Valor por Passageiro</span><span class="dest">${fmt(r.valorPorPax)}</span></div><div class="res-row"><span style="font-size:15px;font-weight:700">Valor Total da Viagem</span><span class="dest2">${fmt(r.valorFinal)}</span></div></div></body></html>`;
+  const win=window.open("","_blank");
+  if(!win)return alert("Permita pop-ups para gerar o PDF");
+  win.document.write(html);win.document.close();setTimeout(()=>win.print(),600);
+}
+
+// ── CALCULADORA (aba principal) ───────────────────────────────────────────────
+function Calculadora() {
+  const state = useCalc();
+  const {resultado, dados} = state;
+  const r = resultado;
+  return (
+    <div className="ani">
+      <div className="topbar"><h1>Calculadora</h1></div>
+      <div className="calc-section">
+        <CalcForm state={state}/>
+        {r.custoTotal>0 && r.nPax>0 && (
+          <button className="btn btn-primary btn-full" style={{marginTop:4,marginBottom:24}}
+            onClick={()=>gerarPDFCalc(r, dados.onibus, dados.hoteis, "Simulação")}>
+            📄 Gerar PDF do Orçamento
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ── TAB ORÇAMENTO (dentro da viagem) ─────────────────────────────────────────
+function TabOrcamento({viagem, updViagem}) {
+  const orcSalvo = viagem.orcamento || null;
+  const state = useCalc(orcSalvo);
+  const {resultado, dados} = state;
+  const r = resultado;
+  const [salvando, setSalvando] = React.useState(false);
+  const [salvo, setSalvo] = React.useState(false);
+
+  const salvar = async () => {
+    setSalvando(true);
+    await updViagem({...viagem, orcamento: dados});
+    setSalvando(false); setSalvo(true);
+    setTimeout(()=>setSalvo(false), 2000);
+  };
+
+  return (
+    <div style={{padding:"0 0 24px"}}>
+      <div style={{padding:"14px 28px 0",display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:4}}>
+        <span style={{fontSize:12,color:"var(--dim)"}}>Orçamento vinculado a <strong style={{color:"var(--txt)"}}>{viagem.nome}</strong></span>
+        <div style={{display:"flex",gap:8}}>
+          {r.custoTotal>0&&r.nPax>0&&<button className="btn btn-ghost btn-sm" onClick={()=>gerarPDFCalc(r,dados.onibus,dados.hoteis,viagem.nome)}>📄 PDF</button>}
+          <button className="btn btn-primary btn-sm" onClick={salvar} disabled={salvando}>
+            {salvando?"Salvando...":salvo?"✓ Salvo!":"💾 Salvar"}
+          </button>
+        </div>
+      </div>
+      <div className="calc-section" style={{paddingTop:10}}>
+        <CalcForm state={state}/>
+      </div>
+    </div>
+  );
+}
+
 
 ReactDOM.render(<App/>, document.getElementById("root"));
 </script>
