@@ -11,7 +11,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
 <meta name="apple-mobile-web-app-title" content="V&V Gestão"/>
 <meta name="application-name" content="V&V Gestão"/>
-<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
@@ -19,229 +19,236 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
 <style>
+
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
 :root{
-  --bg:#080e1a;--surf:#0f1724;--card:#151e2e;--brd:#1d2b40;
+  --bg:#080e1a;--surf:#0d1520;--card:#111827;--brd:#1e2d42;
   --sky:#38bdf8;--mint:#34d399;--rose:#f87171;--amber:#fbbf24;--lilac:#a78bfa;
-  --txt:#e8f0fe;--dim:#6b82a0;--font:'Outfit',sans-serif;
-  --sidebar:240px;
+  --txt:#dde6f0;--dim:#4d6175;--dim2:#7a96b0;--font:'Outfit',sans-serif;
+  --sidebar:240px;--radius:10px;
 }
 html,body{height:100%;background:var(--bg);overflow:hidden;}
 #root{height:100%;}
 *{font-family:var(--font);-webkit-tap-highlight-color:transparent;}
 
-/* ── LAYOUT DESKTOP ── */
+/* ── LAYOUT ── */
 .app-layout{display:flex;height:100%;overflow:hidden;}
-
-/* Sidebar */
-.sidebar{width:var(--sidebar);background:var(--surf);border-right:1px solid var(--brd);display:flex;flex-direction:column;flex-shrink:0;overflow:hidden;}
-.sidebar-logo{padding:24px 16px 20px;border-bottom:1px solid var(--brd);display:flex;justify-content:center;align-items:center;width:100%;}
-.sidebar-logo-inner{display:flex;justify-content:center;align-items:center;}
-.sidebar-logo-icon{width:40px;height:40px;background:linear-gradient(135deg,#38bdf8,#a78bfa);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;}
-.sidebar-logo-text{font-size:17px;font-weight:900;color:var(--txt);letter-spacing:-.3px;line-height:1.1;}
-.sidebar-logo-sub{font-size:11px;color:var(--dim);margin-top:2px;}
-.sidebar-nav{flex:1;padding:12px 10px;display:flex;flex-direction:column;gap:2px;overflow-y:auto;}
-.sidebar-nav::-webkit-scrollbar{display:none;}
-.sni{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;cursor:pointer;border:none;background:none;color:var(--dim);font-size:13px;font-weight:600;width:100%;text-align:left;transition:all .15s;letter-spacing:-.1px;}
-.sni:hover{background:var(--card);color:var(--txt);}
-.sni.on{background:rgba(56,189,248,.12);color:var(--sky);}
-.sni-icon{font-size:18px;width:22px;text-align:center;flex-shrink:0;}
-.sidebar-user{padding:14px 16px;border-top:1px solid var(--brd);display:flex;align-items:center;gap:10px;}
-.sidebar-avatar{width:34px;height:34px;border-radius:10px;object-fit:cover;flex-shrink:0;background:var(--card);}
-.sidebar-user-info{flex:1;min-width:0;}
-.sidebar-user-name{font-size:12px;font-weight:700;color:var(--txt);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.sidebar-user-email{font-size:10px;color:var(--dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.sidebar-logout{width:30px;height:30px;border-radius:8px;border:1px solid var(--brd);background:none;cursor:pointer;color:var(--dim);font-size:14px;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .15s;}
-.sidebar-logout:hover{background:rgba(248,113,113,.1);color:var(--rose);border-color:rgba(248,113,113,.3);}
-
-/* Main content */
 .main-content{flex:1;display:flex;flex-direction:column;overflow:hidden;}
 .page{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;}
-.page::-webkit-scrollbar{width:4px;}
+.page::-webkit-scrollbar{width:3px;}
 .page::-webkit-scrollbar-track{background:transparent;}
 .page::-webkit-scrollbar-thumb{background:var(--brd);border-radius:2px;}
 
-/* ── MOBILE LAYOUT ── */
+/* ── SIDEBAR ── */
+.sidebar{width:var(--sidebar);background:var(--surf);border-right:1px solid var(--brd);display:flex;flex-direction:column;flex-shrink:0;overflow:hidden;}
+.sidebar-logo{padding:20px 16px 16px;border-bottom:1px solid var(--brd);display:flex;justify-content:center;align-items:center;width:100%;}
+.sidebar-logo-inner{display:flex;justify-content:center;align-items:center;}
+.sidebar-logo-icon{background:transparent;width:auto;height:auto;padding:0;display:flex;align-items:center;justify-content:center;}
+.sidebar-logo-text{font-size:15px;font-weight:600;color:var(--txt);}
+.sidebar-logo-sub{font-size:11px;color:var(--dim2);margin-top:2px;}
+.sidebar-nav{flex:1;padding:10px 8px;display:flex;flex-direction:column;gap:1px;overflow-y:auto;}
+.sidebar-nav::-webkit-scrollbar{display:none;}
+.sni{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:8px;cursor:pointer;border:none;background:none;color:var(--dim2);font-size:13px;font-weight:500;width:100%;text-align:left;transition:all .15s;letter-spacing:.1px;}
+.sni:hover{background:rgba(255,255,255,.04);color:var(--txt);}
+.sni.on{background:rgba(56,189,248,.1);color:var(--sky);}
+.sni-icon{width:18px;height:18px;flex-shrink:0;opacity:.7;}
+.sni.on .sni-icon{opacity:1;}
+.sidebar-section{font-size:10px;font-weight:600;color:var(--dim);text-transform:uppercase;letter-spacing:.8px;padding:14px 14px 6px;}
+.sidebar-user{padding:12px 14px;border-top:1px solid var(--brd);display:flex;align-items:center;gap:10px;}
+.sidebar-avatar{width:32px;height:32px;border-radius:8px;object-fit:cover;flex-shrink:0;background:var(--card);}
+.sidebar-user-info{flex:1;min-width:0;}
+.sidebar-user-name{font-size:12px;font-weight:600;color:var(--txt);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.sidebar-user-email{font-size:10px;color:var(--dim2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.sidebar-logout{width:28px;height:28px;border-radius:7px;border:1px solid var(--brd);background:none;cursor:pointer;color:var(--dim2);display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .15s;}
+.sidebar-logout:hover{background:rgba(248,113,113,.08);color:var(--rose);border-color:rgba(248,113,113,.25);}
+.sidebar-logout svg{width:14px;height:14px;}
+
+/* ── MOBILE NAV ── */
 @media(max-width:768px){
   .sidebar{display:none;}
   .app-layout{flex-direction:column;}
   .main-content{height:100%;}
-  .page{padding-bottom:70px;}
+  .page{padding-bottom:64px;}
   .mobile-nav{display:flex !important;}
 }
 .mobile-nav{display:none;position:fixed;bottom:0;left:0;right:0;background:var(--surf);border-top:1px solid var(--brd);z-index:100;padding:6px 0 calc(6px + env(safe-area-inset-bottom));}
-.mni{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;cursor:pointer;padding:4px 2px;border:none;background:none;color:var(--dim);font-size:10px;font-weight:600;transition:color .15s;}
+.mni{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;padding:4px 2px;border:none;background:none;color:var(--dim2);font-size:10px;font-weight:500;transition:color .15s;letter-spacing:.2px;}
 .mni.on{color:var(--sky);}
-.mni-icon{font-size:19px;line-height:1.2;}
+.mni svg{width:20px;height:20px;margin-bottom:1px;}
 
-/* ── TOP BAR ── */
-.topbar{padding:20px 28px 16px;background:var(--surf);border-bottom:1px solid var(--brd);display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:50;}
-.topbar h1{font-size:22px;font-weight:900;color:var(--txt);letter-spacing:-.4px;flex:1;}
-.topbar-sub{font-size:12px;color:var(--dim);margin-top:2px;}
-.back-btn{width:36px;height:36px;border-radius:10px;border:1px solid var(--brd);background:var(--card);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:16px;color:var(--txt);flex-shrink:0;}
+/* ── TOPBAR ── */
+.topbar{padding:18px 28px 14px;background:var(--surf);border-bottom:1px solid var(--brd);display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:50;}
+.topbar h1{font-size:20px;font-weight:600;color:var(--txt);letter-spacing:-.2px;flex:1;}
+.topbar-sub{font-size:11px;color:var(--dim2);margin-top:2px;}
+.back-btn{width:34px;height:34px;border-radius:8px;border:1px solid var(--brd);background:var(--card);display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--dim2);flex-shrink:0;}
+.back-btn svg{width:16px;height:16px;}
 @media(max-width:768px){
-  .topbar{padding:12px 16px 12px;}
-  .topbar h1{font-size:19px;}
+  .topbar{padding:12px 16px;}
+  .topbar h1{font-size:17px;}
 }
 
-/* ── CARDS & GRID ── */
-.stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;padding:24px 28px 0;}
-.stat-card{background:var(--card);border:1px solid var(--brd);border-radius:14px;padding:16px;}
-.stat-label{font-size:10px;font-weight:700;color:var(--dim);text-transform:uppercase;letter-spacing:.5px;}
-.stat-value{font-size:26px;font-weight:900;color:var(--txt);margin-top:5px;letter-spacing:-.5px;}
-.stat-sub{font-size:11px;color:var(--dim);margin-top:2px;}
-@media(max-width:1100px){.stats-grid{grid-template-columns:repeat(2,1fr);}}
-@media(max-width:768px){.stats-grid{grid-template-columns:repeat(2,1fr);padding:14px 14px 0;gap:10px;}.stat-value{font-size:22px;}}
+/* ── SECTION HEADER ── */
+.sec-hd{display:flex;align-items:center;gap:8px;margin-bottom:14px;}
+.sec-hd-title{font-size:10px;font-weight:600;color:var(--dim2);text-transform:uppercase;letter-spacing:.8px;}
+.sec-hd-count{font-size:10px;font-weight:600;color:var(--sky);background:rgba(56,189,248,.1);padding:2px 7px;border-radius:10px;}
+.sec-hd-action{margin-left:auto;font-size:12px;font-weight:500;color:var(--sky);cursor:pointer;display:flex;align-items:center;gap:4px;}
 
-/* Section */
+/* ── STAT CARDS ── */
+.stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;padding:20px 28px 0;}
+.stat-card{background:var(--card);border:1px solid var(--brd);border-radius:var(--radius);padding:16px 18px;}
+.stat-label{font-size:10px;font-weight:600;color:var(--dim2);text-transform:uppercase;letter-spacing:.6px;}
+.stat-value{font-size:24px;font-weight:700;color:var(--txt);margin-top:6px;letter-spacing:-.3px;}
+.stat-sub{font-size:11px;color:var(--dim2);margin-top:3px;}
+@media(max-width:1100px){.stats-grid{grid-template-columns:repeat(2,1fr);}}
+@media(max-width:768px){.stats-grid{grid-template-columns:repeat(2,1fr);padding:14px 14px 0;gap:8px;}.stat-value{font-size:20px;}}
+
+/* ── SECTION PADDING ── */
 .section{padding:20px 28px 0;}
-.section-title{font-size:11px;font-weight:700;color:var(--dim);text-transform:uppercase;letter-spacing:.5px;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center;}
+.section-title{font-size:10px;font-weight:600;color:var(--dim2);text-transform:uppercase;letter-spacing:.7px;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center;}
 @media(max-width:768px){.section{padding:14px 14px 0;}}
 
-/* Viagem cards grid */
-.viagens-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px;}
+/* ── VIAGEM CARDS ── */
+.viagens-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:10px;}
 @media(max-width:768px){.viagens-grid{grid-template-columns:1fr;}}
-
-/* ── VIAGEM CARD ── */
-.vc{background:var(--card);border:1px solid var(--brd);border-radius:14px;padding:16px;cursor:pointer;transition:border-color .15s;}
-.vc:hover{border-color:rgba(56,189,248,.4);}
-.vc-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;}
-.vc-name{font-size:16px;font-weight:800;color:var(--txt);letter-spacing:-.2px;}
-.vc-meta{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:10px;}
-.vc-meta span{font-size:12px;color:var(--dim);}
-.vc-bar{height:4px;background:var(--brd);border-radius:2px;overflow:hidden;}
+.vc{background:var(--card);border:1px solid var(--brd);border-radius:var(--radius);padding:16px;cursor:pointer;transition:border-color .15s;}
+.vc:hover{border-color:rgba(56,189,248,.3);}
+.vc-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;}
+.vc-name{font-size:15px;font-weight:600;color:var(--txt);letter-spacing:-.1px;}
+.vc-meta{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:10px;}
+.vc-meta span{font-size:11px;color:var(--dim2);display:flex;align-items:center;gap:4px;}
+.vc-meta svg{width:12px;height:12px;opacity:.6;}
+.vc-bar{height:3px;background:var(--brd);border-radius:2px;overflow:hidden;}
 .vc-fill{height:100%;background:linear-gradient(90deg,var(--sky),var(--lilac));border-radius:2px;}
-.vc-foot{display:flex;justify-content:space-between;font-size:11px;color:var(--dim);margin-top:4px;}
+.vc-foot{display:flex;justify-content:space-between;font-size:11px;color:var(--dim2);margin-top:5px;}
 .vc-actions{display:flex;gap:6px;margin-top:12px;padding-top:12px;border-top:1px solid var(--brd);}
 
 /* ── BADGE ── */
-.bdg{display:inline-flex;align-items:center;padding:3px 9px;border-radius:20px;font-size:10px;font-weight:700;letter-spacing:.2px;}
+.bdg{display:inline-flex;align-items:center;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:600;letter-spacing:.2px;}
 
 /* ── BUTTONS ── */
-.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:10px 18px;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;border:none;transition:all .15s;color:var(--txt);letter-spacing:-.1px;}
-.btn-primary{background:var(--sky);color:#080e1a;}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:9px 16px;border-radius:8px;font-size:13px;font-weight:500;cursor:pointer;border:none;transition:all .15s;color:var(--txt);letter-spacing:.1px;}
+.btn svg{width:14px;height:14px;}
+.btn-primary{background:var(--sky);color:#080e1a;font-weight:600;}
 .btn-primary:hover{opacity:.88;}
-.btn-ghost{background:transparent;color:var(--dim);border:1px solid var(--brd);}
-.btn-ghost:hover{background:var(--card);color:var(--txt);}
-.btn-danger{background:rgba(248,113,113,.1);color:var(--rose);border:1px solid rgba(248,113,113,.2);}
-.btn-danger:hover{background:rgba(248,113,113,.2);}
-.btn-sm{padding:7px 13px;font-size:12px;border-radius:8px;}
-.btn-icon{padding:8px;border-radius:9px;width:34px;height:34px;}
+.btn-ghost{background:transparent;color:var(--dim2);border:1px solid var(--brd);}
+.btn-ghost:hover{background:rgba(255,255,255,.04);color:var(--txt);}
+.btn-danger{background:rgba(248,113,113,.08);color:var(--rose);border:1px solid rgba(248,113,113,.15);}
+.btn-danger:hover{background:rgba(248,113,113,.15);}
+.btn-sm{padding:6px 12px;font-size:12px;border-radius:7px;}
+.btn-icon{padding:7px;border-radius:7px;width:32px;height:32px;}
 .btn-full{width:100%;}
-.fab{position:fixed;bottom:80px;right:24px;width:52px;height:52px;border-radius:16px;background:var(--sky);color:#080e1a;font-size:26px;display:flex;align-items:center;justify-content:center;cursor:pointer;border:none;box-shadow:0 4px 20px rgba(56,189,248,.4);z-index:90;font-weight:900;transition:transform .15s;}
+.fab{position:fixed;bottom:80px;right:24px;width:48px;height:48px;border-radius:14px;background:var(--sky);color:#080e1a;font-size:22px;display:flex;align-items:center;justify-content:center;cursor:pointer;border:none;box-shadow:0 4px 20px rgba(56,189,248,.35);z-index:90;transition:transform .15s;}
 .fab:hover{transform:scale(1.05);}
+.fab svg{width:22px;height:22px;}
 @media(min-width:769px){.fab{bottom:24px;right:28px;}}
 
 /* ── SEARCH ── */
 .search-box{position:relative;padding:16px 28px 0;}
-.search-box input{padding-left:40px !important;}
-.search-icon{position:absolute;left:42px;top:50%;transform:translateY(-20%);font-size:15px;pointer-events:none;}
+.search-box input{padding-left:38px !important;}
+.search-icon{position:absolute;left:42px;top:50%;transform:translateY(-18%);pointer-events:none;color:var(--dim2);}
+.search-icon svg{width:15px;height:15px;}
 @media(max-width:768px){.search-box{padding:12px 14px 0;}.search-icon{left:26px;}}
 
 /* ── TABS ── */
 .tabs{display:flex;padding:0 28px;border-bottom:1px solid var(--brd);overflow-x:auto;}
 .tabs::-webkit-scrollbar{display:none;}
-.tab{padding:13px 14px;font-size:13px;font-weight:700;cursor:pointer;border:none;background:none;color:var(--dim);border-bottom:2px solid transparent;margin-bottom:-1px;white-space:nowrap;transition:color .15s;}
+.tab{padding:12px 14px;font-size:12px;font-weight:500;cursor:pointer;border:none;background:none;color:var(--dim2);border-bottom:2px solid transparent;margin-bottom:-1px;white-space:nowrap;transition:color .15s;letter-spacing:.2px;}
 .tab.on{color:var(--sky);border-bottom-color:var(--sky);}
 @media(max-width:768px){.tabs{padding:0 14px;}}
 
 /* ── FORMS ── */
 .form-section{display:flex;flex-direction:column;gap:14px;padding:0 20px;}
 .fg{display:flex;flex-direction:column;gap:5px;}
-.fl{font-size:10px;font-weight:800;color:var(--dim);text-transform:uppercase;letter-spacing:.6px;}
-.fi,.fsel,.fta{background:var(--surf);border:1.5px solid var(--brd);border-radius:10px;padding:12px 14px;font-size:14px;color:var(--txt);outline:none;-webkit-appearance:none;width:100%;font-weight:500;}
+.fl{font-size:10px;font-weight:600;color:var(--dim2);text-transform:uppercase;letter-spacing:.6px;}
+.fi,.fsel,.fta{background:var(--bg);border:1px solid var(--brd);border-radius:8px;padding:10px 13px;font-size:14px;color:var(--txt);outline:none;-webkit-appearance:none;width:100%;font-weight:400;}
 .fi:focus,.fsel:focus,.fta:focus{border-color:var(--sky);}
 .fgrid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
 .fta{resize:none;}
 
 /* ── MODAL ── */
-.mo{position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:200;display:flex;align-items:flex-end;backdrop-filter:blur(4px);}
-@media(min-width:769px){
-  .mo{align-items:center;justify-content:center;}
-  .md{border-radius:18px !important;max-width:520px;width:100%;margin:20px;}
-}
-.md{background:var(--surf);border:1px solid var(--brd);border-radius:20px 20px 0 0;width:100%;max-height:92vh;overflow-y:auto;}
+.mo{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:200;display:flex;align-items:flex-end;backdrop-filter:blur(4px);}
+@media(min-width:769px){.mo{align-items:center;justify-content:center;}.md{border-radius:14px !important;max-width:500px;width:100%;margin:20px;}}
+.md{background:var(--surf);border:1px solid var(--brd);border-radius:16px 16px 0 0;width:100%;max-height:92vh;overflow-y:auto;}
 .md::-webkit-scrollbar{display:none;}
-.mhdl{width:36px;height:4px;background:var(--brd);border-radius:2px;margin:12px auto 0;}
+.mhdl{width:32px;height:3px;background:var(--brd);border-radius:2px;margin:12px auto 0;}
 @media(min-width:769px){.mhdl{display:none;}}
-.mhd{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;}
-.mtit{font-size:18px;font-weight:900;color:var(--txt);letter-spacing:-.3px;}
-.mbdy{padding:0 0 16px;}
-.mact{padding:14px 20px 10px;display:flex;gap:10px;border-top:1px solid var(--brd);}
+.mhd{display:flex;align-items:center;justify-content:space-between;padding:14px 20px;}
+.mtit{font-size:16px;font-weight:600;color:var(--txt);letter-spacing:-.1px;}
+.mbdy{padding:0 0 14px;}
+.mact{padding:12px 20px 8px;display:flex;gap:8px;border-top:1px solid var(--brd);}
 
-/* ── RESERVA CARD ── */
-.rc{background:var(--card);border:1px solid var(--brd);border-radius:13px;padding:14px;margin:0 28px 10px;}
-@media(max-width:768px){.rc{margin:0 14px 10px;}}
-.rn{font-size:15px;font-weight:800;color:var(--txt);margin-bottom:3px;}
-.rm{font-size:12px;color:var(--dim);}
-.rpw{flex:1;height:5px;background:var(--brd);border-radius:3px;overflow:hidden;}
+/* ── CARDS RESERVA/PAX ── */
+.rc{background:var(--card);border:1px solid var(--brd);border-radius:var(--radius);padding:14px;margin:0 28px 8px;}
+@media(max-width:768px){.rc{margin:0 14px 8px;}}
+.rn{font-size:14px;font-weight:600;color:var(--txt);margin-bottom:3px;}
+.rm{font-size:11px;color:var(--dim2);}
+.rpw{flex:1;height:4px;background:var(--brd);border-radius:3px;overflow:hidden;}
 .rp{height:100%;border-radius:3px;transition:width .3s;}
-
-/* ── PAX CARD ── */
-.pcard{background:var(--card);border:1px solid var(--brd);border-radius:13px;padding:14px;margin:0 28px 10px;display:flex;align-items:center;gap:12px;}
-@media(max-width:768px){.pcard{margin:0 14px 10px;}}
-.avt{width:42px;height:42px;border-radius:12px;background:linear-gradient(135deg,var(--sky),var(--lilac));display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:900;color:#080e1a;flex-shrink:0;}
+.pcard{background:var(--card);border:1px solid var(--brd);border-radius:var(--radius);padding:13px 14px;margin:0 28px 8px;display:flex;align-items:center;gap:12px;}
+@media(max-width:768px){.pcard{margin:0 14px 8px;}}
+.avt{width:38px;height:38px;border-radius:10px;background:linear-gradient(135deg,rgba(56,189,248,.2),rgba(167,139,250,.2));border:1px solid rgba(56,189,248,.2);display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:700;color:var(--sky);flex-shrink:0;}
 
 /* ── FINANCEIRO ── */
-.fcard{padding:14px 28px;border-bottom:1px solid var(--brd);cursor:pointer;transition:background .15s;}
-.fcard:hover{background:var(--card);}
-@media(max-width:768px){.fcard{padding:13px 14px;}}
-.fname{font-size:14px;font-weight:800;color:var(--txt);margin-bottom:6px;}
-.frow{display:flex;justify-content:space-between;font-size:12px;color:var(--dim);margin-bottom:2px;}
-.frow span:last-child{color:var(--txt);font-weight:700;}
+.fcard{padding:13px 28px;border-bottom:1px solid var(--brd);cursor:pointer;transition:background .15s;}
+.fcard:hover{background:rgba(255,255,255,.02);}
+@media(max-width:768px){.fcard{padding:12px 14px;}}
+.fname{font-size:14px;font-weight:600;color:var(--txt);margin-bottom:6px;}
+.frow{display:flex;justify-content:space-between;font-size:12px;color:var(--dim2);margin-bottom:2px;}
+.frow span:last-child{color:var(--txt);font-weight:500;}
 
 /* ── SEAT MAP ── */
-.seat{width:34px;height:34px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;cursor:pointer;border:1.5px solid transparent;transition:all .15s;flex-shrink:0;}
-.seat-free{background:var(--card);border-color:var(--brd);color:var(--dim);}
-.seat-occ{background:rgba(56,189,248,.15);border-color:var(--sky);color:var(--sky);}
+.seat{width:32px;height:32px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:500;cursor:pointer;border:1px solid transparent;transition:all .15s;flex-shrink:0;}
+.seat-free{background:var(--card);border-color:var(--brd);color:var(--dim2);}
+.seat-occ{background:rgba(56,189,248,.1);border-color:rgba(56,189,248,.3);color:var(--sky);}
 .seat-sel{background:var(--sky);color:#080e1a;border-color:var(--sky);}
 
 /* ── PAYMENT ── */
-.pit{background:var(--card);border:1px solid var(--brd);border-radius:11px;padding:14px;margin-bottom:8px;}
-.pmet{display:flex;align-items:center;gap:7px;font-size:13px;font-weight:800;color:var(--txt);margin-bottom:3px;}
-.pval{font-size:21px;font-weight:900;color:var(--mint);letter-spacing:-.5px;}
+.pit{background:var(--card);border:1px solid var(--brd);border-radius:var(--radius);padding:14px;margin-bottom:8px;}
+.pmet{display:flex;align-items:center;gap:7px;font-size:13px;font-weight:600;color:var(--txt);margin-bottom:3px;}
+.pmet svg{width:15px;height:15px;color:var(--dim2);}
+.pval{font-size:20px;font-weight:700;color:var(--mint);letter-spacing:-.3px;}
 .mg{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:0 20px 8px;}
-.mbtn{background:var(--card);border:1.5px solid var(--brd);border-radius:12px;padding:14px 10px;text-align:center;cursor:pointer;transition:all .15s;}
-.mbtn:hover,.mbtn.on{border-color:var(--sky);background:rgba(56,189,248,.1);}
-.chip{display:inline-flex;align-items:center;gap:5px;background:rgba(56,189,248,.1);border:1px solid rgba(56,189,248,.2);border-radius:20px;padding:4px 10px;font-size:12px;color:var(--sky);font-weight:700;}
+.mbtn{background:var(--card);border:1px solid var(--brd);border-radius:10px;padding:14px 10px;text-align:center;cursor:pointer;transition:all .15s;}
+.mbtn:hover,.mbtn.on{border-color:var(--sky);background:rgba(56,189,248,.08);}
+.mbtn svg{width:22px;height:22px;color:var(--sky);margin-bottom:5px;}
+.chip{display:inline-flex;align-items:center;gap:5px;background:rgba(56,189,248,.08);border:1px solid rgba(56,189,248,.15);border-radius:20px;padding:4px 10px;font-size:12px;color:var(--sky);font-weight:500;}
 
 /* ── EMPTY / LOADING ── */
-.empty{text-align:center;padding:56px 20px;color:var(--dim);}
-.eico{font-size:44px;margin-bottom:14px;}
-.loading-screen{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:18px;color:var(--dim);}
-.spinner{width:38px;height:38px;border:3px solid var(--brd);border-top-color:var(--sky);border-radius:50%;animation:spin .8s linear infinite;}
+.empty{text-align:center;padding:56px 20px;color:var(--dim2);}
+.empty svg{width:40px;height:40px;margin:0 auto 14px;display:block;opacity:.3;}.empty-icon{width:40px;height:40px;margin:0 auto 14px;color:var(--dim2);opacity:.4;}
+.loading-screen{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:16px;color:var(--dim2);}
+.spinner{width:34px;height:34px;border:2px solid var(--brd);border-top-color:var(--sky);border-radius:50%;animation:spin .8s linear infinite;}
 
 /* ── LOGIN ── */
 .login-wrap{display:flex;align-items:center;justify-content:center;height:100%;background:var(--bg);padding:20px;}
-.login-card{background:var(--surf);border:1px solid var(--brd);border-radius:20px;padding:48px 40px;max-width:420px;width:100%;text-align:center;}
-.login-logo{width:64px;height:64px;background:linear-gradient(135deg,#38bdf8,#a78bfa);border-radius:18px;display:flex;align-items:center;justify-content:center;font-size:32px;margin:0 auto 20px;}
-.login-title{font-size:26px;font-weight:900;color:var(--txt);letter-spacing:-.5px;margin-bottom:6px;}
-.login-sub{font-size:14px;color:var(--dim);margin-bottom:32px;line-height:1.5;}
-.google-btn{display:flex;align-items:center;justify-content:center;gap:12px;width:100%;padding:14px 20px;background:#fff;border:none;border-radius:12px;font-size:15px;font-weight:700;color:#1f1f1f;cursor:pointer;transition:all .15s;letter-spacing:-.1px;}
+.login-card{background:var(--surf);border:1px solid var(--brd);border-radius:16px;padding:48px 40px;max-width:420px;width:100%;text-align:center;}
+.login-title{font-size:22px;font-weight:600;color:var(--txt);letter-spacing:-.3px;margin-bottom:6px;}
+.login-sub{font-size:13px;color:var(--dim2);margin-bottom:32px;line-height:1.6;}
+.google-btn{display:flex;align-items:center;justify-content:center;gap:12px;width:100%;padding:13px 20px;background:#fff;border:none;border-radius:10px;font-size:14px;font-weight:600;color:#1f1f1f;cursor:pointer;transition:all .15s;}
 .google-btn:hover{background:#f1f3f4;transform:translateY(-1px);box-shadow:0 4px 16px rgba(0,0,0,.2);}
-.google-btn:active{transform:translateY(0);}
-.google-icon{width:22px;height:22px;}
+.google-icon{width:20px;height:20px;}
 
-@keyframes spin{to{transform:rotate(360deg);}}
-@keyframes up{from{opacity:0;transform:translateY(16px);}to{opacity:1;transform:translateY(0);}}
-.ani{animation:up .22s ease;}
-select option{background:var(--surf);color:var(--txt);}
 /* ── CALCULADORA ── */
 .calc-section{padding:20px 28px 0;}
 @media(max-width:768px){.calc-section{padding:14px 14px 0;}}
-.calc-card{background:var(--card);border:1px solid var(--brd);border-radius:14px;padding:18px;margin-bottom:14px;}
-.calc-card-title{font-size:13px;font-weight:800;color:var(--txt);letter-spacing:-.1px;margin-bottom:14px;display:flex;justify-content:space-between;align-items:center;}
+.calc-card{background:var(--card);border:1px solid var(--brd);border-radius:var(--radius);padding:16px;margin-bottom:12px;}
+.calc-card-title{font-size:11px;font-weight:600;color:var(--dim2);text-transform:uppercase;letter-spacing:.7px;margin-bottom:14px;display:flex;justify-content:space-between;align-items:center;}
 .calc-item{display:grid;grid-template-columns:1fr 120px 32px;gap:8px;align-items:center;margin-bottom:10px;}
-.calc-result{background:linear-gradient(135deg,rgba(56,189,248,.08),rgba(167,139,250,.08));border:1px solid rgba(56,189,248,.2);border-radius:14px;padding:20px 24px;}
-.calc-result-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--brd);font-size:14px;}
+.calc-result{background:rgba(56,189,248,.04);border:1px solid rgba(56,189,248,.15);border-radius:var(--radius);padding:18px 20px;}
+.calc-result-row{display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid var(--brd);font-size:13px;}
 .calc-result-row:last-child{border-bottom:none;}
-.calc-result-label{color:var(--dim);font-weight:600;}
-.calc-result-value{font-weight:800;color:var(--txt);}
-.calc-result-highlight{font-size:22px;font-weight:900;color:var(--sky);}
-.calc-result-profit{font-size:18px;font-weight:900;color:var(--mint);}
+.calc-result-label{color:var(--dim2);font-weight:500;}
+.calc-result-value{font-weight:600;color:var(--txt);}
+.calc-result-highlight{font-size:20px;font-weight:700;color:var(--sky);}
+.calc-result-profit{font-size:16px;font-weight:700;color:var(--mint);}
 .ganho-toggle{display:flex;gap:6px;margin-bottom:12px;}
-.ganho-btn{flex:1;padding:8px;border-radius:8px;border:1.5px solid var(--brd);background:var(--card);color:var(--dim);font-size:12px;font-weight:700;cursor:pointer;transition:all .15s;text-align:center;}
-.ganho-btn.on{border-color:var(--sky);background:rgba(56,189,248,.1);color:var(--sky);}
+.ganho-btn{flex:1;padding:8px;border-radius:7px;border:1px solid var(--brd);background:var(--card);color:var(--dim2);font-size:12px;font-weight:500;cursor:pointer;transition:all .15s;text-align:center;}
+.ganho-btn.on{border-color:var(--sky);background:rgba(56,189,248,.08);color:var(--sky);}
+
+@keyframes spin{to{transform:rotate(360deg);}}
+@keyframes up{from{opacity:0;transform:translateY(12px);}to{opacity:1;transform:translateY(0);}}
+.ani{animation:up .2s ease;}
+select option{background:var(--surf);color:var(--txt);}
 
 </style>
 </head>
@@ -265,6 +272,34 @@ const googleProvider = new firebase.auth.GoogleAuthProvider();
 <script type="text/babel">
 const { useState, useRef, useEffect, useCallback } = React;
 
+
+// ── SVG ICONS ─────────────────────────────────────────────────────────────────
+const ICONS = {
+  home: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>,
+  bus: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="4" width="20" height="14" rx="2"/><path d="M2 10h20M7 18v2M17 18v2M2 7h20"/></svg>,
+  users: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>,
+  dollar: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>,
+  chart: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>,
+  calc: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="4" y="2" width="16" height="20" rx="2"/><line x1="8" y1="6" x2="16" y2="6"/><line x1="8" y1="11" x2="8" y2="11"/><line x1="12" y1="11" x2="12" y2="11"/><line x1="16" y1="11" x2="16" y2="11"/><line x1="8" y1="15" x2="8" y2="15"/><line x1="12" y1="15" x2="12" y2="15"/><line x1="16" y1="15" x2="16" y2="15"/><line x1="8" y1="19" x2="12" y2="19"/></svg>,
+  edit: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>,
+  trash: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg>,
+  plus: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>,
+  back: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"/></svg>,
+  logout: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>,
+  search: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>,
+  calendar: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>,
+  seat: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M6 2v6l-2 4v8h16v-8l-2-4V2"/><path d="M6 12h12"/></svg>,
+  credit: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>,
+  pix: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>,
+  cash: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="3"/></svg>,
+  close: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>,
+  hotel: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M3 22V8l9-6 9 6v14"/><path d="M9 22V12h6v10"/></svg>,
+  save: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>,
+  pdf: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>,
+  warn: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>,
+  unlock: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 019.9-1"/></svg>,
+};
+
 // ── HELPERS ──────────────────────────────────────────────────────────────────
 const genId = () => Math.random().toString(36).slice(2) + Date.now().toString(36);
 const sumPgto = r => (r.pagamentos||[]).reduce((s,p)=>s+Number(p.valor||0),0);
@@ -273,11 +308,11 @@ const dt = d => d ? new Date(d+"T12:00:00").toLocaleDateString("pt-BR") : "—";
 const SV = { aberta:{l:"Aberta",c:"#34d399"}, confirmada:{l:"Confirmada",c:"#60a5fa"}, encerrada:{l:"Encerrada",c:"#6b7280"} };
 const SR = { confirmada:{l:"Confirmada",c:"#34d399"}, pendente:{l:"Pendente",c:"#fbbf24"}, cancelada:{l:"Cancelada",c:"#f87171"} };
 const METODOS = [
-  {id:"credito",label:"Cartão de Crédito",icon:"💳"},
-  {id:"debito",label:"Cartão de Débito",icon:"🏧"},
-  {id:"pix",label:"Pix",icon:"⚡"},
-  {id:"pix_parcelado",label:"Pix Parcelado",icon:"⚡"},
-  {id:"dinheiro",label:"Dinheiro",icon:"💵"},
+  {id:"credito",label:"Cartão de Crédito",icon:"credit"},
+  {id:"debito",label:"Cartão de Débito",icon:"credit"},
+  {id:"pix",label:"Pix",icon:"pix"},
+  {id:"pix_parcelado",label:"Pix Parcelado",icon:"pix"},
+  {id:"dinheiro",label:"Dinheiro",icon:"cash"},
 ];
 const METODOS_LABEL = {credito:"Cartão de Crédito",debito:"Cartão de Débito",pix:"Pix",pix_parcelado:"Pix Parcelado",dinheiro:"Dinheiro"};
 
@@ -349,12 +384,12 @@ function App() {
   const curViagem = page==="viagem" ? viagens.find(v=>v.id===ctx.viagem?.id)||ctx.viagem : null;
 
   const navItems = [
-    ["dashboard","🏠","Início"],
-    ["viagens","🚌","Viagens"],
-    ["passageiros","👥","Passageiros"],
-    ["financeiro","💰","Financeiro"],
-    ["relatorios","📊","Relatórios"],
-    ["calculadora","🧮","Calculadora"],
+    ["dashboard","home","Início"],
+    ["viagens","bus","Viagens"],
+    ["passageiros","users","Passageiros"],
+    ["financeiro","dollar","Financeiro"],
+    ["relatorios","chart","Relatórios"],
+    ["calculadora","calc","Calculadora"],
   ];
 
   const pageEl = () => {
@@ -380,7 +415,7 @@ function App() {
         <nav className="sidebar-nav">
           {navItems.map(([id,ic,lb]) => (
             <button key={id} className={`sni ${activeNav===id?"on":""}`} onClick={()=>go(id)}>
-              <span className="sni-icon">{ic}</span>
+              <span className="sni-icon">{ICONS[ic]||ic}</span>
               <span>{lb}</span>
             </button>
           ))}
@@ -394,7 +429,7 @@ function App() {
             <div className="sidebar-user-name">{user.displayName||"Usuário"}</div>
             <div className="sidebar-user-email">{user.email}</div>
           </div>
-          <button className="sidebar-logout" onClick={logout} title="Sair">⏏</button>
+          <button className="sidebar-logout" onClick={logout} title="Sair">{ICONS.logout}</button>
         </div>
       </aside>
 
@@ -407,7 +442,7 @@ function App() {
         <nav className="mobile-nav">
           {navItems.map(([id,ic,lb]) => (
             <button key={id} className={`mni ${activeNav===id?"on":""}`} onClick={()=>go(id)}>
-              <span className="mni-icon">{ic}</span>
+              <span>{ICONS[ic]||ic}</span>
               <span>{lb}</span>
             </button>
           ))}
@@ -455,9 +490,9 @@ function Dashboard({viagens, passageiros, go}) {
         <div className="stat-card"><div className="stat-label">Pagtos Pendentes</div><div className="stat-value" style={{color:pendentes>0?"var(--rose)":"var(--mint)"}}>{pendentes}</div><div className="stat-sub">passageiros em aberto</div></div>
       </div>
       <div className="section" style={{marginTop:24}}>
-        <div className="section-title"><span>Viagens Ativas</span></div>
+        <div className="sec-hd"><span className="sec-hd-title">Viagens Ativas</span><span className="sec-hd-count">{ativas.length}</span></div>
         {ativas.length===0
-          ? <div className="empty"><div className="eico">🚌</div><p>Nenhuma viagem ativa</p></div>
+          ? <div className="empty"><div className="empty-icon">{ICONS.bus}</div><p>Nenhuma viagem ativa</p></div>
           : <div className="viagens-grid">{ativas.map(v=><VCard key={v.id} v={v} onClick={()=>go("viagem",{viagem:v})}/>)}</div>
         }
       </div>
@@ -475,9 +510,9 @@ function VCard({v, onClick, onEdit, onDel}) {
         <span className="bdg" style={{background:s.c+"22",color:s.c}}>{s.l}</span>
       </div>
       <div className="vc-meta">
-        <span>📅 {dt(v.dataIda)}</span>
-        <span>🚌 {cap} lugares</span>
-        {v.valor&&<span>💰 {R$(v.valor)}</span>}
+        <span>{ICONS.calendar}{dt(v.dataIda)}</span>
+        <span>{ICONS.seat}{cap} lugares</span>
+        {v.valor&&<span>{ICONS.dollar}{R$(v.valor)}</span>}
       </div>
       <div className="vc-bar"><div className="vc-fill" style={{width:pct+"%"}}/></div>
       <div className="vc-foot"><span>{ocp} reservados</span><span>{cap-ocp} livres • {pct}%</span></div>
@@ -502,14 +537,14 @@ function Viagens({viagens, addViagem, saveViagem, deleteViagem, go}) {
   return (
     <div className="ani">
       <div className="topbar"><h1>Viagens</h1><span className="bdg" style={{background:"rgba(56,189,248,.1)",color:"var(--sky)"}}>{viagens.length}</span></div>
-      <div className="search-box"><span className="search-icon">🔍</span><input className="fi" placeholder="Buscar viagem..." value={search} onChange={e=>setSearch(e.target.value)}/></div>
+      <div className="search-box"><span className="search-icon">{ICONS.search}</span><input className="fi" placeholder="Buscar viagem..." value={search} onChange={e=>setSearch(e.target.value)}/></div>
       <div className="section" style={{marginTop:16}}>
         {filtered.length===0
-          ? <div className="empty"><div className="eico">🚌</div><p>Nenhuma viagem encontrada</p></div>
+          ? <div className="empty"><div className="empty-icon">{ICONS.bus}</div><p>Nenhuma viagem encontrada</p></div>
           : <div className="viagens-grid">{filtered.map(v=><VCard key={v.id} v={v} onClick={()=>go("viagem",{viagem:v})} onEdit={()=>{setEditing(v);setModal(true);}} onDel={()=>onDel(v.id)}/>)}</div>
         }
       </div>
-      <button className="fab" onClick={()=>{setEditing(null);setModal(true);}}>+</button>
+      <button className="fab" onClick={()=>{setEditing(null);setModal(true);}}>{ICONS.plus}</button>
       {modal&&<ModalViagem initial={editing} onSave={onSave} onClose={()=>{setModal(false);setEditing(null);}}/>}
     </div>
   );
@@ -521,7 +556,7 @@ function ModalViagem({initial, onSave, onClose}) {
   return (
     <div className="mo" onClick={e=>e.target===e.currentTarget&&onClose()}>
       <div className="md ani">
-        <div className="mhdl"/><div className="mhd"><span className="mtit">{initial?"Editar Viagem":"Nova Viagem"}</span><button className="btn btn-ghost btn-icon" onClick={onClose}>✕</button></div>
+        <div className="mhdl"/><div className="mhd"><span className="mtit">{initial?"Editar Viagem":"Nova Viagem"}</span><button className="btn btn-ghost btn-icon" onClick={onClose}>{ICONS.close}</button></div>
         <div className="mbdy"><div className="form-section">
           <div className="fg"><label className="fl">Destino *</label><input className="fi" value={f.nome} onChange={e=>s("nome",e.target.value)} placeholder="Ex: Aparecida do Norte"/></div>
           <div className="fgrid">
@@ -557,7 +592,7 @@ function ViagemDetail({viagens, passageiros, addPassageiro, viagem, updViagem, g
   return (
     <div className="ani">
       <div className="topbar">
-        <div className="back-btn" onClick={()=>go("viagens")}>←</div>
+        <div className="back-btn" onClick={()=>go("viagens")}>{ICONS.back}</div>
         <div style={{flex:1}}>
           <div style={{display:"flex",alignItems:"center",gap:8}}>
             <span style={{fontWeight:900,fontSize:18,color:"var(--txt)"}}>{viagem.nome}</span>
@@ -596,7 +631,7 @@ function TabReservas({viagem, passageiros, addPassageiro, updViagem}) {
         {reservas.length<(viagem.capacidade||0)&&<button className="btn btn-primary btn-sm" onClick={()=>{setEditing(null);setModal(true);}}>+ Adicionar Reserva</button>}
       </div>
       {reservas.length===0
-        ?<div className="empty"><div className="eico">👥</div><p>Nenhuma reserva ainda</p></div>
+        ?<div className="empty"><div className="empty-icon">{ICONS.users}</div><p>Nenhuma reserva ainda</p></div>
         :reservas.map(r=>{
           const pago=sumPgto(r),total=Number(viagem.valor||0),falta=total-pago,pct=total>0?Math.min(100,Math.round((pago/total)*100)):0;
           const sr=SR[r.status]||SR.pendente;
@@ -605,8 +640,8 @@ function TabReservas({viagem, passageiros, addPassageiro, updViagem}) {
               <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}>
                 <div><div className="rn">{r.nomeAvulso||"—"}</div><div className="rm">{r.assento?`Assento ${r.assento} • `:""}<span className="bdg" style={{background:sr.c+"22",color:sr.c}}>{sr.l}</span>{r.obs&&<span style={{marginLeft:6,fontSize:11,color:"var(--dim)"}}>{r.obs}</span>}</div></div>
                 <div style={{display:"flex",gap:4}}>
-                  <button className="btn btn-ghost btn-icon btn-sm" onClick={()=>{setEditing(r);setModal(true);}}>✏️</button>
-                  <button className="btn btn-danger btn-icon btn-sm" onClick={()=>onDel(r.id)}>🗑️</button>
+                  <button className="btn btn-ghost btn-icon btn-sm" onClick={()=>{setEditing(r);setModal(true);}}>{ICONS.edit}</button>
+                  <button className="btn btn-danger btn-icon btn-sm" onClick={()=>onDel(r.id)}>{ICONS.trash}</button>
                 </div>
               </div>
               <div style={{display:"flex",justifyContent:"space-between",fontSize:12,marginTop:8}}>
@@ -642,7 +677,7 @@ function ModalReserva({initial, viagem, passageiros, onSave, onClose, addPassage
   return (
     <div className="mo" onClick={e=>e.target===e.currentTarget&&onClose()}>
       <div className="md ani">
-        <div className="mhdl"/><div className="mhd"><span className="mtit">{initial?"Editar Reserva":"Nova Reserva"}</span><button className="btn btn-ghost btn-icon" onClick={onClose}>✕</button></div>
+        <div className="mhdl"/><div className="mhd"><span className="mtit">{initial?"Editar Reserva":"Nova Reserva"}</span><button className="btn btn-ghost btn-icon" onClick={onClose}>{ICONS.close}</button></div>
         <div className="mbdy"><div className="form-section">
           {!newP?<>
             <div className="fg"><label className="fl">Passageiro cadastrado</label>
@@ -664,7 +699,7 @@ function ModalReserva({initial, viagem, passageiros, onSave, onClose, addPassage
                   <div className="fg"><label className="fl">CPF / RG</label><input className="fi" value={pf.cpf} onChange={e=>setPf(x=>({...x,cpf:e.target.value}))}/></div>
                 </div>
               </div>
-              <button className="btn btn-ghost btn-sm" style={{marginTop:10}} onClick={()=>setNewP(false)}>← Voltar</button>
+              <button className="btn btn-ghost btn-sm" style={{marginTop:10}} onClick={()=>setNewP(false)}><>{ICONS.back} Voltar</></button>
             </div>
           )}
           <div className="fgrid">
@@ -703,7 +738,7 @@ function TabPagamentos({viagem, updViagem}) {
         <div style={{background:"var(--card)",border:"1px solid var(--brd)",borderRadius:14,padding:16}}><div style={{fontSize:10,fontWeight:700,color:"var(--dim)",textTransform:"uppercase",letterSpacing:".5px"}}>Em Aberto</div><div style={{fontSize:20,fontWeight:900,color:(totalEsp-totalRec)>0?"var(--rose)":"var(--dim)",marginTop:4}}>{R$(totalEsp-totalRec)}</div></div>
       </div>
       <div style={{padding:"16px 28px 6px",fontSize:12,color:"var(--dim)"}}>Clique num passageiro para ver e registrar pagamentos:</div>
-      {reservas.length===0?<div className="empty"><div className="eico">💰</div><p>Nenhuma reserva</p></div>
+      {reservas.length===0?<div className="empty"><div className="empty-icon">{ICONS.dollar}</div><p>Nenhuma reserva</p></div>
         :reservas.map(r=>{
           const pago=sumPgto(r),total=Number(viagem.valor||0),falta=total-pago,pct=total>0?Math.min(100,Math.round((pago/total)*100)):0;
           return (
@@ -740,7 +775,7 @@ function PgtoDetalhe({reserva, viagem, onBack, onUpdate}) {
   const delPgto = async id => { if(confirm("Excluir pagamento?")) await onUpdate({...reserva,pagamentos:pagamentos.filter(p=>p.id!==id)}); };
   return (
     <>
-      <div style={{padding:"14px 28px 0"}}><button className="btn btn-ghost btn-sm" onClick={onBack}>← Voltar</button></div>
+      <div style={{padding:"14px 28px 0"}}><button className="btn btn-ghost btn-sm" onClick={onBack}><>{ICONS.back} Voltar</></button></div>
       <div className="rc" style={{marginTop:12}}>
         <div className="rn">{reserva.nomeAvulso||"Passageiro"}</div>
         <div style={{display:"flex",justifyContent:"space-between",fontSize:13,margin:"8px 0 4px"}}>
@@ -757,19 +792,19 @@ function PgtoDetalhe({reserva, viagem, onBack, onUpdate}) {
         <span style={{fontSize:12,fontWeight:700,color:"var(--dim)",textTransform:"uppercase",letterSpacing:".4px"}}>Pagamentos</span>
         <button className="btn btn-primary btn-sm" onClick={()=>{setEditP(null);setModal(true);}}>+ Registrar</button>
       </div>
-      {pagamentos.length===0?<div className="empty" style={{padding:"30px 20px"}}><div className="eico">💳</div><p>Nenhum pagamento ainda</p></div>
+      {pagamentos.length===0?<div className="empty" style={{padding:"30px 20px"}}><div className="empty-icon">{ICONS.credit}</div><p>Nenhum pagamento ainda</p></div>
         :<div style={{padding:"4px 28px"}}>
           {pagamentos.map(p=>{const m=METODOS.find(x=>x.id===p.metodo);return(
             <div key={p.id} className="pit">
               <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}>
                 <div>
-                  <div className="pmet">{m?.icon||"💳"} {m?.label||p.metodo}</div>
+                  <div className="pmet">{m?ICONS[m.icon]:ICONS.credit} {m?.label||p.metodo}</div>
                   <div className="pval">{R$(p.valor)}</div>
                   <div style={{fontSize:11,color:"var(--dim)",marginTop:2}}>{p.data?`📅 ${dt(p.data)}`:""}{p.obs?` • ${p.obs}`:""}</div>
                 </div>
                 <div style={{display:"flex",gap:4}}>
-                  <button className="btn btn-ghost btn-icon btn-sm" onClick={()=>{setEditP(p);setModal(true);}}>✏️</button>
-                  <button className="btn btn-danger btn-icon btn-sm" onClick={()=>delPgto(p.id)}>🗑️</button>
+                  <button className="btn btn-ghost btn-icon btn-sm" onClick={()=>{setEditP(p);setModal(true);}}>{ICONS.edit}</button>
+                  <button className="btn btn-danger btn-icon btn-sm" onClick={()=>delPgto(p.id)}>{ICONS.trash}</button>
                 </div>
               </div>
             </div>
@@ -791,10 +826,10 @@ function ModalPgto({initial, onSave, onClose}) {
     <div className="mo" onClick={e=>e.target===e.currentTarget&&onClose()}>
       <div className="md ani">
         <div className="mhdl"/>
-        <div className="mhd"><span className="mtit">{initial?"Editar Pagamento":step==="metodo"?"Forma de Pagamento":"Registrar Pagamento"}</span><button className="btn btn-ghost btn-icon" onClick={onClose}>✕</button></div>
+        <div className="mhd"><span className="mtit">{initial?"Editar Pagamento":step==="metodo"?"Forma de Pagamento":"Registrar Pagamento"}</span><button className="btn btn-ghost btn-icon" onClick={onClose}>{ICONS.close}</button></div>
         {step==="metodo"&&!initial?(
           <>
-            <div className="mg">{METODOS.map(mt=><div key={mt.id} className={`mbtn ${metodo===mt.id?"on":""}`} onClick={()=>setMetodo(mt.id)}><div style={{fontSize:24,marginBottom:5}}>{mt.icon}</div><div style={{fontSize:12,fontWeight:700,color:"var(--txt)"}}>{mt.label}</div></div>)}</div>
+            <div className="mg">{METODOS.map(mt=><div key={mt.id} className={`mbtn ${metodo===mt.id?"on":""}`} onClick={()=>setMetodo(mt.id)}><div style={{display:"flex",justifyContent:"center",marginBottom:5,color:"var(--sky)"}}>{ICONS[mt.icon]||mt.icon}</div><div style={{fontSize:12,fontWeight:700,color:"var(--txt)"}}>{mt.label}</div></div>)}</div>
             <div className="mact"><button className="btn btn-ghost btn-full" onClick={onClose}>Cancelar</button><button className="btn btn-primary btn-full" onClick={()=>{if(!metodo)return alert("Selecione a forma");setStep("form");}}>Continuar →</button></div>
           </>
         ):(
@@ -807,7 +842,7 @@ function ModalPgto({initial, onSave, onClose}) {
               <div className="fg"><label className="fl">Observações</label><textarea className="fta" rows={2} value={f.obs} onChange={e=>set("obs",e.target.value)} placeholder="Ex: entrada, 1ª parcela..."/></div>
             </div></div>
             <div className="mact">
-              {!initial&&<button className="btn btn-ghost" onClick={()=>setStep("metodo")}>← Voltar</button>}
+              {!initial&&<button className="btn btn-ghost" onClick={()=>setStep("metodo")}><>{ICONS.back} Voltar</></button>}
               {initial&&<button className="btn btn-ghost btn-full" onClick={onClose}>Cancelar</button>}
               <button className="btn btn-primary btn-full" onClick={()=>{if(!f.valor)return alert("Informe o valor");onSave({...f,metodo});}}>Salvar Pagamento</button>
             </div>
@@ -886,7 +921,7 @@ function TabMapa({viagem, updViagem}) {
       {infoSeat&&reservaModal&&(
         <div className="mo" onClick={()=>setInfoSeat(null)}>
           <div className="md ani" style={{maxHeight:"40vh"}}>
-            <div className="mhdl"/><div className="mhd"><span className="mtit">Assento {infoSeat}</span><button className="btn btn-ghost btn-icon" onClick={()=>setInfoSeat(null)}>✕</button></div>
+            <div className="mhdl"/><div className="mhd"><span className="mtit">Assento {infoSeat}</span><button className="btn btn-ghost btn-icon" onClick={()=>setInfoSeat(null)}>{ICONS.close}</button></div>
             <div style={{padding:"0 20px 20px"}}>
               <div style={{fontSize:16,fontWeight:800,color:"var(--txt)",marginBottom:4}}>{reservaModal.nomeAvulso}</div>
               <div style={{fontSize:13,color:"var(--dim)",marginBottom:16}}>{reservaModal.obs||"Sem observações"}</div>
@@ -911,9 +946,9 @@ function Passageiros({passageiros, viagens, savePassageiro, addPassageiro, delet
   return (
     <div className="ani">
       <div className="topbar"><h1>Passageiros</h1><span className="bdg" style={{background:"rgba(56,189,248,.1)",color:"var(--sky)"}}>{passageiros.length}</span></div>
-      <div className="search-box"><span className="search-icon">🔍</span><input className="fi" placeholder="Nome, CPF ou telefone..." value={search} onChange={e=>setSearch(e.target.value)}/></div>
+      <div className="search-box"><span className="search-icon">{ICONS.search}</span><input className="fi" placeholder="Nome, CPF ou telefone..." value={search} onChange={e=>setSearch(e.target.value)}/></div>
       <div style={{marginTop:14}}>
-        {filtered.length===0?<div className="empty"><div className="eico">👥</div><p>Nenhum passageiro</p></div>
+        {filtered.length===0?<div className="empty"><div className="empty-icon">{ICONS.users}</div><p>Nenhum passageiro</p></div>
           :filtered.map(p=>(
             <div key={p.id} className="pcard">
               <div className="avt">{p.nome?.[0]?.toUpperCase()||"?"}</div>
@@ -923,14 +958,14 @@ function Passageiros({passageiros, viagens, savePassageiro, addPassageiro, delet
                 {vc(p.id)>0&&<div style={{fontSize:11,color:"var(--sky)",marginTop:2}}>{vc(p.id)} viagem(ns)</div>}
               </div>
               <div style={{display:"flex",gap:4}}>
-                <button className="btn btn-ghost btn-icon btn-sm" onClick={()=>{setEditing(p);setModal(true);}}>✏️</button>
-                <button className="btn btn-danger btn-icon btn-sm" onClick={()=>onDel(p.id)}>🗑️</button>
+                <button className="btn btn-ghost btn-icon btn-sm" onClick={()=>{setEditing(p);setModal(true);}}>{ICONS.edit}</button>
+                <button className="btn btn-danger btn-icon btn-sm" onClick={()=>onDel(p.id)}>{ICONS.trash}</button>
               </div>
             </div>
           ))
         }
       </div>
-      <button className="fab" onClick={()=>{setEditing(null);setModal(true);}}>+</button>
+      <button className="fab" onClick={()=>{setEditing(null);setModal(true);}}>{ICONS.plus}</button>
       {modal&&<ModalPax initial={editing} onSave={onSave} onClose={()=>{setModal(false);setEditing(null);}}/>}
     </div>
   );
@@ -942,7 +977,7 @@ function ModalPax({initial, onSave, onClose}) {
   return (
     <div className="mo" onClick={e=>e.target===e.currentTarget&&onClose()}>
       <div className="md ani">
-        <div className="mhdl"/><div className="mhd"><span className="mtit">{initial?"Editar Passageiro":"Novo Passageiro"}</span><button className="btn btn-ghost btn-icon" onClick={onClose}>✕</button></div>
+        <div className="mhdl"/><div className="mhd"><span className="mtit">{initial?"Editar Passageiro":"Novo Passageiro"}</span><button className="btn btn-ghost btn-icon" onClick={onClose}>{ICONS.close}</button></div>
         <div className="mbdy"><div className="form-section">
           <div className="fg"><label className="fl">Nome *</label><input className="fi" value={f.nome} onChange={e=>s("nome",e.target.value)}/></div>
           <div className="fgrid">
@@ -976,7 +1011,7 @@ function Financeiro({viagens, go}) {
         <div style={{background:"var(--card)",border:"1px solid var(--brd)",borderRadius:14,padding:16}}><div style={{fontSize:10,fontWeight:700,color:"var(--dim)",textTransform:"uppercase",letterSpacing:".5px"}}>Em Aberto</div><div style={{fontSize:22,fontWeight:900,color:(totalEsp-totalRec)>0?"var(--rose)":"var(--dim)",marginTop:5}}>{R$(totalEsp-totalRec)}</div></div>
       </div>
       <div style={{padding:"20px 28px 8px",fontSize:11,fontWeight:700,color:"var(--dim)",textTransform:"uppercase",letterSpacing:".5px"}}>Por Viagem — clique para abrir</div>
-      {viagens.length===0?<div className="empty"><div className="eico">💰</div><p>Nenhuma viagem</p></div>
+      {viagens.length===0?<div className="empty"><div className="empty-icon">{ICONS.dollar}</div><p>Nenhuma viagem</p></div>
         :viagens.map(v=>{
           const res=v.reservas||[],esp=res.length*Number(v.valor||0),rec=res.reduce((s,r)=>s+sumPgto(r),0),ab=esp-rec,pct=esp>0?Math.min(100,Math.round((rec/esp)*100)):0;
           return (
@@ -1025,7 +1060,7 @@ function Relatorios({viagens}) {
       <div style={{padding:"20px 28px 0",display:"grid",gridTemplateColumns:"1fr 1fr",gap:16}}>
         <div style={{background:"var(--card)",border:"1px solid var(--brd)",borderRadius:14,padding:16}}>
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
-            <div style={{fontWeight:800,fontSize:14,color:"var(--txt)"}}>⚠️ Pagamentos Pendentes</div>
+            <div style={{fontWeight:600,fontSize:13,color:"var(--txt)",display:"flex",alignItems:"center",gap:7}}>{ICONS.warn} Pagamentos Pendentes</div>
             <span className="bdg" style={{background:"rgba(248,113,113,.1)",color:"var(--rose)"}}>{pendentes.length}</span>
           </div>
           {pendentes.length===0?<div style={{color:"var(--mint)",fontSize:13,fontWeight:600}}>✓ Todos os pagamentos em dia!</div>
@@ -1108,14 +1143,14 @@ function CalcForm({state, showResult=true}) {
       {/* Ônibus */}
       <div className="calc-card">
         <div className="calc-card-title">
-          <span>🚌 Ônibus</span>
-          <button className="btn btn-ghost btn-sm" onClick={addOnibus}>+ Adicionar</button>
+          <span style={{display:"flex",alignItems:"center",gap:6}}>{ICONS.bus} Ônibus</span>
+          <button className="btn btn-ghost btn-sm" onClick={addOnibus}>{ICONS.plus} Adicionar</button>
         </div>
         {onibus.map(o=>(
           <div key={o.id} className="calc-item">
             <input className="fi" value={o.nome} onChange={e=>updOnibus(o.id,"nome",e.target.value)} placeholder="Nome"/>
             <input type="number" className="fi" value={o.valor} onChange={e=>updOnibus(o.id,"valor",e.target.value)} placeholder="R$ valor"/>
-            {onibus.length>1&&<button className="btn btn-danger btn-icon btn-sm" onClick={()=>remOnibus(o.id)}>✕</button>}
+            {onibus.length>1&&<button className="btn btn-danger btn-icon btn-sm" onClick={()=>remOnibus(o.id)}>{ICONS.close}</button>}
           </div>
         ))}
         <div style={{fontSize:12,color:"var(--dim)",marginTop:4}}>Subtotal: <strong style={{color:"var(--txt)"}}>{R$(r.custoOnibus)}</strong></div>
@@ -1124,14 +1159,14 @@ function CalcForm({state, showResult=true}) {
       {/* Hotéis */}
       <div className="calc-card">
         <div className="calc-card-title">
-          <span>🏨 Hotéis</span>
-          <button className="btn btn-ghost btn-sm" onClick={addHotel}>+ Adicionar</button>
+          <span style={{display:"flex",alignItems:"center",gap:6}}>{ICONS.hotel} Hotéis</span>
+          <button className="btn btn-ghost btn-sm" onClick={addHotel}>{ICONS.plus} Adicionar</button>
         </div>
         {hoteis.map(h=>(
           <div key={h.id} className="calc-item">
             <input className="fi" value={h.nome} onChange={e=>updHotel(h.id,"nome",e.target.value)} placeholder="Nome"/>
             <input type="number" className="fi" value={h.valor} onChange={e=>updHotel(h.id,"valor",e.target.value)} placeholder="R$ valor"/>
-            {hoteis.length>1&&<button className="btn btn-danger btn-icon btn-sm" onClick={()=>remHotel(h.id)}>✕</button>}
+            {hoteis.length>1&&<button className="btn btn-danger btn-icon btn-sm" onClick={()=>remHotel(h.id)}>{ICONS.close}</button>}
           </div>
         ))}
         <div style={{fontSize:12,color:"var(--dim)",marginTop:4}}>Subtotal: <strong style={{color:"var(--txt)"}}>{R$(r.custoHotel)}</strong></div>
@@ -1139,7 +1174,7 @@ function CalcForm({state, showResult=true}) {
 
       {/* Passageiros e Ganho */}
       <div className="calc-card">
-        <div className="calc-card-title"><span>👥 Passageiros & Ganho</span></div>
+        <div className="calc-card-title"><span style={{display:"flex",alignItems:"center",gap:6}}>{ICONS.users} Passageiros & Ganho</span></div>
         <div className="fgrid" style={{marginBottom:14}}>
           <div className="fg"><label className="fl">Nº de Passageiros</label><input type="number" className="fi" value={passageiros} onChange={e=>setPassageiros(e.target.value)} placeholder="Ex: 44"/></div>
           <div className="fg">
@@ -1198,7 +1233,7 @@ function Calculadora() {
         {r.custoTotal>0 && r.nPax>0 && (
           <button className="btn btn-primary btn-full" style={{marginTop:4,marginBottom:24}}
             onClick={()=>gerarPDFCalc(r, dados.onibus, dados.hoteis, "Simulação")}>
-            📄 Gerar PDF do Orçamento
+            <>{ICONS.pdf} Gerar PDF do Orçamento</>
           </button>
         )}
       </div>
@@ -1229,7 +1264,7 @@ function TabOrcamento({viagem, updViagem}) {
         <div style={{display:"flex",gap:8}}>
           {r.custoTotal>0&&r.nPax>0&&<button className="btn btn-ghost btn-sm" onClick={()=>gerarPDFCalc(r,dados.onibus,dados.hoteis,viagem.nome)}>📄 PDF</button>}
           <button className="btn btn-primary btn-sm" onClick={salvar} disabled={salvando}>
-            {salvando?"Salvando...":salvo?"✓ Salvo!":"💾 Salvar"}
+            {salvando?"Salvando...":salvo?"✓ Salvo!":<>{ICONS.save} Salvar</>}
           </button>
         </div>
       </div>
