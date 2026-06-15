@@ -696,16 +696,58 @@ function TabReservas({viagem, passageiros, addPassageiro, updViagem}) {
 }
 
 function ModalReserva({initial, viagem, passageiros, onSave, onClose, addPassageiro}) {
-  const [f,setF]=useState(initial||{passageiroId:"",nomeAvulso:"",assento:"",status:"confirmada",obs:"",responsavel:"",telefoneResp:"",statusCobranca:"pendente",dataPrometida:""});
+  // Puxar telefone do passageiro selecionado como default do responsável
+  const getPaxTel = (pid) => { const p = passageiros.find(x=>x.id===pid); return p?.telefone||""; };
+  const getPaxNome = (pid) => { const p = passageiros.find(x=>x.id===pid); return p?.nome||""; };
+
+  const initState = (ini) => {
+    if(ini) return ini;
+    return {passageiroId:"",nomeAvulso:"",assento:"",status:"confirmada",obs:"",
+            outroResp:false,respId:"",responsavel:"",telefoneResp:"",
+            statusCobranca:"pendente",dataPrometida:""};
+  };
+  const [f,setF]=useState(()=>initState(initial));
   const [newP,setNewP]=useState(false);
   const [pf,setPf]=useState({nome:"",telefone:"",cpf:""});
   const set=(k,v)=>setF(x=>({...x,[k]:v}));
   const ocup=(viagem.reservas||[]).filter(r=>r.id!==initial?.id).map(r=>r.assento).filter(Boolean);
+
+  // Quando muda passageiro principal, atualiza responsável se não for "outro"
+  const onChangePax = (pid) => {
+    setF(x=>({...x, passageiroId:pid,
+      responsavel: x.outroResp ? x.responsavel : getPaxNome(pid),
+      telefoneResp: x.outroResp ? x.telefoneResp : getPaxTel(pid)
+    }));
+  };
+
+  // Quando marca "outro responsável"
+  const onToggleOutro = (val) => {
+    setF(x=>({...x, outroResp:val,
+      respId: val ? x.respId : "",
+      responsavel: val ? x.responsavel : getPaxNome(x.passageiroId),
+      telefoneResp: val ? x.telefoneResp : getPaxTel(x.passageiroId)
+    }));
+  };
+
+  // Quando seleciona o responsável alternativo
+  const onChangeResp = (pid) => {
+    setF(x=>({...x, respId:pid,
+      responsavel: getPaxNome(pid),
+      telefoneResp: getPaxTel(pid)
+    }));
+  };
+
   const handleSave = async () => {
     let fd={...f};
-    if(newP){if(!pf.nome)return alert("Informe o nome");const p=await addPassageiro(pf);fd.passageiroId=p.id;fd.nomeAvulso=pf.nome;}
-    else if(f.passageiroId){const p=passageiros.find(x=>x.id===f.passageiroId);fd.nomeAvulso=p?.nome||"";}
+    if(newP){if(!pf.nome)return alert("Informe o nome");const p=await addPassageiro(pf);fd.passageiroId=p.id;fd.nomeAvulso=pf.nome;
+      if(!fd.outroResp){fd.responsavel=pf.nome;fd.telefoneResp=pf.telefone;}
+    } else if(f.passageiroId){
+      const p=passageiros.find(x=>x.id===f.passageiroId);
+      fd.nomeAvulso=p?.nome||"";
+      if(!fd.outroResp){fd.responsavel=p?.nome||"";fd.telefoneResp=p?.telefone||"";}
+    }
     if(!fd.passageiroId&&!fd.nomeAvulso)return alert("Informe o passageiro");
+    if(fd.outroResp&&!fd.respId)return alert("Selecione o responsável pelo pagamento");
     await onSave(fd);
   };
   return (
@@ -715,7 +757,7 @@ function ModalReserva({initial, viagem, passageiros, onSave, onClose, addPassage
         <div className="mbdy"><div className="form-section">
           {!newP?<>
             <div className="fg"><label className="fl">Passageiro cadastrado</label>
-              <select className="fsel" value={f.passageiroId} onChange={e=>set("passageiroId",e.target.value)}>
+              <select className="fsel" value={f.passageiroId} onChange={e=>onChangePax(e.target.value)}>
                 <option value="">Selecionar...</option>
                 {passageiros.map(p=><option key={p.id} value={p.id}>{p.nome}</option>)}
               </select>
@@ -746,21 +788,46 @@ function ModalReserva({initial, viagem, passageiros, onSave, onClose, addPassage
           </div>
           <div className="fg"><label className="fl">Observações</label><input className="fi" value={f.obs} onChange={e=>set("obs",e.target.value)} placeholder="Preferências, necessidades especiais..."/></div>
           <div style={{borderTop:"1px solid var(--brd)",paddingTop:14,marginTop:2}}>
-            <div style={{fontSize:10,fontWeight:600,color:"var(--sky)",textTransform:"uppercase",letterSpacing:".6px",marginBottom:10}}>Responsável pelo Pagamento</div>
+            <div style={{fontSize:10,fontWeight:600,color:"var(--sky)",textTransform:"uppercase",letterSpacing:".6px",marginBottom:12}}>Responsável pelo Pagamento</div>
+            
+            {/* Toggle outro responsável */}
+            <label style={{display:"flex",alignItems:"center",gap:10,cursor:"pointer",marginBottom:12,padding:"10px 12px",background:"var(--bg)",borderRadius:8,border:"1px solid var(--brd)"}}>
+              <input type="checkbox" checked={f.outroResp||false} onChange={e=>onToggleOutro(e.target.checked)}
+                style={{width:16,height:16,accentColor:"var(--sky)",cursor:"pointer"}}/>
+              <span style={{fontSize:13,color:"var(--txt)",fontWeight:500}}>Outro responsável pelo pagamento</span>
+            </label>
+
+            {/* Se outro: selecionar da lista de passageiros */}
+            {f.outroResp&&(
+              <div className="fg" style={{marginBottom:12}}>
+                <label className="fl">Selecionar responsável</label>
+                <select className="fsel" value={f.respId||""} onChange={e=>onChangeResp(e.target.value)}>
+                  <option value="">Selecionar passageiro...</option>
+                  {passageiros.map(p=><option key={p.id} value={p.id}>{p.nome}{p.telefone?` — ${p.telefone}`:""}</option>)}
+                </select>
+              </div>
+            )}
+
+            {/* Info do responsável (readonly) */}
+            {(f.responsavel||f.telefoneResp)&&(
+              <div style={{background:"rgba(56,189,248,.06)",border:"1px solid rgba(56,189,248,.15)",borderRadius:8,padding:"10px 12px",marginBottom:12}}>
+                <div style={{fontSize:11,color:"var(--dim2)",marginBottom:3}}>Responsável definido</div>
+                <div style={{fontSize:13,fontWeight:600,color:"var(--txt)"}}>{f.responsavel||"—"}</div>
+                <div style={{fontSize:12,color:"var(--sky)",marginTop:2}}>{f.telefoneResp||"Sem telefone cadastrado"}</div>
+              </div>
+            )}
+
+            {/* Status de cobrança */}
             <div className="fgrid">
-              <div className="fg"><label className="fl">Nome do Responsável</label><input className="fi" value={f.responsavel} onChange={e=>set("responsavel",e.target.value)} placeholder="Quem paga (pode ser o próprio)"/></div>
-              <div className="fg"><label className="fl">WhatsApp (com DDD)</label><input className="fi" value={f.telefoneResp} onChange={e=>set("telefoneResp",e.target.value)} placeholder="(41) 99999-9999"/></div>
-            </div>
-            <div className="fgrid" style={{marginTop:10}}>
               <div className="fg"><label className="fl">Status de Cobrança</label>
-                <select className="fsel" value={f.statusCobranca} onChange={e=>set("statusCobranca",e.target.value)}>
+                <select className="fsel" value={f.statusCobranca||"pendente"} onChange={e=>set("statusCobranca",e.target.value)}>
                   <option value="pendente">Pendente</option>
                   <option value="cobrado">Cobrado</option>
                   <option value="prometido">Prometido</option>
                   <option value="quitado">Quitado</option>
                 </select>
               </div>
-              {f.statusCobranca==="prometido"&&<div className="fg"><label className="fl">Data Prometida</label><input type="date" className="fi" value={f.dataPrometida} onChange={e=>set("dataPrometida",e.target.value)}/></div>}
+              {f.statusCobranca==="prometido"&&<div className="fg"><label className="fl">Data Prometida</label><input type="date" className="fi" value={f.dataPrometida||""} onChange={e=>set("dataPrometida",e.target.value)}/></div>}
             </div>
           </div>
         </div></div>
