@@ -570,7 +570,7 @@ function App() {
         <div className="page">
           {pageEl()}
         </div>
-        <div className="app-version">v1.2.1</div>
+        <div className="app-version">v1.2.2</div>
         {/* Mobile nav */}
         <nav className="mobile-nav">
           {navItems.map(([id,ic,lb]) => (
@@ -1119,11 +1119,101 @@ function TabMapa({viagem, updViagem}) {
       {r?<span style={{fontSize:9,textAlign:"center",lineHeight:1.2}}>{num}<br/>{(r.nomeAvulso||"").split(" ")[0]?.slice(0,4)||"✓"}</span>:num}
     </div>;
   };
+  // ── PDF Mapa Visual ──
+  const gerarPDFMapa = () => {
+    const cap = viagem.capacidade||44;
+    const rows = [];
+    let s = 1;
+    while(s<=cap){
+      const row = [];
+      if(s<=cap) row.push(s++); else row.push(null);
+      if(s<=cap) row.push(s++); else row.push(null);
+      row.push("aisle");
+      if(s<=cap) row.push(s++); else row.push(null);
+      if(s<=cap) row.push(s++); else row.push(null);
+      rows.push(row);
+    }
+    const seatHTML = rows.map(row => {
+      const cells = row.map(num => {
+        if(num === "aisle") return `<td style="width:20px"></td>`;
+        if(num === null) return `<td style="width:50px;height:44px"></td>`;
+        const r = reservas.find(r=>r.assento===String(num));
+        const nome = r?.nomeAvulso||"";
+        const nomeCurto = nome.split(" ")[0]?.slice(0,8)||"";
+        if(r) return `<td style="width:50px;height:44px;border:1px solid #888;background:#e0e0e0;text-align:center;font-size:9px;padding:2px;vertical-align:middle;border-radius:4px"><strong style="font-size:10px">${num}</strong><br/>${nomeCurto}</td>`;
+        return `<td style="width:50px;height:44px;border:1px solid #ccc;text-align:center;font-size:11px;color:#999;border-radius:4px;vertical-align:middle">${num}</td>`;
+      });
+      return `<tr>${cells.join("")}</tr>`;
+    }).join("");
+
+    const semAssentoHTML = semAssento.length > 0
+      ? `<div style="margin-top:24px;padding:12px 16px;background:#fff0f0;border:1px solid #ffaaaa;border-radius:8px">
+          <div style="font-weight:700;color:#cc0000;font-size:13px;margin-bottom:8px">⚠ Passageiros SEM ASSENTO DEFINIDO (${semAssento.length})</div>
+          ${semAssento.map(r=>`<div style="font-size:12px;color:#cc0000;padding:3px 0">${r.nomeAvulso||"—"}</div>`).join("")}
+        </div>`
+      : `<div style="margin-top:16px;padding:10px 14px;background:#f0fff4;border:1px solid #aaddbb;border-radius:8px;font-size:12px;color:#006600">✓ Todos os passageiros com assento definido</div>`;
+
+    const html = `<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"/><title>Mapa do Ônibus — ${viagem.nome}</title>
+    <style>body{font-family:Arial,sans-serif;color:#111;padding:24px;max-width:600px;margin:0 auto}h1{font-size:18px;margin-bottom:4px}.sub{color:#555;font-size:12px;margin-bottom:20px}table{border-collapse:separate;border-spacing:4px;margin:0 auto}.front{text-align:center;padding:8px;background:#333;color:#fff;font-size:11px;border-radius:4px;margin-bottom:8px;max-width:240px;margin-left:auto;margin-right:auto}.legenda{display:flex;gap:16px;justify-content:center;margin-top:16px;font-size:11px}.leg-item{display:flex;align-items:center;gap:5px}.leg-box{width:14px;height:14px;border-radius:2px;border:1px solid #999}@media print{body{padding:8px}}</style>
+    </head><body>
+    <h1>🚌 Mapa do Ônibus — ${viagem.nome}</h1>
+    <div class="sub">${viagem.dataIda ? "Ida: "+new Date(viagem.dataIda+"T12:00:00").toLocaleDateString("pt-BR") : ""} | ${reservas.filter(r=>r.assento).length} alocados · ${semAssento.length} sem assento · Gerado em ${new Date().toLocaleDateString("pt-BR")}</div>
+    <div class="front">⬛ FRENTE DO ÔNIBUS</div>
+    <table>${seatHTML}</table>
+    <div class="legenda">
+      <div class="leg-item"><div class="leg-box" style="background:#e0e0e0"></div>Ocupado</div>
+      <div class="leg-item"><div class="leg-box" style="background:#fff"></div>Livre</div>
+    </div>
+    ${semAssentoHTML}
+    </body></html>`;
+    const win = window.open("","_blank");
+    if(!win) return alert("Permita pop-ups para gerar o PDF");
+    win.document.write(html); win.document.close(); setTimeout(()=>win.print(),600);
+  };
+
+  // ── PDF Lista Embarque ──
+  const gerarPDFLista = () => {
+    const comAssento = reservas.filter(r=>r.assento).sort((a,b)=>Number(a.assento)-Number(b.assento));
+    const semAss = reservas.filter(r=>!r.assento);
+
+    const linhasComAssento = comAssento.map((r,i)=>`
+      <tr style="background:${i%2===0?"#f9f9f9":"#fff"}">
+        <td style="padding:8px;text-align:center;font-weight:700">${r.assento}</td>
+        <td style="padding:8px;font-weight:500">${r.nomeAvulso||"—"}</td>
+        <td style="padding:8px;color:#555">${r.telefoneResp||""}</td>
+        <td style="padding:8px;color:#555">${r.obs||""}</td>
+      </tr>`).join("");
+
+    const linhasSemAssento = semAss.length > 0
+      ? `<tr><td colspan="4" style="padding:12px 8px;background:#fff0f0;color:#cc0000;font-weight:700;font-size:13px">⚠ SEM ASSENTO DEFINIDO (${semAss.length} passageiro${semAss.length>1?"s":""})</td></tr>`
+        + semAss.map(r=>`<tr style="background:#fff5f5"><td style="padding:8px;text-align:center;color:#cc0000">—</td><td style="padding:8px;color:#cc0000;font-weight:500">${r.nomeAvulso||"—"}</td><td style="padding:8px;color:#cc0000">${r.telefoneResp||""}</td><td style="padding:8px;color:#cc0000">${r.obs||""}</td></tr>`).join("")
+      : "";
+
+    const html = `<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"/><title>Lista de Embarque — ${viagem.nome}</title>
+    <style>body{font-family:Arial,sans-serif;color:#111;padding:24px;max-width:800px;margin:0 auto}h1{font-size:18px;margin-bottom:4px}.sub{color:#555;font-size:12px;margin-bottom:20px}table{width:100%;border-collapse:collapse}th{background:#1e293b;color:#fff;padding:10px 8px;text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.4px}td{font-size:13px}.total{margin-top:16px;padding:10px 14px;background:#f1f5f9;border-radius:6px;font-size:13px}@media print{body{padding:8px}}</style>
+    </head><body>
+    <h1>📋 Lista de Embarque — ${viagem.nome}</h1>
+    <div class="sub">${viagem.dataIda ? "Ida: "+new Date(viagem.dataIda+"T12:00:00").toLocaleDateString("pt-BR") : ""} | Total: ${reservas.length} passageiros · Gerado em ${new Date().toLocaleDateString("pt-BR")}</div>
+    <table>
+      <thead><tr><th style="width:60px">Assento</th><th>Nome</th><th>Telefone</th><th>Obs</th></tr></thead>
+      <tbody>${linhasComAssento}${linhasSemAssento}</tbody>
+    </table>
+    <div class="total">Total com assento: <strong>${comAssento.length}</strong> · Sem assento: <strong style="color:${semAss.length>0?"#cc0000":"#006600"}">${semAss.length}</strong></div>
+    </body></html>`;
+    const win = window.open("","_blank");
+    if(!win) return alert("Permita pop-ups para gerar o PDF");
+    win.document.write(html); win.document.close(); setTimeout(()=>win.print(),600);
+  };
+
   return (
     <>
-      <div style={{padding:"14px 28px 0",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-        <div style={{fontSize:13,color:"var(--dim)"}}>{reservas.filter(r=>r.assento).length} alocados • {semAssento.length} sem assento</div>
-        <button className="btn btn-danger btn-sm" onClick={()=>{if(confirm("Reiniciar mapa de assentos?"))updViagem({...viagem,reservas:reservas.map(r=>({...r,assento:""}))})}}>{ICONS.close} Reiniciar</button>
+      <div style={{padding:"14px 28px 0",display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",gap:8}}>
+        <div style={{fontSize:13,color:"var(--dim)"}}>{reservas.filter(r=>r.assento).length} alocados • <span style={{color:semAssento.length>0?"var(--rose)":"var(--mint)"}}>{semAssento.length} sem assento</span></div>
+        <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
+          <button className="btn btn-ghost btn-sm" onClick={gerarPDFMapa}>{ICONS.pdf} Mapa PDF</button>
+          <button className="btn btn-ghost btn-sm" onClick={gerarPDFLista}>{ICONS.pdf} Lista PDF</button>
+          <button className="btn btn-danger btn-sm" onClick={()=>{if(confirm("Reiniciar mapa de assentos?"))updViagem({...viagem,reservas:reservas.map(r=>({...r,assento:""}))})}}>{ICONS.close} Reiniciar</button>
+        </div>
       </div>
       {semAssento.length>0&&(
         <div style={{padding:"12px 28px 0"}}>
