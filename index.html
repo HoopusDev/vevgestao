@@ -433,7 +433,7 @@ function App() {
     if(page==="financeiro")  return <Financeiro viagens={viagens} go={go}/>;
     if(page==="relatorios")  return <Relatorios viagens={viagens}/>;
     if(page==="calculadora") return <Calculadora/>;
-    if(page==="cobrancas")  return <Cobrancas viagens={viagens} updViagem={updViagem}/>;
+    if(page==="cobrancas")  return <Cobrancas viagens={viagens} passageiros={passageiros} updViagem={updViagem}/>;
   };
 
   return (
@@ -1419,7 +1419,7 @@ Aguardamos o envio do valor restante ou parte dele para podermos registrar aqui.
 
 Quando fizer o pagamento, por gentileza envie o comprovante.
 
-V&V Viagens agradece! 🙏`;
+V&V Viagens agradece! 😄`;
 
 function formatFone(fone) {
   if(!fone) return "";
@@ -1435,7 +1435,7 @@ function gerarMensagem(modelo, nomeResp, nomeViagem, itens) {
     .replace(/\{pix\}/g, PIX_DISPLAY);
 }
 
-function Cobrancas({viagens, updViagem}) {
+function Cobrancas({viagens, passageiros, updViagem}) {
   const [vid, setVid] = useState("");
   const [filtro, setFiltro] = useState("todos");
   const [modelo, setModelo] = useState(MODELO_PADRAO);
@@ -1452,16 +1452,18 @@ function Cobrancas({viagens, updViagem}) {
     const mapa = {};
     reservas.forEach(r=>{
       const falta = Number(viagem?.valor||0) - sumPgto(r);
-      if(falta<=0) return; // já quitado
-      const fone = r.telefoneResp||r.passageiroTel||"sem-telefone";
-      const resp = r.responsavel||r.nomeAvulso||"Sem responsável";
+      if(falta<=0) return;
+      // Fallback automático: usa passageiro cadastrado se não tiver responsável definido
+      const paxCad = passageiros.find(p=>p.id===r.passageiroId);
+      const resp = r.responsavel || paxCad?.nome || r.nomeAvulso || "Sem responsável";
+      const fone = r.telefoneResp || paxCad?.telefone || "sem-telefone";
       const key = fone+"|"+resp;
-      if(!mapa[key]) mapa[key] = {resp, fone, paxs:[], ultimaCob:null, statusCob:r.statusCobranca||"pendente"};
+      if(!mapa[key]) mapa[key] = {resp, fone, paxs:[], ultimaCob:null};
       mapa[key].paxs.push({id:r.id, nome:r.nomeAvulso, falta, statusCobranca:r.statusCobranca||"pendente", ultimaCob:r.ultimaCobranca, dataPrometida:r.dataPrometida});
       if(r.ultimaCobranca && (!mapa[key].ultimaCob || r.ultimaCobranca > mapa[key].ultimaCob)) mapa[key].ultimaCob = r.ultimaCobranca;
     });
-    return Object.values(mapa);
-  }, [reservas, viagem]);
+    return Object.values(mapa).sort((a,b)=>a.resp.localeCompare(b.resp));
+  }, [reservas, viagem, passageiros]);
 
   const hoje = new Date().toISOString().slice(0,10);
   const gruposFiltrados = grupos.filter(g=>{
