@@ -245,6 +245,34 @@ html,body{height:100%;background:var(--bg);overflow:hidden;}
 .ganho-btn{flex:1;padding:8px;border-radius:7px;border:1px solid var(--brd);background:var(--card);color:var(--dim2);font-size:12px;font-weight:500;cursor:pointer;transition:all .15s;text-align:center;}
 .ganho-btn.on{border-color:var(--sky);background:rgba(56,189,248,.08);color:var(--sky);}
 
+
+/* ── COBRANÇAS ── */
+.cob-viagem-sel{padding:16px 28px 0;}
+@media(max-width:768px){.cob-viagem-sel{padding:12px 14px 0;}}
+.cob-modelo{background:var(--card);border:1px solid var(--brd);border-radius:var(--radius);padding:16px;margin:14px 28px 0;}
+@media(max-width:768px){.cob-modelo{margin:12px 14px 0;}}
+.cob-modelo-title{font-size:10px;font-weight:600;color:var(--dim2);text-transform:uppercase;letter-spacing:.6px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;}
+.cob-lista{padding:14px 28px 0;}
+@media(max-width:768px){.cob-lista{padding:12px 14px 0;}}
+.cob-group{background:var(--card);border:1px solid var(--brd);border-radius:var(--radius);margin-bottom:10px;overflow:hidden;}
+.cob-group-header{padding:13px 14px;display:flex;align-items:center;gap:10px;cursor:pointer;transition:background .15s;}
+.cob-group-header:hover{background:rgba(255,255,255,.03);}
+.cob-group-name{font-size:14px;font-weight:600;color:var(--txt);flex:1;}
+.cob-group-phone{font-size:12px;color:var(--dim2);}
+.cob-group-total{font-size:13px;font-weight:700;color:var(--rose);}
+.cob-pax{padding:0 14px 10px;border-top:1px solid var(--brd);display:flex;flex-direction:column;gap:6px;padding-top:10px;}
+.cob-pax-row{display:flex;justify-content:space-between;align-items:center;font-size:13px;}
+.cob-pax-name{color:var(--txt);font-weight:500;}
+.cob-pax-val{color:var(--rose);font-weight:600;}
+.cob-actions{padding:10px 14px;border-top:1px solid var(--brd);display:flex;gap:8px;}
+.cob-status{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:600;}
+.cob-msg-area{background:var(--bg);border:1px solid var(--brd);border-radius:8px;padding:12px 13px;font-size:13px;color:var(--txt);width:100%;resize:none;min-height:180px;line-height:1.6;outline:none;font-family:var(--font);}
+.cob-msg-area:focus{border-color:var(--sky);}
+.cob-filter{display:flex;gap:6px;flex-wrap:wrap;margin-top:12px;}
+.cob-filter-btn{padding:5px 12px;border-radius:20px;font-size:11px;font-weight:600;cursor:pointer;border:1px solid var(--brd);background:var(--card);color:var(--dim2);transition:all .15s;}
+.cob-filter-btn.on{border-color:var(--sky);background:rgba(56,189,248,.1);color:var(--sky);}
+.cob-hist{font-size:11px;color:var(--dim2);margin-top:4px;}
+
 @keyframes spin{to{transform:rotate(360deg);}}
 @keyframes up{from{opacity:0;transform:translateY(12px);}to{opacity:1;transform:translateY(0);}}
 .ani{animation:up .2s ease;}
@@ -292,6 +320,10 @@ const ICONS = {
   credit: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>,
   pix: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>,
   cash: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="3"/></svg>,
+  whatsapp: <svg viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.149-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.124.554 4.118 1.528 5.852L0 24l6.335-1.508A11.95 11.95 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-1.89 0-3.663-.5-5.2-1.373l-.374-.222-3.876.922.976-3.768-.243-.387A9.96 9.96 0 012 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/></svg>,
+  phone: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 9.81a19.79 19.79 0 01-3.07-8.68A2 2 0 012 .9h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.09 8.74a16 16 0 006.17 6.17l1.21-1.21a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/></svg>,
+  bell: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 01-3.46 0"/></svg>,
+  check: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>,
   close: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>,
   hotel: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M3 22V8l9-6 9 6v14"/><path d="M9 22V12h6v10"/></svg>,
   save: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>,
@@ -390,6 +422,7 @@ function App() {
     ["financeiro","dollar","Financeiro"],
     ["relatorios","chart","Relatórios"],
     ["calculadora","calc","Calculadora"],
+    ["cobrancas","bell","Cobranças"],
   ];
 
   const pageEl = () => {
@@ -400,6 +433,7 @@ function App() {
     if(page==="financeiro")  return <Financeiro viagens={viagens} go={go}/>;
     if(page==="relatorios")  return <Relatorios viagens={viagens}/>;
     if(page==="calculadora") return <Calculadora/>;
+    if(page==="cobrancas")  return <Cobrancas viagens={viagens} updViagem={updViagem}/>;
   };
 
   return (
@@ -662,7 +696,7 @@ function TabReservas({viagem, passageiros, addPassageiro, updViagem}) {
 }
 
 function ModalReserva({initial, viagem, passageiros, onSave, onClose, addPassageiro}) {
-  const [f,setF]=useState(initial||{passageiroId:"",nomeAvulso:"",assento:"",status:"confirmada",obs:""});
+  const [f,setF]=useState(initial||{passageiroId:"",nomeAvulso:"",assento:"",status:"confirmada",obs:"",responsavel:"",telefoneResp:"",statusCobranca:"pendente",dataPrometida:""});
   const [newP,setNewP]=useState(false);
   const [pf,setPf]=useState({nome:"",telefone:"",cpf:""});
   const set=(k,v)=>setF(x=>({...x,[k]:v}));
@@ -711,6 +745,24 @@ function ModalReserva({initial, viagem, passageiros, onSave, onClose, addPassage
             </div>
           </div>
           <div className="fg"><label className="fl">Observações</label><input className="fi" value={f.obs} onChange={e=>set("obs",e.target.value)} placeholder="Preferências, necessidades especiais..."/></div>
+          <div style={{borderTop:"1px solid var(--brd)",paddingTop:14,marginTop:2}}>
+            <div style={{fontSize:10,fontWeight:600,color:"var(--sky)",textTransform:"uppercase",letterSpacing:".6px",marginBottom:10}}>Responsável pelo Pagamento</div>
+            <div className="fgrid">
+              <div className="fg"><label className="fl">Nome do Responsável</label><input className="fi" value={f.responsavel} onChange={e=>set("responsavel",e.target.value)} placeholder="Quem paga (pode ser o próprio)"/></div>
+              <div className="fg"><label className="fl">WhatsApp (com DDD)</label><input className="fi" value={f.telefoneResp} onChange={e=>set("telefoneResp",e.target.value)} placeholder="(41) 99999-9999"/></div>
+            </div>
+            <div className="fgrid" style={{marginTop:10}}>
+              <div className="fg"><label className="fl">Status de Cobrança</label>
+                <select className="fsel" value={f.statusCobranca} onChange={e=>set("statusCobranca",e.target.value)}>
+                  <option value="pendente">Pendente</option>
+                  <option value="cobrado">Cobrado</option>
+                  <option value="prometido">Prometido</option>
+                  <option value="quitado">Quitado</option>
+                </select>
+              </div>
+              {f.statusCobranca==="prometido"&&<div className="fg"><label className="fl">Data Prometida</label><input type="date" className="fi" value={f.dataPrometida} onChange={e=>set("dataPrometida",e.target.value)}/></div>}
+            </div>
+          </div>
         </div></div>
         <div className="mact">
           <button className="btn btn-ghost btn-full" onClick={onClose}>Cancelar</button>
@@ -1275,6 +1327,229 @@ function TabOrcamento({viagem, updViagem}) {
   );
 }
 
+
+
+// ── COBRANÇAS ─────────────────────────────────────────────────────────────────
+const PIX_KEY = "58342611000106";
+const PIX_DISPLAY = "58.342.611/0001-06";
+
+const SC = {
+  pendente:  {l:"Pendente",  c:"var(--amber)"},
+  cobrado:   {l:"Cobrado",   c:"var(--sky)"},
+  prometido: {l:"Prometido", c:"var(--lilac)"},
+  quitado:   {l:"Quitado",  c:"var(--mint)"},
+};
+
+const MODELO_PADRAO = `Olá {nome},
+
+Passando para avisar que ainda temos em aberto o seguinte para a viagem *{viagem}*:
+
+{itens}
+
+Nossa chave Pix: *{pix}*
+
+Aguardamos o envio do valor restante ou parte dele para podermos registrar aqui. Caso queira, podemos combinar uma data para te lembrarmos sobre o valor.
+
+Quando fizer o pagamento, por gentileza envie o comprovante.
+
+V&V Viagens agradece! 🙏`;
+
+function formatFone(fone) {
+  if(!fone) return "";
+  return "55" + fone.replace(/\D/g,"");
+}
+
+function gerarMensagem(modelo, nomeResp, nomeViagem, itens) {
+  const itensStr = itens.map(i=>`• ${i.nome}: *${R$(i.falta)}* em aberto`).join("\n");
+  return modelo
+    .replace(/\{nome\}/g, nomeResp||"cliente")
+    .replace(/\{viagem\}/g, nomeViagem)
+    .replace(/\{itens\}/g, itensStr)
+    .replace(/\{pix\}/g, PIX_DISPLAY);
+}
+
+function Cobrancas({viagens, updViagem}) {
+  const [vid, setVid] = useState("");
+  const [filtro, setFiltro] = useState("todos");
+  const [modelo, setModelo] = useState(MODELO_PADRAO);
+  const [editModelo, setEditModelo] = useState(false);
+  const [modeloTemp, setModeloTemp] = useState(MODELO_PADRAO);
+  const [sel, setSel] = useState(null); // grupo selecionado
+  const [msgEdit, setMsgEdit] = useState(""); // mensagem editável pontual
+
+  const viagem = viagens.find(v=>v.id===vid);
+  const reservas = viagem?.reservas||[];
+
+  // Agrupar por telefone do responsável
+  const grupos = React.useMemo(()=>{
+    const mapa = {};
+    reservas.forEach(r=>{
+      const falta = Number(viagem?.valor||0) - sumPgto(r);
+      if(falta<=0) return; // já quitado
+      const fone = r.telefoneResp||r.passageiroTel||"sem-telefone";
+      const resp = r.responsavel||r.nomeAvulso||"Sem responsável";
+      const key = fone+"|"+resp;
+      if(!mapa[key]) mapa[key] = {resp, fone, paxs:[], ultimaCob:null, statusCob:r.statusCobranca||"pendente"};
+      mapa[key].paxs.push({id:r.id, nome:r.nomeAvulso, falta, statusCobranca:r.statusCobranca||"pendente", ultimaCob:r.ultimaCobranca, dataPrometida:r.dataPrometida});
+      if(r.ultimaCobranca && (!mapa[key].ultimaCob || r.ultimaCobranca > mapa[key].ultimaCob)) mapa[key].ultimaCob = r.ultimaCobranca;
+    });
+    return Object.values(mapa);
+  }, [reservas, viagem]);
+
+  const hoje = new Date().toISOString().slice(0,10);
+  const gruposFiltrados = grupos.filter(g=>{
+    if(filtro==="nunca") return !g.ultimaCob;
+    if(filtro==="prometido") return g.paxs.some(p=>p.statusCobranca==="prometido" && p.dataPrometida && p.dataPrometida < hoje);
+    if(filtro==="cobrado") return g.ultimaCob;
+    return true;
+  });
+
+  const abrirGrupo = (g) => {
+    setSel(g);
+    const msg = gerarMensagem(modelo, g.resp, viagem?.nome||"", g.paxs);
+    setMsgEdit(msg);
+  };
+
+  const registrarCobranca = async (g) => {
+    const agora = new Date().toISOString();
+    const novasReservas = reservas.map(r=>{
+      const pertence = g.paxs.some(p=>p.id===r.id);
+      if(pertence) return {...r, statusCobranca:"cobrado", ultimaCobranca:agora};
+      return r;
+    });
+    await updViagem({...viagem, reservas:novasReservas});
+    setSel(null);
+  };
+
+  const abrirWhatsApp = (fone, msg) => {
+    const num = formatFone(fone);
+    if(!num || num.length < 12) return alert("Número de WhatsApp inválido ou não cadastrado.");
+    const url = `https://wa.me/${num}?text=${encodeURIComponent(msg)}`;
+    window.open(url,"_blank");
+  };
+
+  return (
+    <div className="ani">
+      <div className="topbar"><h1>Cobranças</h1></div>
+
+      {/* Seleção de viagem */}
+      <div className="cob-viagem-sel">
+        <div className="fg">
+          <label className="fl">Selecione a Viagem</label>
+          <select className="fsel" value={vid} onChange={e=>{setVid(e.target.value);setSel(null);}}>
+            <option value="">Selecionar viagem...</option>
+            {viagens.map(v=><option key={v.id} value={v.id}>{v.nome} — {dt(v.dataIda)}</option>)}
+          </select>
+        </div>
+        {vid&&<div className="cob-filter">
+          {[["todos","Todos"],["nunca","Nunca cobrados"],["cobrado","Já cobrados"],["prometido","Prometidos atrasados"]].map(([id,lb])=>(
+            <div key={id} className={`cob-filter-btn ${filtro===id?"on":""}`} onClick={()=>setFiltro(id)}>{lb}</div>
+          ))}
+        </div>}
+      </div>
+
+      {/* Modelo de mensagem */}
+      {vid&&<div className="cob-modelo">
+        <div className="cob-modelo-title">
+          <span>Modelo de Mensagem</span>
+          <button className="btn btn-ghost btn-sm" onClick={()=>{setModeloTemp(modelo);setEditModelo(!editModelo);}}>
+            {editModelo?"Cancelar":ICONS.edit}
+          </button>
+        </div>
+        {editModelo?(
+          <>
+            <div style={{fontSize:11,color:"var(--dim2)",marginBottom:8,lineHeight:1.6}}>
+              Variáveis disponíveis: <code style={{color:"var(--sky)"}}>{"{nome}"}</code> · <code style={{color:"var(--sky)"}}>{"{viagem}"}</code> · <code style={{color:"var(--sky)"}}>{"{itens}"}</code> · <code style={{color:"var(--sky)"}}>{"{pix}"}</code>
+            </div>
+            <textarea className="cob-msg-area" rows={10} value={modeloTemp} onChange={e=>setModeloTemp(e.target.value)}/>
+            <div style={{display:"flex",gap:8,marginTop:10}}>
+              <button className="btn btn-ghost btn-sm" onClick={()=>setEditModelo(false)}>Cancelar</button>
+              <button className="btn btn-primary btn-sm" onClick={()=>{setModelo(modeloTemp);setEditModelo(false);}}>Salvar Modelo</button>
+            </div>
+          </>
+        ):(
+          <div style={{fontSize:12,color:"var(--dim2)",whiteSpace:"pre-wrap",lineHeight:1.6,maxHeight:80,overflow:"hidden",maskImage:"linear-gradient(to bottom,black 60%,transparent)"}}>{modelo}</div>
+        )}
+      </div>}
+
+      {/* Lista de pendentes */}
+      {vid&&(
+        <div className="cob-lista">
+          <div style={{fontSize:10,fontWeight:600,color:"var(--dim2)",textTransform:"uppercase",letterSpacing:".6px",marginBottom:10}}>
+            {gruposFiltrados.length} responsável(is) com pendências
+          </div>
+          {gruposFiltrados.length===0
+            ?<div className="empty"><div className="empty-icon">{ICONS.check}</div><p>Nenhum pendente nesse filtro</p></div>
+            :gruposFiltrados.map((g,i)=>{
+              const totalFalta = g.paxs.reduce((s,p)=>s+p.falta,0);
+              const sc = SC[g.paxs[0]?.statusCobranca]||SC.pendente;
+              return (
+                <div key={i} className="cob-group">
+                  <div className="cob-group-header" onClick={()=>abrirGrupo(g)}>
+                    <div style={{flex:1}}>
+                      <div className="cob-group-name">{g.resp}</div>
+                      <div className="cob-group-phone">{g.fone!=="sem-telefone"?g.fone:"Sem telefone cadastrado"}</div>
+                      {g.ultimaCob&&<div className="cob-hist">Último contato: {new Date(g.ultimaCob).toLocaleDateString("pt-BR")}</div>}
+                    </div>
+                    <div style={{textAlign:"right"}}>
+                      <div className="cob-group-total">{R$(totalFalta)}</div>
+                      <span className="cob-status" style={{background:sc.c+"22",color:sc.c}}>{sc.l}</span>
+                    </div>
+                    <span style={{color:"var(--sky)",fontSize:18,marginLeft:6}}>›</span>
+                  </div>
+                  {g.paxs.length>1&&(
+                    <div className="cob-pax">
+                      {g.paxs.map((p,j)=>(
+                        <div key={j} className="cob-pax-row">
+                          <span className="cob-pax-name">{p.nome}</span>
+                          <span className="cob-pax-val">{R$(p.falta)}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              );
+            })
+          }
+        </div>
+      )}
+
+      {/* Modal de mensagem */}
+      {sel&&(
+        <div className="mo" onClick={e=>e.target===e.currentTarget&&setSel(null)}>
+          <div className="md ani">
+            <div className="mhdl"/>
+            <div className="mhd">
+              <div>
+                <div className="mtit">{sel.resp}</div>
+                <div style={{fontSize:11,color:"var(--dim2)",marginTop:2}}>{sel.fone!=="sem-telefone"?sel.fone:"Sem telefone"} · {R$(sel.paxs.reduce((s,p)=>s+p.falta,0))} em aberto</div>
+              </div>
+              <button className="btn btn-ghost btn-icon" onClick={()=>setSel(null)}>{ICONS.close}</button>
+            </div>
+            <div className="mbdy" style={{padding:"0 20px 8px"}}>
+              <div style={{fontSize:10,fontWeight:600,color:"var(--dim2)",textTransform:"uppercase",letterSpacing:".5px",marginBottom:8}}>Mensagem — edite se necessário</div>
+              <textarea className="cob-msg-area" rows={12} value={msgEdit} onChange={e=>setMsgEdit(e.target.value)}/>
+            </div>
+            <div className="mact" style={{flexWrap:"wrap",gap:8}}>
+              <button className="btn btn-ghost btn-full" onClick={()=>{navigator.clipboard.writeText(msgEdit);alert("Mensagem copiada!");}}>
+                Copiar mensagem
+              </button>
+              <button className="btn btn-primary btn-full"
+                style={{background:"#25D366",color:"#fff"}}
+                onClick={()=>abrirWhatsApp(sel.fone, msgEdit)}>
+                {ICONS.whatsapp} Abrir WhatsApp
+              </button>
+              <button className="btn btn-ghost btn-full" style={{borderColor:"var(--mint)",color:"var(--mint)"}}
+                onClick={()=>registrarCobranca(sel)}>
+                {ICONS.check} Registrar cobrança feita
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
 
 ReactDOM.render(<App/>, document.getElementById("root"));
 </script>
