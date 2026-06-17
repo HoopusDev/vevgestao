@@ -570,7 +570,7 @@ function App() {
         <div className="page">
           {pageEl()}
         </div>
-        <div className="app-version">v1.2.3</div>
+        <div className="app-version">v1.2.4</div>
         {/* Mobile nav */}
         <nav className="mobile-nav">
           {navItems.map(([id,ic,lb]) => (
@@ -958,11 +958,15 @@ function ModalReserva({initial, viagem, passageiros, onSave, onClose, addPassage
 // ── TAB PAGAMENTOS ────────────────────────────────────────────────────────────
 function TabPagamentos({viagem, updViagem}) {
   const [sel,setSel]=useState(null);
+  const [search,setSearch]=useState("");
   const reservas=viagem.reservas||[];
   const totalEsp=reservas.length*Number(viagem.valor||0);
   const totalRec=reservas.reduce((s,r)=>s+sumPgto(r),0);
   const reserva=reservas.find(r=>r.id===sel);
   const updR = async r => await updViagem({...viagem,reservas:reservas.map(x=>x.id===r.id?r:x)});
+  const filtered = search.trim()
+    ? reservas.filter(r=>(r.nomeAvulso||"").toLowerCase().includes(search.toLowerCase()))
+    : reservas;
   if(sel&&reserva) return <PgtoDetalhe reserva={reserva} viagem={viagem} onBack={()=>setSel(null)} onUpdate={updR}/>;
   return (
     <>
@@ -971,9 +975,19 @@ function TabPagamentos({viagem, updViagem}) {
         <div style={{background:"var(--card)",border:"1px solid var(--brd)",borderRadius:14,padding:16}}><div style={{fontSize:10,fontWeight:700,color:"var(--dim)",textTransform:"uppercase",letterSpacing:".5px"}}>Recebido</div><div style={{fontSize:20,fontWeight:900,color:"var(--mint)",marginTop:4}}>{R$(totalRec)}</div></div>
         <div style={{background:"var(--card)",border:"1px solid var(--brd)",borderRadius:14,padding:16}}><div style={{fontSize:10,fontWeight:700,color:"var(--dim)",textTransform:"uppercase",letterSpacing:".5px"}}>Em Aberto</div><div style={{fontSize:20,fontWeight:900,color:(totalEsp-totalRec)>0?"var(--rose)":"var(--dim)",marginTop:4}}>{R$(totalEsp-totalRec)}</div></div>
       </div>
-      <div style={{padding:"16px 28px 6px",fontSize:12,color:"var(--dim)"}}>Clique num passageiro para ver e registrar pagamentos:</div>
-      {reservas.length===0?<div className="empty"><div className="empty-icon">{ICONS.dollar}</div><p>Nenhuma reserva</p></div>
-        :reservas.map(r=>{
+      <div className="search-box" style={{paddingTop:14}}>
+        <span className="search-icon">{ICONS.search}</span>
+        <input className="fi" placeholder="Buscar passageiro..." value={search} onChange={e=>setSearch(e.target.value)}/>
+      </div>
+      <div style={{padding:"10px 28px 6px",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+        <span style={{fontSize:12,color:"var(--dim2)"}}>
+          {search ? `${filtered.length} resultado(s)` : "Clique num passageiro para registrar pagamento"}
+        </span>
+        {search&&<button className="btn btn-ghost btn-sm" onClick={()=>setSearch("")}>Limpar</button>}
+      </div>
+      {filtered.length===0
+        ?<div className="empty"><div className="empty-icon">{ICONS.dollar}</div><p>{search?"Nenhum passageiro encontrado":"Nenhuma reserva"}</p></div>
+        :filtered.map(r=>{
           const pago=sumPgto(r),total=Number(viagem.valor||0),falta=total-pago,pct=total>0?Math.min(100,Math.round((pago/total)*100)):0;
           return (
             <div key={r.id} className="rc" style={{cursor:"pointer"}} onClick={()=>setSel(r.id)}>
