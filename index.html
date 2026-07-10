@@ -640,7 +640,7 @@ function App() {
   const pageEl = () => {
     if(page==="dashboard")   return <Dashboard viagens={viagens} passageiros={passageiros} go={go}/>;
     if(page==="viagens")     return <Viagens viagens={viagens} addViagem={addViagem} saveViagem={saveViagem} deleteViagem={deleteViagem} go={go}/>;
-    if(page==="viagem")      return <ViagemDetail viagens={viagens} passageiros={passageiros} addPassageiro={addPassageiro} viagem={curViagem} updViagem={updViagem} go={go}/>;
+    if(page==="viagem")      return <ViagemDetail viagens={viagens} passageiros={passageiros} addPassageiro={addPassageiro} viagem={curViagem} updViagem={updViagem} go={go} config={config}/>;
     if(page==="passageiros") return <Passageiros passageiros={passageiros} viagens={viagens} savePassageiro={savePassageiro} addPassageiro={addPassageiro} deletePassageiro={deletePassageiro}/>;
     if(page==="financeiro")  return <Financeiro viagens={viagens} go={go}/>;
     if(page==="relatorios")  return <Relatorios viagens={viagens} passageiros={passageiros}/>;
@@ -690,7 +690,7 @@ function App() {
         <div className="page">
           {pageEl()}
         </div>
-        <div className="app-version">v1.3.1</div>
+        <div className="app-version">v1.3.3</div>
         {/* Mobile nav */}
         <nav className="mobile-nav">
           {navItems.map(([id,ic,lb]) => (
@@ -838,7 +838,7 @@ function ModalViagem({initial, onSave, onClose}) {
 }
 
 // ── VIAGEM DETALHE ────────────────────────────────────────────────────────────
-function ViagemDetail({viagens, passageiros, addPassageiro, viagem, updViagem, go}) {
+function ViagemDetail({viagens, passageiros, addPassageiro, viagem, updViagem, go, config}) {
   const [tab,setTab]=useState("reservas");
   if(!viagem){go("viagens");return null;}
   const s=SV[viagem.status]||SV.aberta;
@@ -1828,7 +1828,7 @@ const TIPO_APTO = {
   triplo_solteiro: {label:"Triplo Solteiro", cap:3, color:"var(--mint)"},
 };
 
-function TabHotel({viagem, updViagem}) {
+function TabHotel({viagem, updViagem, config}) {
   const [search, setSearch] = useState("");
   const [selPax, setSelPax] = useState(null); // id da reserva selecionada
   const [modalApto, setModalApto] = useState(null); // {hotelIdx, aptoIdx}
@@ -1836,11 +1836,32 @@ function TabHotel({viagem, updViagem}) {
   const reservas = viagem.reservas || [];
   const hoteis = viagem.hoteis || [];
 
+  // Tipos de apto: usa da config se disponível, senão usa o padrão
+  const tiposAptoDinamico = React.useMemo(() => {
+    const cores = ["var(--lilac)","var(--sky)","var(--mint)","var(--amber)","var(--rose)"];
+    if(config?.tiposApto && config.tiposApto.length > 0) {
+      return config.tiposApto.reduce((acc, t, i) => {
+        acc[t.id] = {label: t.nome, cap: t.cap, color: cores[i % cores.length]};
+        return acc;
+      }, {});
+    }
+    return TIPO_APTO;
+  }, [config]);
+
+  // Motoristas fixos (sempre disponíveis)
+  const MOTORISTAS = [
+    {id:"motorista_1", nomeAvulso:"Motorista 1", _fixo:true},
+    {id:"motorista_2", nomeAvulso:"Motorista 2", _fixo:true},
+  ];
+
   // Passageiros já alocados em algum apto
   const alocados = new Set(
     hoteis.flatMap(h=>(h.aptos||[]).flatMap(a=>(a.paxs||[])))
   );
-  const semApto = reservas.filter(r=>!alocados.has(r.id));
+  const semApto = [
+    ...MOTORISTAS.filter(m=>!alocados.has(m.id)),
+    ...reservas.filter(r=>!alocados.has(r.id))
+  ];
 
   // Filtro de busca nos sem apto
   const semAptoFiltrado = search.trim()
@@ -1866,7 +1887,7 @@ function TabHotel({viagem, updViagem}) {
   };
 
   const addApto = (hIdx, tipo) => {
-    const cap = TIPO_APTO[tipo].cap;
+    const cap = tiposAptoDinamico[tipo].cap;
     const h = hoteis.map((x,i)=>i===hIdx?{...x,aptos:[...(x.aptos||[]),{id:genId(),nome:`Apto ${(x.aptos||[]).length+1}`,tipo,cap,paxs:[]}]}:x);
     salvar(h);
     setModalApto(null);
@@ -1897,13 +1918,17 @@ function TabHotel({viagem, updViagem}) {
     salvar(h);
   };
 
-  const getNome = (paxId) => reservas.find(r=>r.id===paxId)?.nomeAvulso || "—";
+  const getNome = (paxId) => {
+    if(paxId==="motorista_1") return "Motorista 1";
+    if(paxId==="motorista_2") return "Motorista 2";
+    return reservas.find(r=>r.id===paxId)?.nomeAvulso || "—";
+  };
 
   const gerarPDFHotel = () => {
     if(hoteis.length===0) return alert("Nenhum hotel cadastrado.");
     const blocos = hoteis.map(h=>{
       const aptos = (h.aptos||[]).map(a=>{
-        const tipo = TIPO_APTO[a.tipo]||TIPO_APTO.duplo_casal;
+        const tipo = tiposAptoDinamico[a.tipo]||TIPO_APTO.duplo_casal;
         const paxsNomes = (a.paxs||[]).map(pid=>getNome(pid));
         const vazios = a.cap - paxsNomes.length;
         const slots = [
@@ -1994,7 +2019,7 @@ function TabHotel({viagem, updViagem}) {
                 ? <div style={{padding:"16px 14px",fontSize:12,color:"var(--dim2)"}}>Nenhum apto. Clique em "+ Apto" para adicionar.</div>
                 : <div className="apto-grid">
                     {(h.aptos||[]).map((a,aIdx)=>{
-                      const tipo = TIPO_APTO[a.tipo]||TIPO_APTO.duplo_casal;
+                      const tipo = tiposAptoDinamico[a.tipo]||TIPO_APTO.duplo_casal;
                       const slots = a.cap||2;
                       const paxs = a.paxs||[];
                       const cheio = paxs.length >= slots;
@@ -2039,7 +2064,7 @@ function TabHotel({viagem, updViagem}) {
             <div className="mhdl"/>
             <div className="mhd"><span className="mtit">Tipo de Apto</span><button className="btn btn-ghost btn-icon" onClick={()=>setModalApto(null)}>{ICONS.close}</button></div>
             <div style={{padding:"0 20px 20px",display:"flex",flexDirection:"column",gap:10}}>
-              {Object.entries(TIPO_APTO).map(([key,t])=>(
+              {Object.entries(tiposAptoDinamico).map(([key,t])=>(
                 <button key={key} className="btn btn-ghost btn-full" style={{justifyContent:"flex-start",gap:12,padding:"14px 16px"}}
                   onClick={()=>addApto(modalApto,key)}>
                   <span style={{width:10,height:10,borderRadius:"50%",background:t.color,flexShrink:0,display:"inline-block"}}/>
