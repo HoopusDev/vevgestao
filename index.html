@@ -640,7 +640,7 @@ function App() {
   const pageEl = () => {
     if(page==="dashboard")   return <Dashboard viagens={viagens} passageiros={passageiros} go={go}/>;
     if(page==="viagens")     return <Viagens viagens={viagens} addViagem={addViagem} saveViagem={saveViagem} deleteViagem={deleteViagem} go={go}/>;
-    if(page==="viagem")      return <ViagemDetail viagens={viagens} passageiros={passageiros} addPassageiro={addPassageiro} viagem={curViagem} updViagem={updViagem} go={go} config={config}/>;
+    if(page==="viagem")      return <ViagemDetail viagens={viagens} passageiros={passageiros} addPassageiro={addPassageiro} viagem={curViagem} updViagem={updViagem} go={go}/>;
     if(page==="passageiros") return <Passageiros passageiros={passageiros} viagens={viagens} savePassageiro={savePassageiro} addPassageiro={addPassageiro} deletePassageiro={deletePassageiro}/>;
     if(page==="financeiro")  return <Financeiro viagens={viagens} go={go}/>;
     if(page==="relatorios")  return <Relatorios viagens={viagens} passageiros={passageiros}/>;
@@ -690,7 +690,7 @@ function App() {
         <div className="page">
           {pageEl()}
         </div>
-        <div className="app-version">v1.3.5</div>
+        <div className="app-version">v1.3.6</div>
         {/* Mobile nav */}
         <nav className="mobile-nav">
           {navItems.map(([id,ic,lb]) => (
@@ -838,7 +838,7 @@ function ModalViagem({initial, onSave, onClose}) {
 }
 
 // ── VIAGEM DETALHE ────────────────────────────────────────────────────────────
-function ViagemDetail({viagens, passageiros, addPassageiro, viagem, updViagem, go, config}) {
+function ViagemDetail({viagens, passageiros, addPassageiro, viagem, updViagem, go}) {
   const [tab,setTab]=useState("reservas");
   if(!viagem){go("viagens");return null;}
   const s=SV[viagem.status]||SV.aberta;
@@ -1828,7 +1828,10 @@ const TIPO_APTO = {
   triplo_solteiro: {label:"Triplo Solteiro", cap:3, color:"var(--mint)"},
 };
 
-function TabHotel({viagem, updViagem, config}) {
+function TabHotel({viagem, updViagem}) {
+  // Ler config direto do Firestore para garantir dados atualizados
+  const configDocsLocal = useCol("configs");
+  const config = configDocsLocal?.[0] || {};
   const [search, setSearch] = useState("");
   const [selPax, setSelPax] = useState(null); // id da reserva selecionada
   const [modalApto, setModalApto] = useState(null); // {hotelIdx, aptoIdx}
