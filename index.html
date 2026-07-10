@@ -690,7 +690,7 @@ function App() {
         <div className="page">
           {pageEl()}
         </div>
-        <div className="app-version">v1.3.3</div>
+        <div className="app-version">v1.3.4</div>
         {/* Mobile nav */}
         <nav className="mobile-nav">
           {navItems.map(([id,ic,lb]) => (
@@ -2373,6 +2373,15 @@ function Configuracoes({config, usuarios, userAtual}) {
   const [emailEmp, setEmailEmp] = useState(config.email||"");
   const [pix, setPix] = useState(config.pix||"58342611000106");
 
+  // Sincronizar dados da empresa quando config carregar
+  React.useEffect(()=>{
+    if(config.nomeEmpresa) setNomeEmp(config.nomeEmpresa);
+    if(config.telefone) setTelEmp(config.telefone);
+    if(config.email) setEmailEmp(config.email);
+    if(config.pix) setPix(config.pix);
+    if(config.modeloCobranca) setModelo(config.modeloCobranca);
+  }, [config.id]);
+
   // Modelo de cobrança
   const modeloPadrao = `Olá {nome},\n\nPassando para avisar que ainda temos em aberto o seguinte para a viagem *{viagem}*:\n\n{itens}\n\nNossa chave Pix: *{pix}*\n\nAguardamos o envio do valor restante ou parte dele para podermos registrar aqui. Caso queira, podemos combinar uma data para te lembrarmos sobre o valor.\n\nQuando fizer o pagamento, por gentileza envie o comprovante.\n\nV&V Viagens agradece! 😄`;
   const [modelo, setModelo] = useState(config.modeloCobranca||modeloPadrao);
@@ -2384,6 +2393,11 @@ function Configuracoes({config, usuarios, userAtual}) {
     {id:"triplo_solteiro",nome:"Triplo Solteiro",cap:3},
   ];
   const [tiposApto, setTiposApto] = useState(config.tiposApto||tiposPadrao);
+
+  // Sincronizar quando config carregar do Firebase
+  React.useEffect(()=>{
+    if(config.tiposApto) setTiposApto(config.tiposApto);
+  }, [config.tiposApto]);
 
   const salvarConfig = async () => {
     setSalvando(true);
