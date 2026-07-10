@@ -314,6 +314,21 @@ html,body{height:100%;background:var(--bg);overflow:hidden;}
 .sem-apto-chip{padding:5px 10px;border-radius:16px;font-size:11px;font-weight:600;cursor:pointer;transition:all .15s;border:1px solid var(--brd);background:var(--card);color:var(--txt);}
 .sem-apto-chip.ativo{background:var(--sky);color:#080e1a;border-color:var(--sky);}
 
+
+/* ── CONFIGURAÇÕES ── */
+.config-section{padding:20px 28px 0;}
+@media(max-width:768px){.config-section{padding:14px 14px 0;}}
+.config-card{background:var(--card);border:1px solid var(--brd);border-radius:var(--radius);padding:18px;margin-bottom:14px;}
+.config-card-title{font-size:11px;font-weight:600;color:var(--dim2);text-transform:uppercase;letter-spacing:.7px;margin-bottom:14px;display:flex;justify-content:space-between;align-items:center;}
+.user-row{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--brd);}
+.user-row:last-child{border-bottom:none;}
+.user-avatar{width:36px;height:36px;border-radius:9px;object-fit:cover;background:var(--surf);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:var(--sky);}
+.user-info{flex:1;min-width:0;}
+.user-name{font-size:13px;font-weight:600;color:var(--txt);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.user-email{font-size:11px;color:var(--dim2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.aguard-wrap{display:flex;align-items:center;justify-content:center;height:100%;background:var(--bg);padding:20px;}
+.aguard-card{background:var(--surf);border:1px solid var(--brd);border-radius:16px;padding:40px 36px;max-width:400px;width:100%;text-align:center;}
+
 .app-version{position:fixed;bottom:6px;right:10px;font-size:10px;color:var(--dim);opacity:.4;z-index:50;pointer-events:none;letter-spacing:.3px;}
 @media(max-width:768px){
 /* ── AUTOCOMPLETE ── */
@@ -355,6 +370,21 @@ html,body{height:100%;background:var(--bg);overflow:hidden;}
 .sem-apto-list{padding:6px 10px 8px;display:flex;flex-wrap:wrap;gap:5px;}
 .sem-apto-chip{padding:5px 10px;border-radius:16px;font-size:11px;font-weight:600;cursor:pointer;transition:all .15s;border:1px solid var(--brd);background:var(--card);color:var(--txt);}
 .sem-apto-chip.ativo{background:var(--sky);color:#080e1a;border-color:var(--sky);}
+
+
+/* ── CONFIGURAÇÕES ── */
+.config-section{padding:20px 28px 0;}
+@media(max-width:768px){.config-section{padding:14px 14px 0;}}
+.config-card{background:var(--card);border:1px solid var(--brd);border-radius:var(--radius);padding:18px;margin-bottom:14px;}
+.config-card-title{font-size:11px;font-weight:600;color:var(--dim2);text-transform:uppercase;letter-spacing:.7px;margin-bottom:14px;display:flex;justify-content:space-between;align-items:center;}
+.user-row{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--brd);}
+.user-row:last-child{border-bottom:none;}
+.user-avatar{width:36px;height:36px;border-radius:9px;object-fit:cover;background:var(--surf);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:var(--sky);}
+.user-info{flex:1;min-width:0;}
+.user-name{font-size:13px;font-weight:600;color:var(--txt);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.user-email{font-size:11px;color:var(--dim2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.aguard-wrap{display:flex;align-items:center;justify-content:center;height:100%;background:var(--bg);padding:20px;}
+.aguard-card{background:var(--surf);border:1px solid var(--brd);border-radius:16px;padding:40px 36px;max-width:400px;width:100%;text-align:center;}
 
 .app-version{bottom:70px;}}
 @keyframes spin{to{transform:rotate(360deg);}}
@@ -408,6 +438,8 @@ const ICONS = {
   phone: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 9.81a19.79 19.79 0 01-3.07-8.68A2 2 0 012 .9h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.09 8.74a16 16 0 006.17 6.17l1.21-1.21a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/></svg>,
   bell: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 01-3.46 0"/></svg>,
   check: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>,
+  settings: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>,
+  approve: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>,
   close: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>,
   hotel: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M3 22V8l9-6 9 6v14"/><path d="M9 22V12h6v10"/></svg>,
   save: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>,
@@ -529,9 +561,29 @@ function App() {
   const [ctx, setCtx] = useState({});
   const viagens = useCol("viagens");
   const passageiros = useCol("passageiros");
+  const configDocs = useCol("configs");
+  const usuariosDocs = useCol("usuarios");
+  const config = configDocs?.[0] || {};
+  const usuariosPendentes = (usuariosDocs||[]).filter(u=>u.status==="pendente");
 
   useEffect(() => {
-    return auth.onAuthStateChanged(u => setUser(u));
+    return auth.onAuthStateChanged(async u => {
+      setUser(u);
+      if(u) {
+        // Registrar/verificar usuário no Firestore
+        const snap = await db.collection("usuarios").doc(u.uid).get();
+        if(!snap.exists) {
+          // Verificar se é o primeiro usuário (admin automático)
+          const totalSnap = await db.collection("usuarios").get();
+          const isFirst = totalSnap.empty;
+          await db.collection("usuarios").doc(u.uid).set({
+            id: u.uid, nome: u.displayName||"", email: u.email||"",
+            foto: u.photoURL||"", status: isFirst ? "aprovado" : "pendente",
+            criadoEm: new Date().toISOString()
+          });
+        }
+      }
+    });
   }, []);
 
   const go = (p, c={}) => { setPage(p); setCtx(c); };
@@ -557,8 +609,14 @@ function App() {
   // Not logged in
   if (!user) return <LoginScreen onLogin={login} />;
 
+  // Verificar aprovação
+  const meuStatus = usuariosDocs?.find(u=>u.id===user.uid)?.status;
+  if(usuariosDocs !== null && meuStatus && meuStatus !== "aprovado") {
+    return <AguardandoAprovacao user={user} onLogout={logout}/>;
+  }
+
   // Loading data
-  if (viagens === null || passageiros === null) return (
+  if (viagens === null || passageiros === null || configDocs === null) return (
     <div className="loading-screen">
       <div className="spinner"/>
       <span>Conectando ao banco de dados...</span>
@@ -587,7 +645,8 @@ function App() {
     if(page==="financeiro")  return <Financeiro viagens={viagens} go={go}/>;
     if(page==="relatorios")  return <Relatorios viagens={viagens} passageiros={passageiros}/>;
     if(page==="calculadora") return <Calculadora/>;
-    if(page==="cobrancas")  return <Cobrancas viagens={viagens} passageiros={passageiros} updViagem={updViagem}/>;
+    if(page==="cobrancas")  return <Cobrancas viagens={viagens} passageiros={passageiros} updViagem={updViagem} config={config}/>;
+    if(page==="configuracoes") return <Configuracoes config={config} usuarios={usuariosDocs||[]} userAtual={user}/>;
   };
 
   return (
@@ -608,7 +667,12 @@ function App() {
             </button>
           ))}
         </nav>
-        <div className="sidebar-user">
+        <button className={`sni ${page==="configuracoes"?"on":""}`} style={{margin:"0 8px 8px"}} onClick={()=>go("configuracoes")}>
+            <span className="sni-icon">{ICONS.settings}</span>
+            <span>Configurações</span>
+            {usuariosPendentes.length>0&&<span style={{marginLeft:"auto",background:"var(--rose)",color:"#fff",borderRadius:10,fontSize:10,fontWeight:700,padding:"1px 6px"}}>{usuariosPendentes.length}</span>}
+          </button>
+          <div className="sidebar-user">
           {user.photoURL
             ? <img src={user.photoURL} className="sidebar-avatar" alt=""/>
             : <div className="sidebar-avatar" style={{display:"flex",alignItems:"center",justifyContent:"center",fontSize:14,fontWeight:900,color:"var(--sky)"}}>{user.displayName?.[0]||"?"}</div>
@@ -626,7 +690,7 @@ function App() {
         <div className="page">
           {pageEl()}
         </div>
-        <div className="app-version">v1.2.8</div>
+        <div className="app-version">v1.3.1</div>
         {/* Mobile nav */}
         <nav className="mobile-nav">
           {navItems.map(([id,ic,lb]) => (
@@ -1247,26 +1311,36 @@ function TabMapa({viagem, updViagem, passageiros}) {
     const comAssento = reservas.filter(r=>r.assento).sort((a,b)=>Number(a.assento)-Number(b.assento));
     const semAss = reservas.filter(r=>!r.assento);
 
+    // Buscar CPF/RG por ID ou por nome como fallback
+    const getCpf = (r) => {
+      if(!passageiros) return "—";
+      const p = passageiros.find(x=>x.id===r.passageiroId)
+             || passageiros.find(x=>x.nome?.toLowerCase()===r.nomeAvulso?.toLowerCase());
+      if(!p) return "Avulso";
+      return p.cpf || "Sem CPF/RG";
+    };
+
     const linhasComAssento = comAssento.map((r,i)=>`
       <tr style="background:${i%2===0?"#f9f9f9":"#fff"}">
         <td style="padding:8px;text-align:center;font-weight:700">${r.assento}</td>
         <td style="padding:8px;font-weight:500">${r.nomeAvulso||"—"}</td>
         <td style="padding:8px;color:#555">${r.telefoneResp||""}</td>
+        <td style="padding:8px;color:#555">${getCpf(r)}</td>
         <td style="padding:8px;color:#555">${r.obs||""}</td>
       </tr>`).join("");
 
     const linhasSemAssento = semAss.length > 0
-      ? `<tr><td colspan="4" style="padding:12px 8px;background:#fff0f0;color:#cc0000;font-weight:700;font-size:13px">⚠ SEM ASSENTO DEFINIDO (${semAss.length} passageiro${semAss.length>1?"s":""})</td></tr>`
-        + semAss.map(r=>`<tr style="background:#fff5f5"><td style="padding:8px;text-align:center;color:#cc0000">—</td><td style="padding:8px;color:#cc0000;font-weight:500">${r.nomeAvulso||"—"}</td><td style="padding:8px;color:#cc0000">${r.telefoneResp||""}</td><td style="padding:8px;color:#cc0000">${r.obs||""}</td></tr>`).join("")
+      ? `<tr><td colspan="5" style="padding:12px 8px;background:#fff0f0;color:#cc0000;font-weight:700;font-size:13px">⚠ SEM ASSENTO DEFINIDO (${semAss.length} passageiro${semAss.length>1?"s":""})</td></tr>`
+        + semAss.map(r=>`<tr style="background:#fff5f5"><td style="padding:8px;text-align:center;color:#cc0000">—</td><td style="padding:8px;color:#cc0000;font-weight:500">${r.nomeAvulso||"—"}</td><td style="padding:8px;color:#cc0000">${r.telefoneResp||""}</td><td style="padding:8px;color:#cc0000">${getCpf(r)}</td><td style="padding:8px;color:#cc0000">${r.obs||""}</td></tr>`).join("")
       : "";
 
     const html = `<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"/><title></title>
-    <style>body{font-family:Arial,sans-serif;color:#111;padding:24px;max-width:800px;margin:0 auto}h1{font-size:18px;margin-bottom:4px}.sub{color:#555;font-size:12px;margin-bottom:20px}table{width:100%;border-collapse:collapse}th{background:#1e293b;color:#fff;padding:10px 8px;text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.4px}td{font-size:13px;border-bottom:1px solid #e5e7eb}.total{margin-top:16px;padding:10px 14px;background:#f1f5f9;border-radius:6px;font-size:13px}@media print{@page{size:auto;margin:10mm 10mm 10mm 10mm}body{padding:0}tr{-webkit-print-color-adjust:exact;print-color-adjust:exact;}}</style>
+    <style>body{font-family:Arial,sans-serif;color:#111;padding:24px;max-width:900px;margin:0 auto}h1{font-size:18px;margin-bottom:4px}.sub{color:#555;font-size:12px;margin-bottom:20px}table{width:100%;border-collapse:collapse}th{background:#1e293b;color:#fff;padding:10px 8px;text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.4px}td{font-size:13px;border-bottom:1px solid #e5e7eb}.total{margin-top:16px;padding:10px 14px;background:#f1f5f9;border-radius:6px;font-size:13px}@media print{@page{size:auto;margin:10mm 10mm 10mm 10mm}body{padding:0}tr{-webkit-print-color-adjust:exact;print-color-adjust:exact;}}</style>
     </head><body>
-    <h1>📋 Lista de Embarque — ${viagem.nome}</h1>
+    <h1>Lista de Embarque — ${viagem.nome}</h1>
     <div class="sub">${viagem.dataIda ? "Ida: "+new Date(viagem.dataIda+"T12:00:00").toLocaleDateString("pt-BR") : ""} | Total: ${reservas.length} passageiros · Gerado em ${new Date().toLocaleDateString("pt-BR")}</div>
     <table>
-      <thead><tr><th style="width:60px">Assento</th><th>Nome</th><th>Telefone</th><th>Obs</th></tr></thead>
+      <thead><tr><th style="width:55px">Assento</th><th>Nome</th><th>Telefone</th><th>CPF / RG</th><th>Obs</th></tr></thead>
       <tbody>${linhasComAssento}${linhasSemAssento}</tbody>
     </table>
     <div class="total">Total com assento: <strong>${comAssento.length}</strong> · Sem assento: <strong style="color:${semAss.length>0?"#cc0000":"#006600"}">${semAss.length}</strong></div>
@@ -1493,7 +1567,7 @@ function Relatorios({viagens, passageiros}) {
     const linhas=reservas.map((r,i)=>{
       const pago=sumPgto(r),falta=Number(viagem.valor||0)-pago;
       const pgtos=(r.pagamentos||[]).map(p=>`<tr style="font-size:11px"><td></td><td colspan="2" style="padding:3px 8px;color:#666">↳ ${METODOS_LABEL[p.metodo]||p.metodo} — ${p.data?new Date(p.data+"T12:00:00").toLocaleDateString("pt-BR"):"sem data"}${p.obs?" — "+p.obs:""}</td><td style="text-align:right;padding:3px 8px;color:#16a34a">+ ${fmt(p.valor)}</td></tr>`).join("");
-      const paxCad = passageiros.find(p=>p.id===r.passageiroId); const cpfRg = paxCad?.cpf||"—";
+      const paxCad = passageiros.find(p=>p.id===r.passageiroId) || passageiros.find(p=>p.nome?.toLowerCase()===r.nomeAvulso?.toLowerCase()); const cpfRg = paxCad ? (paxCad.cpf||"Sem CPF/RG") : "Avulso";
       return `<tr style="background:${i%2===0?"#f9fafb":"#fff"}"><td style="padding:8px;font-weight:600">${i+1}. ${r.nomeAvulso||"—"}</td><td style="padding:8px;color:#555">${r.assento||"—"}</td><td style="padding:8px;color:#555">${cpfRg}</td><td style="padding:8px;text-align:right;color:#16a34a">${fmt(pago)}</td><td style="padding:8px;text-align:right;color:${falta>0?"#dc2626":"#6b7280"}">${falta>0?fmt(falta):"✓"}</td></tr>${pgtos}`;
     }).join("");
     const html=`<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"/><title></title><style>body{font-family:Arial,sans-serif;color:#111;padding:32px;max-width:800px;margin:0 auto}h1{font-size:22px;margin-bottom:4px}.sub{color:#555;font-size:13px;margin-bottom:24px}.section{margin-bottom:28px}.st{font-size:14px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#374151;border-bottom:2px solid #e5e7eb;padding-bottom:6px;margin-bottom:12px}.ig{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px}.ib{background:#f3f4f6;border-radius:8px;padding:10px 14px}.il{font-size:10px;text-transform:uppercase;color:#6b7280;letter-spacing:.4px}.iv{font-size:16px;font-weight:700;margin-top:2px}table{width:100%;border-collapse:collapse;font-size:13px}th{background:#1e293b;color:#fff;padding:8px;text-align:left;font-size:11px;text-transform:uppercase}th:last-child,td:last-child{text-align:right}.tr td{font-weight:700;background:#f1f5f9;padding:10px 8px}@media print{@page{size:auto;margin:10mm 10mm 10mm 10mm}body{padding:0}}</style></head><body><h1>${viagem.nome}</h1><div class="sub">${viagem.dataIda?"Ida: "+new Date(viagem.dataIda+"T12:00:00").toLocaleDateString("pt-BR"):""} ${viagem.dataVolta?"| Volta: "+new Date(viagem.dataVolta+"T12:00:00").toLocaleDateString("pt-BR"):""} | Gerado em ${new Date().toLocaleDateString("pt-BR")}</div><div class="section"><div class="st">Resumo</div><div class="ig"><div class="ib"><div class="il">Passageiros</div><div class="iv">${reservas.length}/${viagem.capacidade||0}</div></div><div class="ib"><div class="il">Valor/pessoa</div><div class="iv">${fmt(viagem.valor||0)}</div></div><div class="ib"><div class="il">Total esperado</div><div class="iv">${fmt(totalEsp)}</div></div><div class="ib"><div class="il">Total recebido</div><div class="iv" style="color:#16a34a">${fmt(totalRec)}</div></div><div class="ib"><div class="il">Em aberto</div><div class="iv" style="color:${(totalEsp-totalRec)>0?"#dc2626":"#6b7280"}">${fmt(totalEsp-totalRec)}</div></div><div class="ib"><div class="il">Status</div><div class="iv">${viagem.status||"—"}</div></div></div></div><div class="section"><div class="st">Passageiros e Pagamentos</div><table><thead><tr><th>Passageiro</th><th>Assento</th><th>CPF / RG</th><th style="text-align:right">Pago</th><th style="text-align:right">Falta</th></tr></thead><tbody>${linhas}<tr class="tr"><td colspan="2">TOTAL (${reservas.length} passageiros)</td><td style="color:#16a34a;text-align:right">${fmt(totalRec)}</td><td style="text-align:right;color:${(totalEsp-totalRec)>0?"#dc2626":"#6b7280"}">${(totalEsp-totalRec)>0?fmt(totalEsp-totalRec):"Quitado"}</td></tr></tbody></table></div>${viagem.descricao?`<div class="section"><div class="st">Observações</div><p style="font-size:13px;color:#555">${viagem.descricao}</p></div>`:""}</body></html>`;
@@ -2056,10 +2130,10 @@ function gerarMensagem(modelo, nomeResp, nomeViagem, itens) {
     .replace(/\{pix\}/g, PIX_DISPLAY);
 }
 
-function Cobrancas({viagens, passageiros, updViagem}) {
+function Cobrancas({viagens, passageiros, updViagem, config}) {
   const [vid, setVid] = useState("");
   const [filtro, setFiltro] = useState("todos");
-  const [modelo, setModelo] = useState(MODELO_PADRAO);
+  const [modelo, setModelo] = useState(config?.modeloCobranca||MODELO_PADRAO);
   const [editModelo, setEditModelo] = useState(false);
   const [modeloTemp, setModeloTemp] = useState(MODELO_PADRAO);
   const [sel, setSel] = useState(null); // grupo selecionado
@@ -2234,6 +2308,202 @@ function Cobrancas({viagens, passageiros, updViagem}) {
                 {ICONS.check} Registrar cobrança feita
               </button>
             </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+
+// ── AGUARDANDO APROVAÇÃO ──────────────────────────────────────────────────────
+function AguardandoAprovacao({user, onLogout}) {
+  return (
+    <div className="aguard-wrap">
+      <div className="aguard-card ani">
+        {user.photoURL
+          ? <img src={user.photoURL} style={{width:64,height:64,borderRadius:16,margin:"0 auto 16px",display:"block"}} alt=""/>
+          : <div style={{width:64,height:64,borderRadius:16,background:"linear-gradient(135deg,var(--sky),var(--lilac))",display:"flex",alignItems:"center",justifyContent:"center",fontSize:28,fontWeight:900,color:"#080e1a",margin:"0 auto 16px"}}>{user.displayName?.[0]||"?"}</div>
+        }
+        <div style={{fontSize:18,fontWeight:700,color:"var(--txt)",marginBottom:8}}>Acesso Pendente</div>
+        <div style={{fontSize:13,color:"var(--dim2)",marginBottom:24,lineHeight:1.6}}>
+          Olá, <strong style={{color:"var(--txt)"}}>{user.displayName}</strong>!<br/>
+          Seu acesso está aguardando aprovação do administrador. Em breve você receberá acesso ao sistema.
+        </div>
+        <button className="btn btn-ghost btn-full" onClick={onLogout}>Sair</button>
+      </div>
+    </div>
+  );
+}
+
+// ── CONFIGURAÇÕES ─────────────────────────────────────────────────────────────
+function Configuracoes({config, usuarios, userAtual}) {
+  const [tabCfg, setTabCfg] = useState("empresa");
+  const [salvando, setSalvando] = useState(false);
+  const [salvo, setSalvo] = useState(false);
+
+  // Dados da empresa
+  const [nomeEmp, setNomeEmp] = useState(config.nomeEmpresa||"V&V Viagens");
+  const [telEmp, setTelEmp] = useState(config.telefone||"");
+  const [emailEmp, setEmailEmp] = useState(config.email||"");
+  const [pix, setPix] = useState(config.pix||"58342611000106");
+
+  // Modelo de cobrança
+  const modeloPadrao = `Olá {nome},\n\nPassando para avisar que ainda temos em aberto o seguinte para a viagem *{viagem}*:\n\n{itens}\n\nNossa chave Pix: *{pix}*\n\nAguardamos o envio do valor restante ou parte dele para podermos registrar aqui. Caso queira, podemos combinar uma data para te lembrarmos sobre o valor.\n\nQuando fizer o pagamento, por gentileza envie o comprovante.\n\nV&V Viagens agradece! 😄`;
+  const [modelo, setModelo] = useState(config.modeloCobranca||modeloPadrao);
+
+  // Tipos de apto
+  const tiposPadrao = [
+    {id:"duplo_casal",nome:"Duplo Casal",cap:2},
+    {id:"duplo_solteiro",nome:"Duplo Solteiro",cap:2},
+    {id:"triplo_solteiro",nome:"Triplo Solteiro",cap:3},
+  ];
+  const [tiposApto, setTiposApto] = useState(config.tiposApto||tiposPadrao);
+
+  const salvarConfig = async () => {
+    setSalvando(true);
+    const cfgId = config.id || "principal";
+    await db.collection("configs").doc(cfgId).set({
+      id: cfgId, nomeEmpresa:nomeEmp, telefone:telEmp, email:emailEmp,
+      pix, modeloCobranca:modelo, tiposApto
+    }, {merge:true});
+    setSalvando(false); setSalvo(true);
+    setTimeout(()=>setSalvo(false),2000);
+  };
+
+  const aprovarUsuario = async (uid) => {
+    await db.collection("usuarios").doc(uid).update({status:"aprovado"});
+  };
+  const rejeitarUsuario = async (uid) => {
+    if(confirm("Remover acesso deste usuário?"))
+      await db.collection("usuarios").doc(uid).update({status:"rejeitado"});
+  };
+
+  const addTipo = () => setTiposApto(t=>[...t,{id:genId(),nome:"Novo Tipo",cap:2}]);
+  const updTipo = (id,k,v) => setTiposApto(t=>t.map(x=>x.id===id?{...x,[k]:v}:x));
+  const delTipo = (id) => setTiposApto(t=>t.filter(x=>x.id!==id));
+
+  const pendentes = usuarios.filter(u=>u.status==="pendente");
+  const aprovados = usuarios.filter(u=>u.status==="aprovado");
+
+  return (
+    <div className="ani">
+      <div className="topbar"><h1>Configurações</h1></div>
+      <div className="tabs">
+        {[["empresa","Empresa"],["cobranca","Cobrança"],["aptos","Tipos de Apto"],["usuarios","Usuários"]].map(([id,lb])=>(
+          <button key={id} className={`tab ${tabCfg===id?"on":""}`} onClick={()=>setTabCfg(id)}>
+            {lb}{id==="usuarios"&&pendentes.length>0&&<span style={{marginLeft:6,background:"var(--rose)",color:"#fff",borderRadius:10,fontSize:10,fontWeight:700,padding:"1px 5px"}}>{pendentes.length}</span>}
+          </button>
+        ))}
+      </div>
+
+      {/* ── EMPRESA ── */}
+      {tabCfg==="empresa"&&(
+        <div className="config-section">
+          <div className="config-card">
+            <div className="config-card-title">Dados da Empresa</div>
+            <div style={{display:"flex",flexDirection:"column",gap:12}}>
+              <div className="fg"><label className="fl">Nome da Empresa</label><input className="fi" value={nomeEmp} onChange={e=>setNomeEmp(e.target.value)} placeholder="V&V Viagens"/></div>
+              <div className="fgrid">
+                <div className="fg"><label className="fl">Telefone</label><input className="fi" value={telEmp} onChange={e=>setTelEmp(e.target.value)} placeholder="(41) 99999-9999"/></div>
+                <div className="fg"><label className="fl">E-mail</label><input className="fi" value={emailEmp} onChange={e=>setEmailEmp(e.target.value)} placeholder="contato@empresa.com"/></div>
+              </div>
+              <div className="fg"><label className="fl">Chave Pix</label><input className="fi" value={pix} onChange={e=>setPix(e.target.value)} placeholder="CPF, CNPJ, e-mail ou telefone"/></div>
+            </div>
+          </div>
+          <button className="btn btn-primary btn-full" onClick={salvarConfig}>
+            {salvando?"Salvando...":salvo?"✓ Salvo!":<>{ICONS.save} Salvar Configurações</>}
+          </button>
+        </div>
+      )}
+
+      {/* ── COBRANÇA ── */}
+      {tabCfg==="cobranca"&&(
+        <div className="config-section">
+          <div className="config-card">
+            <div className="config-card-title">
+              <span>Modelo de Mensagem WhatsApp</span>
+            </div>
+            <div style={{fontSize:11,color:"var(--dim2)",marginBottom:10,lineHeight:1.6}}>
+              Variáveis: <code style={{color:"var(--sky)"}}>{"{"+"nome"+"}"}</code> · <code style={{color:"var(--sky)"}}>{"{"+"viagem"+"}"}</code> · <code style={{color:"var(--sky)"}}>{"{"+"itens"+"}"}</code> · <code style={{color:"var(--sky)"}}>{"{"+"pix"+"}"}</code>
+            </div>
+            <textarea className="cob-msg-area" rows={12} value={modelo} onChange={e=>setModelo(e.target.value)}/>
+          </div>
+          <button className="btn btn-primary btn-full" onClick={salvarConfig}>
+            {salvando?"Salvando...":salvo?"✓ Salvo!":<>{ICONS.save} Salvar Modelo</>}
+          </button>
+        </div>
+      )}
+
+      {/* ── TIPOS DE APTO ── */}
+      {tabCfg==="aptos"&&(
+        <div className="config-section">
+          <div className="config-card">
+            <div className="config-card-title">
+              <span>Tipos de Apartamento</span>
+              <button className="btn btn-ghost btn-sm" onClick={addTipo}>{ICONS.plus} Novo tipo</button>
+            </div>
+            <div style={{display:"flex",flexDirection:"column",gap:10}}>
+              {tiposApto.map(t=>(
+                <div key={t.id} style={{display:"grid",gridTemplateColumns:"1fr 100px 32px",gap:8,alignItems:"center"}}>
+                  <input className="fi" value={t.nome} onChange={e=>updTipo(t.id,"nome",e.target.value)} placeholder="Nome do tipo"/>
+                  <div style={{position:"relative"}}>
+                    <input type="number" className="fi" value={t.cap} min={1} max={10} onChange={e=>updTipo(t.id,"cap",Number(e.target.value))} placeholder="Vagas"/>
+                    <span style={{position:"absolute",right:10,top:"50%",transform:"translateY(-50%)",fontSize:10,color:"var(--dim2)",pointerEvents:"none"}}>pessoas</span>
+                  </div>
+                  <button className="btn btn-danger btn-icon btn-sm" onClick={()=>delTipo(t.id)}>{ICONS.trash}</button>
+                </div>
+              ))}
+            </div>
+          </div>
+          <button className="btn btn-primary btn-full" onClick={salvarConfig}>
+            {salvando?"Salvando...":salvo?"✓ Salvo!":<>{ICONS.save} Salvar Tipos</>}
+          </button>
+        </div>
+      )}
+
+      {/* ── USUÁRIOS ── */}
+      {tabCfg==="usuarios"&&(
+        <div className="config-section">
+          {pendentes.length>0&&(
+            <div className="config-card" style={{borderColor:"rgba(248,113,113,.2)"}}>
+              <div className="config-card-title" style={{color:"var(--rose)"}}>{ICONS.warn} Aguardando Aprovação ({pendentes.length})</div>
+              {pendentes.map(u=>(
+                <div key={u.id} className="user-row">
+                  {u.foto
+                    ? <img src={u.foto} className="user-avatar" alt=""/>
+                    : <div className="user-avatar">{u.nome?.[0]||"?"}</div>
+                  }
+                  <div className="user-info">
+                    <div className="user-name">{u.nome||"Sem nome"}</div>
+                    <div className="user-email">{u.email}</div>
+                  </div>
+                  <div style={{display:"flex",gap:6}}>
+                    <button className="btn btn-primary btn-sm" onClick={()=>aprovarUsuario(u.id)}>{ICONS.approve} Aprovar</button>
+                    <button className="btn btn-danger btn-sm" onClick={()=>rejeitarUsuario(u.id)}>{ICONS.trash} Rejeitar</button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+          <div className="config-card">
+            <div className="config-card-title">Usuários Aprovados ({aprovados.length})</div>
+            {aprovados.length===0
+              ? <div style={{color:"var(--dim2)",fontSize:13}}>Nenhum usuário aprovado ainda.</div>
+              : aprovados.map(u=>(
+                <div key={u.id} className="user-row">
+                  {u.foto
+                    ? <img src={u.foto} className="user-avatar" alt=""/>
+                    : <div className="user-avatar">{u.nome?.[0]||"?"}</div>
+                  }
+                  <div className="user-info">
+                    <div className="user-name">{u.nome||"Sem nome"}{u.id===userAtual?.uid&&<span style={{marginLeft:6,fontSize:10,color:"var(--sky)"}}>(você)</span>}</div>
+                    <div className="user-email">{u.email}</div>
+                  </div>
+                  {u.id!==userAtual?.uid&&<button className="btn btn-danger btn-icon btn-sm" onClick={()=>rejeitarUsuario(u.id)}>{ICONS.trash}</button>}
+                </div>
+              ))
+            }
           </div>
         </div>
       )}
