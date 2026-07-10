@@ -286,6 +286,34 @@ html,body{height:100%;background:var(--bg);overflow:hidden;}
 .ac-item-sub{font-size:11px;color:var(--dim2);margin-top:2px;}
 .ac-item.selected{background:rgba(56,189,248,.1);color:var(--sky);}
 
+
+/* ── HOTEL ── */
+.hotel-wrap{padding:16px 28px 0;}
+@media(max-width:768px){.hotel-wrap{padding:12px 14px 0;}}
+.hotel-block{background:var(--card);border:1px solid var(--brd);border-radius:var(--radius);margin-bottom:14px;overflow:hidden;}
+.hotel-header{display:flex;align-items:center;gap:10px;padding:13px 14px;border-bottom:1px solid var(--brd);background:rgba(56,189,248,.04);}
+.hotel-name-input{background:transparent;border:none;outline:none;font-size:15px;font-weight:700;color:var(--txt);flex:1;font-family:var(--font);}
+.hotel-name-input::placeholder{color:var(--dim2);}
+.apto-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px;padding:12px 14px;}
+@media(max-width:600px){.apto-grid{grid-template-columns:1fr 1fr;}}
+.apto-card{background:var(--surf);border:1.5px solid var(--brd);border-radius:10px;overflow:hidden;transition:border-color .15s;}
+.apto-card.cheio{border-color:rgba(56,189,248,.3);}
+.apto-head{display:flex;align-items:center;justify-content:space-between;padding:8px 10px;border-bottom:1px solid var(--brd);}
+.apto-nome-input{background:transparent;border:none;outline:none;font-size:12px;font-weight:700;color:var(--txt);flex:1;font-family:var(--font);min-width:0;}
+.apto-tipo{font-size:10px;padding:2px 6px;border-radius:10px;font-weight:600;}
+.apto-slots{padding:8px 10px;display:flex;flex-direction:column;gap:5px;}
+.apto-slot{height:32px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;cursor:pointer;transition:all .15s;border:1px dashed var(--brd);color:var(--dim2);}
+.apto-slot.ocupado{background:rgba(56,189,248,.1);border:1px solid rgba(56,189,248,.25);color:var(--sky);border-style:solid;cursor:default;}
+.apto-slot.sel{background:var(--sky);color:#080e1a;border-style:solid;}
+.hotel-search{position:relative;margin:0 28px 10px;}
+@media(max-width:768px){.hotel-search{margin:0 14px 10px;}}
+.hotel-search input{padding-left:38px !important;}
+.hotel-search-icon{position:absolute;left:13px;top:50%;transform:translateY(-50%);color:var(--dim2);}
+.hotel-search-icon svg{width:14px;height:14px;}
+.sem-apto-list{padding:6px 10px 8px;display:flex;flex-wrap:wrap;gap:5px;}
+.sem-apto-chip{padding:5px 10px;border-radius:16px;font-size:11px;font-weight:600;cursor:pointer;transition:all .15s;border:1px solid var(--brd);background:var(--card);color:var(--txt);}
+.sem-apto-chip.ativo{background:var(--sky);color:#080e1a;border-color:var(--sky);}
+
 .app-version{position:fixed;bottom:6px;right:10px;font-size:10px;color:var(--dim);opacity:.4;z-index:50;pointer-events:none;letter-spacing:.3px;}
 @media(max-width:768px){
 /* ── AUTOCOMPLETE ── */
@@ -299,6 +327,34 @@ html,body{height:100%;background:var(--bg);overflow:hidden;}
 .ac-item:hover{background:rgba(56,189,248,.1);}
 .ac-item-sub{font-size:11px;color:var(--dim2);margin-top:2px;}
 .ac-item.selected{background:rgba(56,189,248,.1);color:var(--sky);}
+
+
+/* ── HOTEL ── */
+.hotel-wrap{padding:16px 28px 0;}
+@media(max-width:768px){.hotel-wrap{padding:12px 14px 0;}}
+.hotel-block{background:var(--card);border:1px solid var(--brd);border-radius:var(--radius);margin-bottom:14px;overflow:hidden;}
+.hotel-header{display:flex;align-items:center;gap:10px;padding:13px 14px;border-bottom:1px solid var(--brd);background:rgba(56,189,248,.04);}
+.hotel-name-input{background:transparent;border:none;outline:none;font-size:15px;font-weight:700;color:var(--txt);flex:1;font-family:var(--font);}
+.hotel-name-input::placeholder{color:var(--dim2);}
+.apto-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px;padding:12px 14px;}
+@media(max-width:600px){.apto-grid{grid-template-columns:1fr 1fr;}}
+.apto-card{background:var(--surf);border:1.5px solid var(--brd);border-radius:10px;overflow:hidden;transition:border-color .15s;}
+.apto-card.cheio{border-color:rgba(56,189,248,.3);}
+.apto-head{display:flex;align-items:center;justify-content:space-between;padding:8px 10px;border-bottom:1px solid var(--brd);}
+.apto-nome-input{background:transparent;border:none;outline:none;font-size:12px;font-weight:700;color:var(--txt);flex:1;font-family:var(--font);min-width:0;}
+.apto-tipo{font-size:10px;padding:2px 6px;border-radius:10px;font-weight:600;}
+.apto-slots{padding:8px 10px;display:flex;flex-direction:column;gap:5px;}
+.apto-slot{height:32px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;cursor:pointer;transition:all .15s;border:1px dashed var(--brd);color:var(--dim2);}
+.apto-slot.ocupado{background:rgba(56,189,248,.1);border:1px solid rgba(56,189,248,.25);color:var(--sky);border-style:solid;cursor:default;}
+.apto-slot.sel{background:var(--sky);color:#080e1a;border-style:solid;}
+.hotel-search{position:relative;margin:0 28px 10px;}
+@media(max-width:768px){.hotel-search{margin:0 14px 10px;}}
+.hotel-search input{padding-left:38px !important;}
+.hotel-search-icon{position:absolute;left:13px;top:50%;transform:translateY(-50%);color:var(--dim2);}
+.hotel-search-icon svg{width:14px;height:14px;}
+.sem-apto-list{padding:6px 10px 8px;display:flex;flex-wrap:wrap;gap:5px;}
+.sem-apto-chip{padding:5px 10px;border-radius:16px;font-size:11px;font-weight:600;cursor:pointer;transition:all .15s;border:1px solid var(--brd);background:var(--card);color:var(--txt);}
+.sem-apto-chip.ativo{background:var(--sky);color:#080e1a;border-color:var(--sky);}
 
 .app-version{bottom:70px;}}
 @keyframes spin{to{transform:rotate(360deg);}}
@@ -570,7 +626,7 @@ function App() {
         <div className="page">
           {pageEl()}
         </div>
-        <div className="app-version">v1.2.5</div>
+        <div className="app-version">v1.2.6</div>
         {/* Mobile nav */}
         <nav className="mobile-nav">
           {navItems.map(([id,ic,lb]) => (
@@ -735,7 +791,7 @@ function ViagemDetail({viagens, passageiros, addPassageiro, viagem, updViagem, g
         </div>
       </div>
       <div className="tabs">
-        {[["reservas","Reservas"],["mapa","Mapa do Ônibus"],["pagamentos","Pagamentos"],["orcamento","Orçamento"]].map(([id,lb])=>(
+        {[["reservas","Reservas"],["mapa","Mapa do Ônibus"],["hotel","Hotel"],["pagamentos","Pagamentos"],["orcamento","Orçamento"]].map(([id,lb])=>(
           <button key={id} className={`tab ${tab===id?"on":""}`} onClick={()=>setTab(id)}>{lb}</button>
         ))}
       </div>
@@ -743,6 +799,7 @@ function ViagemDetail({viagens, passageiros, addPassageiro, viagem, updViagem, g
       {tab==="mapa"       && <TabMapa viagem={viagem} updViagem={updViagem}/>}
       {tab==="pagamentos" && <TabPagamentos viagem={viagem} updViagem={updViagem}/>}
       {tab==="orcamento"   && <TabOrcamento viagem={viagem} updViagem={updViagem}/>}
+      {tab==="hotel"      && <TabHotel viagem={viagem} updViagem={updViagem}/>}
     </div>
   );
 }
@@ -1685,6 +1742,193 @@ function Calculadora() {
           </button>
         )}
       </div>
+    </div>
+  );
+}
+
+
+// ── TAB HOTEL ─────────────────────────────────────────────────────────────────
+const TIPO_APTO = {
+  duplo_casal:     {label:"Duplo Casal",     cap:2, color:"var(--lilac)"},
+  duplo_solteiro:  {label:"Duplo Solteiro",  cap:2, color:"var(--sky)"},
+  triplo_solteiro: {label:"Triplo Solteiro", cap:3, color:"var(--mint)"},
+};
+
+function TabHotel({viagem, updViagem}) {
+  const [search, setSearch] = useState("");
+  const [selPax, setSelPax] = useState(null); // id da reserva selecionada
+  const [modalApto, setModalApto] = useState(null); // {hotelIdx, aptoIdx}
+
+  const reservas = viagem.reservas || [];
+  const hoteis = viagem.hoteis || [];
+
+  // Passageiros já alocados em algum apto
+  const alocados = new Set(
+    hoteis.flatMap(h=>(h.aptos||[]).flatMap(a=>(a.paxs||[])))
+  );
+  const semApto = reservas.filter(r=>!alocados.has(r.id));
+
+  // Filtro de busca nos sem apto
+  const semAptoFiltrado = search.trim()
+    ? semApto.filter(r=>(r.nomeAvulso||"").toLowerCase().includes(search.toLowerCase()))
+    : semApto;
+
+  const salvar = async (novosHoteis) => {
+    await updViagem({...viagem, hoteis: novosHoteis});
+  };
+
+  const addHotel = () => {
+    salvar([...hoteis, {id:genId(), nome:"Hotel", aptos:[]}]);
+  };
+
+  const updHotelNome = (hIdx, nome) => {
+    const h = hoteis.map((x,i)=>i===hIdx?{...x,nome}:x);
+    salvar(h);
+  };
+
+  const delHotel = (hIdx) => {
+    if(!confirm("Remover hotel e todos os aptos?")) return;
+    salvar(hoteis.filter((_,i)=>i!==hIdx));
+  };
+
+  const addApto = (hIdx, tipo) => {
+    const cap = TIPO_APTO[tipo].cap;
+    const h = hoteis.map((x,i)=>i===hIdx?{...x,aptos:[...(x.aptos||[]),{id:genId(),nome:`Apto ${(x.aptos||[]).length+1}`,tipo,cap,paxs:[]}]}:x);
+    salvar(h);
+    setModalApto(null);
+  };
+
+  const updAptoNome = (hIdx, aIdx, nome) => {
+    const h = hoteis.map((x,i)=>i===hIdx?{...x,aptos:x.aptos.map((a,j)=>j===aIdx?{...a,nome}:a)}:x);
+    salvar(h);
+  };
+
+  const delApto = (hIdx, aIdx) => {
+    const h = hoteis.map((x,i)=>i===hIdx?{...x,aptos:x.aptos.filter((_,j)=>j!==aIdx)}:x);
+    salvar(h);
+  };
+
+  const alocarPax = (hIdx, aIdx) => {
+    if(!selPax) return;
+    const apto = hoteis[hIdx].aptos[aIdx];
+    if((apto.paxs||[]).length >= apto.cap) return;
+    if((apto.paxs||[]).includes(selPax)) return;
+    const h = hoteis.map((x,i)=>i===hIdx?{...x,aptos:x.aptos.map((a,j)=>j===aIdx?{...a,paxs:[...(a.paxs||[]),selPax]}:a)}:x);
+    salvar(h);
+    setSelPax(null);
+  };
+
+  const remPax = (hIdx, aIdx, paxId) => {
+    const h = hoteis.map((x,i)=>i===hIdx?{...x,aptos:x.aptos.map((a,j)=>j===aIdx?{...a,paxs:(a.paxs||[]).filter(p=>p!==paxId)}:a)}:x);
+    salvar(h);
+  };
+
+  const getNome = (paxId) => reservas.find(r=>r.id===paxId)?.nomeAvulso || "—";
+
+  return (
+    <div style={{paddingBottom:24}}>
+      {/* Barra de busca + passageiros sem apto */}
+      <div style={{padding:"14px 28px 0"}}>
+        <div style={{fontSize:10,fontWeight:600,color:"var(--dim2)",textTransform:"uppercase",letterSpacing:".6px",marginBottom:8}}>
+          Passageiros sem apto ({semApto.length})
+          {selPax&&<span style={{marginLeft:8,color:"var(--sky)"}}>— clique num slot para alocar</span>}
+        </div>
+        <div style={{position:"relative",marginBottom:8}}>
+          <span className="hotel-search-icon" style={{position:"absolute",left:13,top:"50%",transform:"translateY(-50%)",color:"var(--dim2)"}}>{ICONS.search}</span>
+          <input className="fi" style={{paddingLeft:38}} placeholder="Buscar passageiro..." value={search} onChange={e=>setSearch(e.target.value)}/>
+        </div>
+        {semAptoFiltrado.length===0
+          ? <div style={{fontSize:12,color:"var(--mint)",padding:"8px 0"}}>✓ Todos alocados!</div>
+          : <div style={{display:"flex",flexWrap:"wrap",gap:6,marginBottom:4}}>
+              {semAptoFiltrado.map(r=>(
+                <div key={r.id}
+                  className={`sem-apto-chip ${selPax===r.id?"ativo":""}`}
+                  onClick={()=>setSelPax(selPax===r.id?null:r.id)}>
+                  {r.nomeAvulso||"—"}
+                </div>
+              ))}
+            </div>
+        }
+        {selPax&&<button className="btn btn-ghost btn-sm" style={{marginTop:4}} onClick={()=>setSelPax(null)}>Cancelar seleção</button>}
+      </div>
+
+      {/* Hotéis */}
+      <div className="hotel-wrap" style={{marginTop:14}}>
+        {hoteis.length===0
+          ? <div className="empty"><div className="empty-icon">{ICONS.hotel}</div><p>Nenhum hotel cadastrado</p></div>
+          : hoteis.map((h,hIdx)=>(
+            <div key={h.id} className="hotel-block">
+              {/* Header hotel */}
+              <div className="hotel-header">
+                <span style={{color:"var(--sky)"}}>{ICONS.hotel}</span>
+                <input className="hotel-name-input" value={h.nome} onChange={e=>updHotelNome(hIdx,e.target.value)} placeholder="Nome do hotel"/>
+                <div style={{display:"flex",gap:6}}>
+                  <button className="btn btn-ghost btn-sm" onClick={()=>setModalApto(hIdx)}>{ICONS.plus} Apto</button>
+                  <button className="btn btn-danger btn-icon btn-sm" onClick={()=>delHotel(hIdx)}>{ICONS.trash}</button>
+                </div>
+              </div>
+              {/* Aptos */}
+              {(h.aptos||[]).length===0
+                ? <div style={{padding:"16px 14px",fontSize:12,color:"var(--dim2)"}}>Nenhum apto. Clique em "+ Apto" para adicionar.</div>
+                : <div className="apto-grid">
+                    {(h.aptos||[]).map((a,aIdx)=>{
+                      const tipo = TIPO_APTO[a.tipo]||TIPO_APTO.duplo_casal;
+                      const slots = a.cap||2;
+                      const paxs = a.paxs||[];
+                      const cheio = paxs.length >= slots;
+                      return (
+                        <div key={a.id} className={`apto-card ${cheio?"cheio":""}`}>
+                          <div className="apto-head">
+                            <input className="apto-nome-input" value={a.nome} onChange={e=>updAptoNome(hIdx,aIdx,e.target.value)}/>
+                            <span className="apto-tipo" style={{background:tipo.color+"22",color:tipo.color}}>{tipo.label}</span>
+                            <button className="btn btn-danger btn-icon btn-sm" style={{marginLeft:4,width:24,height:24}} onClick={()=>delApto(hIdx,aIdx)}>{ICONS.close}</button>
+                          </div>
+                          <div className="apto-slots">
+                            {Array.from({length:slots}).map((_,si)=>{
+                              const paxId = paxs[si];
+                              if(paxId) return (
+                                <div key={si} className="apto-slot ocupado" title="Clique para remover" onClick={()=>remPax(hIdx,aIdx,paxId)}>
+                                  {getNome(paxId).split(" ").slice(0,2).join(" ")}
+                                </div>
+                              );
+                              return (
+                                <div key={si} className={`apto-slot ${selPax&&!cheio?"sel":""}`}
+                                  onClick={()=>selPax&&alocarPax(hIdx,aIdx)}>
+                                  {selPax&&!cheio?"Alocar aqui":"Vaga livre"}
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+              }
+            </div>
+          ))
+        }
+        <button className="btn btn-ghost btn-full" style={{marginTop:4}} onClick={addHotel}>{ICONS.plus} Adicionar Hotel</button>
+      </div>
+
+      {/* Modal tipo de apto */}
+      {modalApto!==null&&(
+        <div className="mo" onClick={e=>e.target===e.currentTarget&&setModalApto(null)}>
+          <div className="md ani" style={{maxHeight:"50vh"}}>
+            <div className="mhdl"/>
+            <div className="mhd"><span className="mtit">Tipo de Apto</span><button className="btn btn-ghost btn-icon" onClick={()=>setModalApto(null)}>{ICONS.close}</button></div>
+            <div style={{padding:"0 20px 20px",display:"flex",flexDirection:"column",gap:10}}>
+              {Object.entries(TIPO_APTO).map(([key,t])=>(
+                <button key={key} className="btn btn-ghost btn-full" style={{justifyContent:"flex-start",gap:12,padding:"14px 16px"}}
+                  onClick={()=>addApto(modalApto,key)}>
+                  <span style={{width:10,height:10,borderRadius:"50%",background:t.color,flexShrink:0,display:"inline-block"}}/>
+                  <span style={{fontWeight:600,color:"var(--txt)"}}>{t.label}</span>
+                  <span style={{marginLeft:"auto",fontSize:11,color:"var(--dim2)"}}>{t.cap} pessoas</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
