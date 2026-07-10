@@ -690,7 +690,7 @@ function App() {
         <div className="page">
           {pageEl()}
         </div>
-        <div className="app-version">v1.3.4</div>
+        <div className="app-version">v1.3.5</div>
         {/* Mobile nav */}
         <nav className="mobile-nav">
           {navItems.map(([id,ic,lb]) => (
@@ -1837,16 +1837,13 @@ function TabHotel({viagem, updViagem, config}) {
   const hoteis = viagem.hoteis || [];
 
   // Tipos de apto: usa da config se disponível, senão usa o padrão
-  const tiposAptoDinamico = React.useMemo(() => {
-    const cores = ["var(--lilac)","var(--sky)","var(--mint)","var(--amber)","var(--rose)"];
-    if(config?.tiposApto && config.tiposApto.length > 0) {
-      return config.tiposApto.reduce((acc, t, i) => {
-        acc[t.id] = {label: t.nome, cap: t.cap, color: cores[i % cores.length]};
-        return acc;
-      }, {});
-    }
-    return TIPO_APTO;
-  }, [config]);
+  const cores = ["var(--lilac)","var(--sky)","var(--mint)","var(--amber)","var(--rose)"];
+  const tiposAptoArray = (config?.tiposApto && config.tiposApto.length > 0)
+    ? config.tiposApto.map((t,i) => ({...t, color: cores[i % cores.length], label: t.nome}))
+    : Object.entries(TIPO_APTO).map(([id,t],i) => ({id, nome:t.label, cap:t.cap, color:t.color, label:t.label}));
+
+  // Objeto indexado por id para lookup rápido
+  const tiposAptoDinamico = tiposAptoArray.reduce((acc,t)=>{acc[t.id]=t;return acc;},{});
 
   // Motoristas fixos (sempre disponíveis)
   const MOTORISTAS = [
@@ -2064,9 +2061,9 @@ function TabHotel({viagem, updViagem, config}) {
             <div className="mhdl"/>
             <div className="mhd"><span className="mtit">Tipo de Apto</span><button className="btn btn-ghost btn-icon" onClick={()=>setModalApto(null)}>{ICONS.close}</button></div>
             <div style={{padding:"0 20px 20px",display:"flex",flexDirection:"column",gap:10}}>
-              {Object.entries(tiposAptoDinamico).map(([key,t])=>(
-                <button key={key} className="btn btn-ghost btn-full" style={{justifyContent:"flex-start",gap:12,padding:"14px 16px"}}
-                  onClick={()=>addApto(modalApto,key)}>
+              {tiposAptoArray.map((t)=>(
+                <button key={t.id} className="btn btn-ghost btn-full" style={{justifyContent:"flex-start",gap:12,padding:"14px 16px"}}
+                  onClick={()=>addApto(modalApto,t.id)}>
                   <span style={{width:10,height:10,borderRadius:"50%",background:t.color,flexShrink:0,display:"inline-block"}}/>
                   <span style={{fontWeight:600,color:"var(--txt)"}}>{t.label}</span>
                   <span style={{marginLeft:"auto",fontSize:11,color:"var(--dim2)"}}>{t.cap} pessoas</span>
