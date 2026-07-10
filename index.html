@@ -626,7 +626,7 @@ function App() {
         <div className="page">
           {pageEl()}
         </div>
-        <div className="app-version">v1.2.7</div>
+        <div className="app-version">v1.2.8</div>
         {/* Mobile nav */}
         <nav className="mobile-nav">
           {navItems.map(([id,ic,lb]) => (
@@ -796,7 +796,7 @@ function ViagemDetail({viagens, passageiros, addPassageiro, viagem, updViagem, g
         ))}
       </div>
       {tab==="reservas"   && <TabReservas viagem={viagem} passageiros={passageiros} addPassageiro={addPassageiro} updViagem={updViagem}/>}
-      {tab==="mapa"       && <TabMapa viagem={viagem} updViagem={updViagem}/>}
+      {tab==="mapa"       && <TabMapa viagem={viagem} updViagem={updViagem} passageiros={passageiros}/>}
       {tab==="pagamentos" && <TabPagamentos viagem={viagem} updViagem={updViagem}/>}
       {tab==="orcamento"   && <TabOrcamento viagem={viagem} updViagem={updViagem}/>}
       {tab==="hotel"      && <TabHotel viagem={viagem} updViagem={updViagem}/>}
@@ -1159,7 +1159,7 @@ function ModalPgto({initial, onSave, onClose}) {
 }
 
 // ── TAB MAPA ──────────────────────────────────────────────────────────────────
-function TabMapa({viagem, updViagem}) {
+function TabMapa({viagem, updViagem, passageiros}) {
   const [drag,setDrag]=useState(null);
   const [infoSeat,setInfoSeat]=useState(null);
   const cap=viagem.capacidade||44;
