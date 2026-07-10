@@ -570,7 +570,7 @@ function App() {
         <div className="page">
           {pageEl()}
         </div>
-        <div className="app-version">v1.2.4</div>
+        <div className="app-version">v1.2.5</div>
         {/* Mobile nav */}
         <nav className="mobile-nav">
           {navItems.map(([id,ic,lb]) => (
@@ -1374,8 +1374,59 @@ function Financeiro({viagens, go}) {
 // ── RELATÓRIOS ────────────────────────────────────────────────────────────────
 function Relatorios({viagens, passageiros}) {
   const [vid,setVid]=useState("");
+  const [tabRel,setTabRel]=useState("pagamentos"); // pagamentos | cadastros
+  const [filtroCad,setFiltroCad]=useState(""); // viagem id ou "" para geral
   const viagem=viagens.find(v=>v.id===vid);
+
+  // ── Pendentes de pagamento ──
   const pendentes=viagens.flatMap(v=>(v.reservas||[]).filter(r=>sumPgto(r)<Number(v.valor||0)).map(r=>({...r,vNome:v.nome,falta:Number(v.valor||0)-sumPgto(r)})));
+
+  // ── Pendentes de cadastro ──
+  const calcPendentesCadastro = (viagemId) => {
+    let reservasFiltradas = [];
+    if(viagemId) {
+      const v = viagens.find(x=>x.id===viagemId);
+      reservasFiltradas = (v?.reservas||[]).map(r=>({...r,vNome:v.nome}));
+    } else {
+      reservasFiltradas = viagens.flatMap(v=>(v.reservas||[]).map(r=>({...r,vNome:v.nome})));
+    }
+    return reservasFiltradas.map(r=>{
+      const paxCad = passageiros.find(p=>p.id===r.passageiroId);
+      const semTel = !paxCad?.telefone && !r.telefoneResp;
+      const semDoc = !paxCad?.cpf;
+      if(!semTel && !semDoc) return null;
+      return { ...r, paxCad, semTel, semDoc };
+    }).filter(Boolean);
+  };
+
+  const pendentesCad = calcPendentesCadastro(filtroCad);
+
+  const gerarPDFCadastros = () => {
+    const lista = pendentesCad;
+    const nomeViagem = filtroCad ? viagens.find(v=>v.id===filtroCad)?.nome : "Geral";
+    const linhas = lista.map((r,i)=>`
+      <tr style="background:${i%2===0?"#f9f9f9":"#fff"}">
+        <td style="padding:8px;font-weight:600">${r.nomeAvulso||"—"}</td>
+        <td style="padding:8px;color:#555">${r.vNome}</td>
+        <td style="padding:8px;text-align:center">${r.semTel?'<span style="color:#dc2626;font-weight:700">✗ Faltando</span>':'<span style="color:#16a34a">✓</span>'}</td>
+        <td style="padding:8px;text-align:center">${r.semDoc?'<span style="color:#dc2626;font-weight:700">✗ Faltando</span>':'<span style="color:#16a34a">✓</span>'}</td>
+      </tr>`).join("");
+    const html=`<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"/><title></title>
+    <style>body{font-family:Arial,sans-serif;color:#111;padding:24px;max-width:800px;margin:0 auto}h1{font-size:20px;margin-bottom:4px}.sub{color:#555;font-size:12px;margin-bottom:20px}table{width:100%;border-collapse:collapse;font-size:13px}th{background:#1e293b;color:#fff;padding:10px 8px;text-align:left;font-size:11px;text-transform:uppercase}td{border-bottom:1px solid #e5e7eb}.tot{margin-top:14px;font-size:13px;color:#555;padding:10px;background:#f8fafc;border-radius:6px}@media print{@page{size:auto;margin:10mm}body{padding:0}tr{-webkit-print-color-adjust:exact;print-color-adjust:exact}}</style>
+    </head><body>
+    <h1>Cadastros Pendentes — ${nomeViagem}</h1>
+    <div class="sub">Gerado em ${new Date().toLocaleDateString("pt-BR")} · ${lista.length} passageiro(s) com pendência</div>
+    <table>
+      <thead><tr><th>Passageiro</th><th>Viagem</th><th style="text-align:center">Telefone</th><th style="text-align:center">CPF / RG</th></tr></thead>
+      <tbody>${linhas}</tbody>
+    </table>
+    <div class="tot">${lista.filter(r=>r.semTel).length} sem telefone · ${lista.filter(r=>r.semDoc).length} sem CPF/RG</div>
+    </body></html>`;
+    const win=window.open("","_blank");
+    if(!win)return alert("Permita pop-ups para gerar o PDF");
+    win.document.write(html);win.document.close();setTimeout(()=>win.print(),600);
+  };
+
   const gerarPDF=()=>{
     if(!viagem)return alert("Selecione uma viagem primeiro");
     const reservas=viagem.reservas||[];
@@ -1396,23 +1447,81 @@ function Relatorios({viagens, passageiros}) {
   return (
     <div className="ani">
       <div className="topbar"><h1>Relatórios</h1></div>
-      <div style={{padding:"20px 28px 0",display:"grid",gridTemplateColumns:"1fr 1fr",gap:16}}>
-        <div style={{background:"var(--card)",border:"1px solid var(--brd)",borderRadius:14,padding:16}}>
+      <div className="tabs">
+        {[["pagamentos","Pagamentos Pendentes"],["cadastros","Cadastros Pendentes"],["viagem","Relatório por Viagem"]].map(([id,lb])=>(
+          <button key={id} className={`tab ${tabRel===id?"on":""}`} onClick={()=>setTabRel(id)}>{lb}</button>
+        ))}
+      </div>
+
+      {/* ── ABA PAGAMENTOS ── */}
+      {tabRel==="pagamentos"&&(
+        <div style={{padding:"16px 28px 0"}}>
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
-            <div style={{fontWeight:600,fontSize:13,color:"var(--txt)",display:"flex",alignItems:"center",gap:7}}>{ICONS.warn} Pagamentos Pendentes</div>
-            <span className="bdg" style={{background:"rgba(248,113,113,.1)",color:"var(--rose)"}}>{pendentes.length}</span>
+            <div style={{fontWeight:600,fontSize:13,color:"var(--txt)",display:"flex",alignItems:"center",gap:7}}>{ICONS.warn} {pendentes.length} pagamento(s) em aberto</div>
           </div>
-          {pendentes.length===0?<div style={{color:"var(--mint)",fontSize:13,fontWeight:600}}>✓ Todos os pagamentos em dia!</div>
+          {pendentes.length===0
+            ?<div style={{color:"var(--mint)",fontSize:13,fontWeight:600,padding:"20px 0"}}>✓ Todos os pagamentos em dia!</div>
             :pendentes.map(r=>(
-              <div key={r.id} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"8px 0",borderBottom:"1px solid var(--brd)"}}>
-                <div><div style={{fontSize:13,fontWeight:700,color:"var(--txt)"}}>{r.nomeAvulso||"Passageiro"}</div><div style={{fontSize:11,color:"var(--dim)"}}>{r.vNome}</div></div>
-                <div style={{fontSize:13,fontWeight:800,color:"var(--rose)"}}>{R$(r.falta)}</div>
+              <div key={r.id} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"10px 0",borderBottom:"1px solid var(--brd)"}}>
+                <div><div style={{fontSize:13,fontWeight:600,color:"var(--txt)"}}>{r.nomeAvulso||"Passageiro"}</div><div style={{fontSize:11,color:"var(--dim2)"}}>{r.vNome}</div></div>
+                <div style={{fontSize:13,fontWeight:700,color:"var(--rose)"}}>{R$(r.falta)}</div>
               </div>
             ))
           }
         </div>
-        <div style={{background:"var(--card)",border:"1px solid var(--brd)",borderRadius:14,padding:16}}>
-          <div style={{fontWeight:800,fontSize:14,color:"var(--txt)",marginBottom:12}}>Relatório por Viagem</div>
+      )}
+
+      {/* ── ABA CADASTROS PENDENTES ── */}
+      {tabRel==="cadastros"&&(
+        <div style={{padding:"16px 28px 0"}}>
+          <div style={{display:"flex",gap:10,alignItems:"flex-end",marginBottom:14,flexWrap:"wrap"}}>
+            <div className="fg" style={{flex:1,minWidth:200}}>
+              <label className="fl">Filtrar por viagem</label>
+              <select className="fsel" value={filtroCad} onChange={e=>setFiltroCad(e.target.value)}>
+                <option value="">Todos os passageiros</option>
+                {viagens.map(v=><option key={v.id} value={v.id}>{v.nome} — {dt(v.dataIda)}</option>)}
+              </select>
+            </div>
+            <button className="btn btn-ghost btn-sm" style={{marginBottom:1}} onClick={gerarPDFCadastros}>{ICONS.pdf} Exportar PDF</button>
+          </div>
+
+          {/* Resumo */}
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8,marginBottom:14}}>
+            <div style={{background:"var(--card)",border:"1px solid var(--brd)",borderRadius:10,padding:12}}>
+              <div style={{fontSize:10,color:"var(--dim2)",textTransform:"uppercase",letterSpacing:".5px"}}>Total pendentes</div>
+              <div style={{fontSize:22,fontWeight:700,color:"var(--rose)",marginTop:4}}>{pendentesCad.length}</div>
+            </div>
+            <div style={{background:"var(--card)",border:"1px solid var(--brd)",borderRadius:10,padding:12}}>
+              <div style={{fontSize:10,color:"var(--dim2)",textTransform:"uppercase",letterSpacing:".5px"}}>Sem telefone</div>
+              <div style={{fontSize:22,fontWeight:700,color:"var(--amber)",marginTop:4}}>{pendentesCad.filter(r=>r.semTel).length}</div>
+            </div>
+            <div style={{background:"var(--card)",border:"1px solid var(--brd)",borderRadius:10,padding:12}}>
+              <div style={{fontSize:10,color:"var(--dim2)",textTransform:"uppercase",letterSpacing:".5px"}}>Sem CPF/RG</div>
+              <div style={{fontSize:22,fontWeight:700,color:"var(--amber)",marginTop:4}}>{pendentesCad.filter(r=>r.semDoc).length}</div>
+            </div>
+          </div>
+
+          {pendentesCad.length===0
+            ?<div style={{color:"var(--mint)",fontSize:13,fontWeight:600,padding:"20px 0"}}>✓ Todos os cadastros completos!</div>
+            :pendentesCad.map((r,i)=>(
+              <div key={r.id+i} style={{display:"flex",alignItems:"center",gap:10,padding:"10px 0",borderBottom:"1px solid var(--brd)"}}>
+                <div style={{flex:1}}>
+                  <div style={{fontSize:13,fontWeight:600,color:"var(--txt)"}}>{r.nomeAvulso||"—"}</div>
+                  <div style={{fontSize:11,color:"var(--dim2)",marginTop:2}}>{r.vNome}</div>
+                </div>
+                <div style={{display:"flex",gap:6}}>
+                  {r.semTel&&<span className="bdg" style={{background:"rgba(251,191,36,.1)",color:"var(--amber)"}}>Sem telefone</span>}
+                  {r.semDoc&&<span className="bdg" style={{background:"rgba(251,191,36,.1)",color:"var(--amber)"}}>Sem CPF/RG</span>}
+                </div>
+              </div>
+            ))
+          }
+        </div>
+      )}
+
+      {/* ── ABA RELATÓRIO POR VIAGEM ── */}
+      {tabRel==="viagem"&&(
+        <div style={{padding:"16px 28px 0"}}>
           <div className="fg" style={{marginBottom:12}}>
             <select className="fsel" value={vid} onChange={e=>setVid(e.target.value)}>
               <option value="">Selecionar viagem...</option>
@@ -1421,17 +1530,17 @@ function Relatorios({viagens, passageiros}) {
           </div>
           {viagem&&(viagem.reservas||[]).map((r,i)=>{const pago=sumPgto(r),q=pago>=Number(viagem.valor||0);return(
             <div key={r.id} style={{display:"flex",alignItems:"center",gap:8,padding:"8px 0",borderBottom:"1px solid var(--brd)"}}>
-              <span style={{fontSize:11,color:"var(--dim)",width:20}}>{i+1}</span>
-              <div style={{flex:1}}><div style={{fontSize:13,fontWeight:700,color:"var(--txt)"}}>{r.nomeAvulso||"—"}</div><div style={{fontSize:11,color:"var(--dim)"}}>Assento: {r.assento||"—"}</div></div>
+              <span style={{fontSize:11,color:"var(--dim2)",width:20}}>{i+1}</span>
+              <div style={{flex:1}}><div style={{fontSize:13,fontWeight:600,color:"var(--txt)"}}>{r.nomeAvulso||"—"}</div><div style={{fontSize:11,color:"var(--dim2)"}}>Assento: {r.assento||"—"}</div></div>
               <span className="bdg" style={{background:q?"rgba(52,211,153,.1)":"rgba(248,113,113,.1)",color:q?"var(--mint)":"var(--rose)"}}>{q?"Quitado":`Falta ${R$(Number(viagem.valor||0)-pago)}`}</span>
             </div>
           );})}
-          {viagem&&(viagem.reservas||[]).length===0&&<div style={{color:"var(--dim)",fontSize:13,marginBottom:12}}>Nenhuma reserva nesta viagem.</div>}
+          {viagem&&(viagem.reservas||[]).length===0&&<div style={{color:"var(--dim2)",fontSize:13,marginBottom:12}}>Nenhuma reserva nesta viagem.</div>}
           <button className="btn btn-primary btn-full" style={{marginTop:14,opacity:viagem?1:.4}} onClick={gerarPDF}>
             {ICONS.pdf} Gerar PDF {viagem?`— ${viagem.nome}`:"(selecione uma viagem)"}
           </button>
         </div>
-      </div>
+      )}
     </div>
   );
 }
