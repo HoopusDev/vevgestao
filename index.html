@@ -690,7 +690,7 @@ function App() {
         <div className="page">
           {pageEl()}
         </div>
-        <div className="app-version">v1.3.7</div>
+        <div className="app-version">v1.3.8</div>
         {/* Mobile nav */}
         <nav className="mobile-nav">
           {navItems.map(([id,ic,lb]) => (
@@ -1931,7 +1931,7 @@ function TabHotel({viagem, updViagem, passageiros}) {
     // tenta pelo passageiroId vinculado ao cadastro
     if(reserva.passageiroId && passageiros) {
       const cad = passageiros.find(p=>p.id===reserva.passageiroId);
-      if(cad?.cpfRg) return cad.cpfRg;
+      if(cad?.cpf) return cad.cpf;
     }
     return "";
   };
