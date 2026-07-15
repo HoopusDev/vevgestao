@@ -690,7 +690,7 @@ function App() {
         <div className="page">
           {pageEl()}
         </div>
-        <div className="app-version">v1.4.0</div>
+        <div className="app-version">v1.4.1</div>
         {/* Mobile nav */}
         <nav className="mobile-nav">
           {navItems.map(([id,ic,lb]) => (
@@ -1977,20 +1977,21 @@ function TabHotel({viagem, updViagem, passageiros}) {
           return [...linhasPax, ...linhasVazias, separador].join("");
         }).join("");
 
-        return `<div style="margin-bottom:20px;break-inside:avoid">
-          <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:#555;
-            border-bottom:2px solid #1e293b;padding-bottom:4px;margin-bottom:6px">${tipoLabel}</div>
-          <table style="width:100%;border-collapse:collapse">
-            <colgroup><col style="width:90px"/><col/><col style="width:130px"/></colgroup>
+        return `<table style="width:100%;border-collapse:collapse;margin-bottom:20px">
+          <colgroup><col style="width:90px"/><col/><col style="width:140px"/></colgroup>
+          <thead>
+            <tr>
+              <td colspan="3" style="padding:0 0 4px 0;font-size:12px;font-weight:700;text-transform:uppercase;
+                letter-spacing:.05em;color:#555;border-bottom:2px solid #1e293b;padding-bottom:4px">${h.nome} — ${tipoLabel}</td>
+            </tr>
+          </thead>
+          <tbody>
             ${linhasAptos}
-          </table>
-        </div>`;
+          </tbody>
+        </table>`;
       }).join("");
 
-      return `<div style="margin-bottom:32px">
-        <div style="font-size:16px;font-weight:700;margin-bottom:12px;padding-bottom:6px;border-bottom:3px solid #1e293b">${h.nome}</div>
-        ${secoes}
-      </div>`;
+      return `<div style="margin-bottom:16px">${secoes}</div>`;
     }).join("");
 
     const semAptoHtml = semApto.length > 0
@@ -2001,7 +2002,14 @@ function TabHotel({viagem, updViagem, passageiros}) {
       : "";
 
     const html=`<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"/><title></title>
-    <style>body{font-family:Arial,sans-serif;color:#111;padding:24px;max-width:900px;margin:0 auto}h1{font-size:20px;margin-bottom:4px}.sub{color:#555;font-size:12px;margin-bottom:20px}@media print{@page{size:auto;margin:10mm}body{padding:0}}</style>
+    <style>
+      body{font-family:Arial,sans-serif;color:#111;padding:24px;max-width:900px;margin:0 auto}
+      h1{font-size:20px;margin-bottom:4px}
+      .sub{color:#555;font-size:12px;margin-bottom:20px}
+      thead{display:table-header-group}
+      tr{page-break-inside:avoid}
+      @media print{@page{size:auto;margin:10mm}body{padding:0}}
+    </style>
     </head><body>
     <h1>Mapa de Hotel — ${viagem.nome}</h1>
     <div class="sub">${viagem.dataIda?"Ida: "+new Date(viagem.dataIda+"T12:00:00").toLocaleDateString("pt-BR"):""} | ${reservas.length} passageiros · ${hoteis.length} hotel(is) · Gerado em ${new Date().toLocaleDateString("pt-BR")}</div>
