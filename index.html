@@ -690,7 +690,7 @@ function App() {
         <div className="page">
           {pageEl()}
         </div>
-        <div className="app-version">v1.3.8</div>
+        <div className="app-version">v1.3.9</div>
         {/* Mobile nav */}
         <nav className="mobile-nav">
           {navItems.map(([id,ic,lb]) => (
@@ -1939,36 +1939,57 @@ function TabHotel({viagem, updViagem, passageiros}) {
   const gerarPDFHotel = () => {
     if(hoteis.length===0) return alert("Nenhum hotel cadastrado.");
     const blocos = hoteis.map(h=>{
-      const aptos = (h.aptos||[]).map(a=>{
+      // agrupa aptos por tipo
+      const porTipo = {};
+      (h.aptos||[]).forEach(a=>{
         const tipo = tiposAptoDinamico[a.tipo]||TIPO_APTO.duplo_casal;
-        const paxIds = a.paxs||[];
-        const vazios = a.cap - paxIds.length;
-        const slotsPax = paxIds.map((pid, idx)=>{
-          const nome = getNome(pid);
-          const rg = getRG(pid);
-          const divisor = idx < paxIds.length - 1 || vazios > 0
-            ? `<div style="border-top:1px dashed #ccc;margin:4px 0"></div>`
-            : "";
-          return `<div style="padding:5px 8px;background:#e0e0e0;border-radius:4px;margin-bottom:2px">
-            <div style="font-size:12px;font-weight:700;color:#111">${nome}</div>
-            ${rg ? `<div style="font-size:10px;color:#555;margin-top:1px">${rg}</div>` : ""}
-          </div>${divisor}`;
-        });
-        const slotsVazios = Array.from({length:vazios}).map(()=>
-          `<div style="padding:5px 8px;border:1px dashed #ccc;border-radius:4px;font-size:12px;color:#999;margin-bottom:2px">Vaga livre</div>`
-        );
-        const slots = [...slotsPax, ...slotsVazios].join("");
-        return `<div style="background:#f9f9f9;border:1px solid #ddd;border-radius:8px;padding:12px;break-inside:avoid">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;border-bottom:1px solid #ddd;padding-bottom:6px">
-            <span style="font-weight:700;font-size:13px">${a.nome}</span>
-            <span style="font-size:10px;font-weight:600;padding:2px 7px;border-radius:10px;background:#e5e7eb;color:#555">${tipo.label} · ${a.cap} pessoas</span>
-          </div>
-          ${slots}
+        const key = tipo.label;
+        if(!porTipo[key]) porTipo[key]=[];
+        porTipo[key].push({...a, tipoLabel: tipo.label});
+      });
+
+      const secoes = Object.entries(porTipo).map(([tipoLabel, aptosDoTipo])=>{
+        const linhasAptos = aptosDoTipo.map(a=>{
+          const paxIds = a.paxs||[];
+          const vazios = a.cap - paxIds.length;
+
+          const linhasPax = paxIds.map((pid, idx)=>{
+            const nome = getNome(pid);
+            const rg = getRG(pid);
+            const isFirst = idx===0;
+            return `<tr style="break-inside:avoid">
+              <td style="padding:4px 8px;font-weight:700;font-size:12px;vertical-align:top;white-space:nowrap;color:#1e293b">${isFirst ? a.nome : ""}</td>
+              <td style="padding:4px 8px;font-size:12px;vertical-align:top">${nome}</td>
+              <td style="padding:4px 8px;font-size:11px;color:#555;vertical-align:top">${rg||"—"}</td>
+            </tr>`;
+          });
+
+          const linhasVazias = Array.from({length:vazios}).map((_,idx)=>{
+            const isFirst = paxIds.length===0 && idx===0;
+            return `<tr>
+              <td style="padding:4px 8px;font-weight:700;font-size:12px;color:#1e293b">${isFirst ? a.nome : ""}</td>
+              <td style="padding:4px 8px;font-size:12px;color:#aaa;font-style:italic">Vaga livre</td>
+              <td></td>
+            </tr>`;
+          });
+
+          const separador = `<tr><td colspan="3"><div style="border-top:1px solid #e5e7eb;margin:2px 0"></div></td></tr>`;
+          return [...linhasPax, ...linhasVazias, separador].join("");
+        }).join("");
+
+        return `<div style="margin-bottom:20px;break-inside:avoid">
+          <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:#555;
+            border-bottom:2px solid #1e293b;padding-bottom:4px;margin-bottom:6px">${tipoLabel}</div>
+          <table style="width:100%;border-collapse:collapse">
+            <colgroup><col style="width:90px"/><col/><col style="width:130px"/></colgroup>
+            ${linhasAptos}
+          </table>
         </div>`;
       }).join("");
-      return `<div style="margin-bottom:24px;break-inside:avoid">
-        <div style="font-size:15px;font-weight:700;margin-bottom:10px;padding-bottom:6px;border-bottom:2px solid #1e293b">${h.nome}</div>
-        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px">${aptos}</div>
+
+      return `<div style="margin-bottom:32px">
+        <div style="font-size:16px;font-weight:700;margin-bottom:12px;padding-bottom:6px;border-bottom:3px solid #1e293b">${h.nome}</div>
+        ${secoes}
       </div>`;
     }).join("");
 
