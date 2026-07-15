@@ -690,7 +690,7 @@ function App() {
         <div className="page">
           {pageEl()}
         </div>
-        <div className="app-version">v1.3.6</div>
+        <div className="app-version">v1.3.7</div>
         {/* Mobile nav */}
         <nav className="mobile-nav">
           {navItems.map(([id,ic,lb]) => (
@@ -863,7 +863,7 @@ function ViagemDetail({viagens, passageiros, addPassageiro, viagem, updViagem, g
       {tab==="mapa"       && <TabMapa viagem={viagem} updViagem={updViagem} passageiros={passageiros}/>}
       {tab==="pagamentos" && <TabPagamentos viagem={viagem} updViagem={updViagem}/>}
       {tab==="orcamento"   && <TabOrcamento viagem={viagem} updViagem={updViagem}/>}
-      {tab==="hotel"      && <TabHotel viagem={viagem} updViagem={updViagem}/>}
+      {tab==="hotel"      && <TabHotel viagem={viagem} updViagem={updViagem} passageiros={passageiros}/>}
     </div>
   );
 }
@@ -1828,7 +1828,7 @@ const TIPO_APTO = {
   triplo_solteiro: {label:"Triplo Solteiro", cap:3, color:"var(--mint)"},
 };
 
-function TabHotel({viagem, updViagem}) {
+function TabHotel({viagem, updViagem, passageiros}) {
   // Ler config direto do Firestore para garantir dados atualizados
   const configDocsLocal = useCol("configs");
   const config = configDocsLocal?.[0] || {};
@@ -1924,17 +1924,40 @@ function TabHotel({viagem, updViagem}) {
     return reservas.find(r=>r.id===paxId)?.nomeAvulso || "—";
   };
 
+  const getRG = (paxId) => {
+    if(paxId==="motorista_1"||paxId==="motorista_2") return "";
+    const reserva = reservas.find(r=>r.id===paxId);
+    if(!reserva) return "";
+    // tenta pelo passageiroId vinculado ao cadastro
+    if(reserva.passageiroId && passageiros) {
+      const cad = passageiros.find(p=>p.id===reserva.passageiroId);
+      if(cad?.cpfRg) return cad.cpfRg;
+    }
+    return "";
+  };
+
   const gerarPDFHotel = () => {
     if(hoteis.length===0) return alert("Nenhum hotel cadastrado.");
     const blocos = hoteis.map(h=>{
       const aptos = (h.aptos||[]).map(a=>{
         const tipo = tiposAptoDinamico[a.tipo]||TIPO_APTO.duplo_casal;
-        const paxsNomes = (a.paxs||[]).map(pid=>getNome(pid));
-        const vazios = a.cap - paxsNomes.length;
-        const slots = [
-          ...paxsNomes.map(n=>`<div style="padding:6px 10px;background:#e0e0e0;border-radius:4px;font-size:12px;font-weight:600;margin-bottom:4px">${n}</div>`),
-          ...Array.from({length:vazios}).map(()=>`<div style="padding:6px 10px;border:1px dashed #ccc;border-radius:4px;font-size:12px;color:#999;margin-bottom:4px">Vaga livre</div>`)
-        ].join("");
+        const paxIds = a.paxs||[];
+        const vazios = a.cap - paxIds.length;
+        const slotsPax = paxIds.map((pid, idx)=>{
+          const nome = getNome(pid);
+          const rg = getRG(pid);
+          const divisor = idx < paxIds.length - 1 || vazios > 0
+            ? `<div style="border-top:1px dashed #ccc;margin:4px 0"></div>`
+            : "";
+          return `<div style="padding:5px 8px;background:#e0e0e0;border-radius:4px;margin-bottom:2px">
+            <div style="font-size:12px;font-weight:700;color:#111">${nome}</div>
+            ${rg ? `<div style="font-size:10px;color:#555;margin-top:1px">${rg}</div>` : ""}
+          </div>${divisor}`;
+        });
+        const slotsVazios = Array.from({length:vazios}).map(()=>
+          `<div style="padding:5px 8px;border:1px dashed #ccc;border-radius:4px;font-size:12px;color:#999;margin-bottom:2px">Vaga livre</div>`
+        );
+        const slots = [...slotsPax, ...slotsVazios].join("");
         return `<div style="background:#f9f9f9;border:1px solid #ddd;border-radius:8px;padding:12px;break-inside:avoid">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;border-bottom:1px solid #ddd;padding-bottom:6px">
             <span style="font-weight:700;font-size:13px">${a.nome}</span>
@@ -1945,7 +1968,7 @@ function TabHotel({viagem, updViagem}) {
       }).join("");
       return `<div style="margin-bottom:24px;break-inside:avoid">
         <div style="font-size:15px;font-weight:700;margin-bottom:10px;padding-bottom:6px;border-bottom:2px solid #1e293b">${h.nome}</div>
-        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px">${aptos}</div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px">${aptos}</div>
       </div>`;
     }).join("");
 
