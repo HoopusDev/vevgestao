@@ -690,7 +690,7 @@ function App() {
         <div className="page">
           {pageEl()}
         </div>
-        <div className="app-version">v1.3.9</div>
+        <div className="app-version">v1.4.0</div>
         {/* Mobile nav */}
         <nav className="mobile-nav">
           {navItems.map(([id,ic,lb]) => (
@@ -1958,17 +1958,17 @@ function TabHotel({viagem, updViagem, passageiros}) {
             const rg = getRG(pid);
             const isFirst = idx===0;
             return `<tr style="break-inside:avoid">
-              <td style="padding:4px 8px;font-weight:700;font-size:12px;vertical-align:top;white-space:nowrap;color:#1e293b">${isFirst ? a.nome : ""}</td>
-              <td style="padding:4px 8px;font-size:12px;vertical-align:top">${nome}</td>
-              <td style="padding:4px 8px;font-size:11px;color:#555;vertical-align:top">${rg||"—"}</td>
+              <td style="padding:3px 8px;font-weight:700;font-size:13px;vertical-align:middle;white-space:nowrap;color:#1e293b">${isFirst ? a.nome : ""}</td>
+              <td style="padding:3px 8px;font-size:13px;vertical-align:middle">${nome}</td>
+              <td style="padding:3px 8px;font-size:13px;color:#555;vertical-align:middle;white-space:nowrap">${rg||"—"}</td>
             </tr>`;
           });
 
           const linhasVazias = Array.from({length:vazios}).map((_,idx)=>{
             const isFirst = paxIds.length===0 && idx===0;
             return `<tr>
-              <td style="padding:4px 8px;font-weight:700;font-size:12px;color:#1e293b">${isFirst ? a.nome : ""}</td>
-              <td style="padding:4px 8px;font-size:12px;color:#aaa;font-style:italic">Vaga livre</td>
+              <td style="padding:3px 8px;font-weight:700;font-size:13px;color:#1e293b">${isFirst ? a.nome : ""}</td>
+              <td style="padding:3px 8px;font-size:13px;color:#aaa;font-style:italic">Vaga livre</td>
               <td></td>
             </tr>`;
           });
@@ -1996,9 +1996,9 @@ function TabHotel({viagem, updViagem, passageiros}) {
     const semAptoHtml = semApto.length > 0
       ? `<div style="margin-top:20px;padding:12px 16px;background:#fff0f0;border:1px solid #ffaaaa;border-radius:8px">
           <div style="font-weight:700;color:#cc0000;font-size:13px;margin-bottom:8px">⚠ Passageiros SEM APTO (${semApto.length})</div>
-          ${semApto.map(r=>`<div style="font-size:12px;color:#cc0000;padding:3px 0">${r.nomeAvulso||"—"}</div>`).join("")}
+          ${semApto.map(r=>`<div style="font-size:13px;color:#cc0000;padding:3px 0">${r.nomeAvulso||"—"}</div>`).join("")}
         </div>`
-      : `<div style="margin-top:16px;padding:10px 14px;background:#f0fff4;border:1px solid #aaddbb;border-radius:8px;font-size:12px;color:#006600">✓ Todos os passageiros alocados</div>`;
+      : "";
 
     const html=`<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"/><title></title>
     <style>body{font-family:Arial,sans-serif;color:#111;padding:24px;max-width:900px;margin:0 auto}h1{font-size:20px;margin-bottom:4px}.sub{color:#555;font-size:12px;margin-bottom:20px}@media print{@page{size:auto;margin:10mm}body{padding:0}}</style>
