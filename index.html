@@ -690,7 +690,7 @@ function App() {
         <div className="page">
           {pageEl()}
         </div>
-        <div className="app-version">v1.4.2</div>
+        <div className="app-version">v1.4.3</div>
         {/* Mobile nav */}
         <nav className="mobile-nav">
           {navItems.map(([id,ic,lb]) => (
@@ -1504,6 +1504,8 @@ function Financeiro({viagens, go}) {
 
 // ── RELATÓRIOS ────────────────────────────────────────────────────────────────
 function Relatorios({viagens, passageiros}) {
+  const configDocsRel = useCol("configs");
+  const configRel = configDocsRel?.[0] || {};
   const [vid,setVid]=useState("");
   const [vidGer,setVidGer]=useState("");
   const [tabRel,setTabRel]=useState("pagamentos"); // pagamentos | cadastros | viagem | gerencial
@@ -1677,28 +1679,42 @@ function Relatorios({viagens, passageiros}) {
 
       {/* ── ABA GERENCIAL ── */}
       {tabRel==="gerencial"&&(()=>{
+        // Resolve label do tipo de apto a partir do config (igual ao TabHotel)
+        const cores = ["var(--lilac)","var(--sky)","var(--mint)","var(--amber)","var(--rose)"];
+        const TIPO_APTO_GER = {
+          duplo_casal:{label:"Duplo Casal",cap:2},
+          duplo_solteiro:{label:"Duplo Solteiro",cap:2},
+          triplo_solteiro:{label:"Triplo Solteiro",cap:3},
+        };
+        const tiposAptoArrayGer = (configRel?.tiposApto && configRel.tiposApto.length > 0)
+          ? configRel.tiposApto.map((t,i) => ({...t, color: cores[i % cores.length], label: t.nome}))
+          : Object.entries(TIPO_APTO_GER).map(([id,t],i) => ({id, nome:t.label, cap:t.cap, label:t.label}));
+        const tiposAptoDinamicoGer = tiposAptoArrayGer.reduce((acc,t)=>{acc[t.id]=t;return acc;},{});
+
         // Monta dados cruzados: reserva + assento + hotel/quarto + CPF/RG + financeiro
-        const getQuarto = (reservaId) => {
-          if(!viagemGer) return "—";
+        const getAptoInfo = (reservaId) => {
+          if(!viagemGer) return null;
           for(const h of (viagemGer.hoteis||[])) {
             for(const a of (h.aptos||[])) {
               if((a.paxs||[]).includes(reservaId)) {
-                return a.nome ? `${a.nome}` : (a.tipo||"—");
+                return { nomeApto: a.nome||"", tipo: a.tipo||"" };
               }
             }
           }
-          return "—";
+          return null;
+        };
+        const getTipoLabel = (tipoId) => {
+          if(!tipoId) return "—";
+          return tiposAptoDinamicoGer[tipoId]?.label || tipoId;
+        };
+        // mantém compatibilidade com gerarPDFGerencial abaixo
+        const getQuarto = (reservaId) => {
+          const info = getAptoInfo(reservaId);
+          return info ? info.nomeApto || "—" : "—";
         };
         const getTipoQuarto = (reservaId) => {
-          if(!viagemGer) return "—";
-          for(const h of (viagemGer.hoteis||[])) {
-            for(const a of (h.aptos||[])) {
-              if((a.paxs||[]).includes(reservaId)) {
-                return a.tipo||"—";
-              }
-            }
-          }
-          return "—";
+          const info = getAptoInfo(reservaId);
+          return info ? getTipoLabel(info.tipo) : "—";
         };
         const getCpfGer = (r) => {
           if(!passageiros) return "—";
@@ -1724,8 +1740,7 @@ function Relatorios({viagens, passageiros}) {
             const pago = sumPgto(r);
             const falta = Number(viagemGer.valor||0) - pago;
             const quitado = falta <= 0;
-            const quarto = getQuarto(r.id);
-            const tipoQ = getTipoQuarto(r.id);
+            const aptoInfoPdf = getAptoInfo(r.id);
             const cpf = getCpfGer(r);
             const tel = getTelGer(r);
             const statusCell = quitado
@@ -1736,7 +1751,7 @@ function Relatorios({viagens, passageiros}) {
               <td style="padding:8px;font-weight:600">${r.nomeAvulso||"—"}</td>
               <td style="padding:8px;color:#555">${tel}</td>
               <td style="padding:8px;color:#555">${cpf}</td>
-              <td style="padding:8px;color:#555">${quarto!=="—"?quarto+" — "+tipoQ:tipoQ!=="—"?tipoQ:"—"}</td>
+              <td style="padding:8px;color:#555">${aptoInfoPdf?(aptoInfoPdf.nomeApto?aptoInfoPdf.nomeApto+" — "+getTipoLabel(aptoInfoPdf.tipo):getTipoLabel(aptoInfoPdf.tipo)):"—"}</td>
               ${statusCell}
             </tr>`;
           }).join("");
@@ -1818,9 +1833,7 @@ function Relatorios({viagens, passageiros}) {
                         const pago=sumPgto(r);
                         const falta=Number(viagemGer.valor||0)-pago;
                         const quitado=falta<=0;
-                        const quarto=getQuarto(r.id);
-                        const tipoQ=getTipoQuarto(r.id);
-                        const quartoLabel=quarto!=="—"?`${quarto} (${tipoQ!=="—"?tipoQ:"?"})`:tipoQ!=="—"?tipoQ:"—";
+                        const aptoInfo=getAptoInfo(r.id); const quartoLabel=aptoInfo?(aptoInfo.nomeApto?`${aptoInfo.nomeApto} — ${getTipoLabel(aptoInfo.tipo)}`:getTipoLabel(aptoInfo.tipo)):"—";
                         return (
                           <tr key={r.id} style={{borderBottom:"1px solid var(--brd)",background:i%2===0?"transparent":"rgba(255,255,255,.02)"}}>
                             <td style={{padding:"9px 10px",textAlign:"center",fontWeight:700,fontSize:13,color:"var(--sky)"}}>{r.assento||"—"}</td>
