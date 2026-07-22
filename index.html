@@ -690,7 +690,7 @@ function App() {
         <div className="page">
           {pageEl()}
         </div>
-        <div className="app-version">v1.4.1</div>
+        <div className="app-version">v1.4.2</div>
         {/* Mobile nav */}
         <nav className="mobile-nav">
           {navItems.map(([id,ic,lb]) => (
@@ -1324,14 +1324,13 @@ function TabMapa({viagem, updViagem, passageiros}) {
       <tr style="background:${i%2===0?"#f9f9f9":"#fff"}">
         <td style="padding:8px;text-align:center;font-weight:700">${r.assento}</td>
         <td style="padding:8px;font-weight:500">${r.nomeAvulso||"—"}</td>
-        <td style="padding:8px;color:#555">${r.telefoneResp||""}</td>
         <td style="padding:8px;color:#555">${getCpf(r)}</td>
         <td style="padding:8px;color:#555">${r.obs||""}</td>
       </tr>`).join("");
 
     const linhasSemAssento = semAss.length > 0
-      ? `<tr><td colspan="5" style="padding:12px 8px;background:#fff0f0;color:#cc0000;font-weight:700;font-size:13px">⚠ SEM ASSENTO DEFINIDO (${semAss.length} passageiro${semAss.length>1?"s":""})</td></tr>`
-        + semAss.map(r=>`<tr style="background:#fff5f5"><td style="padding:8px;text-align:center;color:#cc0000">—</td><td style="padding:8px;color:#cc0000;font-weight:500">${r.nomeAvulso||"—"}</td><td style="padding:8px;color:#cc0000">${r.telefoneResp||""}</td><td style="padding:8px;color:#cc0000">${getCpf(r)}</td><td style="padding:8px;color:#cc0000">${r.obs||""}</td></tr>`).join("")
+      ? `<tr><td colspan="4" style="padding:12px 8px;background:#fff0f0;color:#cc0000;font-weight:700;font-size:13px">⚠ SEM ASSENTO DEFINIDO (${semAss.length} passageiro${semAss.length>1?"s":""})</td></tr>`
+        + semAss.map(r=>`<tr style="background:#fff5f5"><td style="padding:8px;text-align:center;color:#cc0000">—</td><td style="padding:8px;color:#cc0000;font-weight:500">${r.nomeAvulso||"—"}</td><td style="padding:8px;color:#cc0000">${getCpf(r)}</td><td style="padding:8px;color:#cc0000">${r.obs||""}</td></tr>`).join("")
       : "";
 
     const html = `<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"/><title></title>
@@ -1340,7 +1339,7 @@ function TabMapa({viagem, updViagem, passageiros}) {
     <h1>Lista de Embarque — ${viagem.nome}</h1>
     <div class="sub">${viagem.dataIda ? "Ida: "+new Date(viagem.dataIda+"T12:00:00").toLocaleDateString("pt-BR") : ""} | Total: ${reservas.length} passageiros · Gerado em ${new Date().toLocaleDateString("pt-BR")}</div>
     <table>
-      <thead><tr><th style="width:55px">Assento</th><th>Nome</th><th>Telefone</th><th>CPF / RG</th><th>Obs</th></tr></thead>
+      <thead><tr><th style="width:55px">Assento</th><th>Nome</th><th>CPF / RG</th><th>Obs</th></tr></thead>
       <tbody>${linhasComAssento}${linhasSemAssento}</tbody>
     </table>
     <div class="total">Total com assento: <strong>${comAssento.length}</strong> · Sem assento: <strong style="color:${semAss.length>0?"#cc0000":"#006600"}">${semAss.length}</strong></div>
