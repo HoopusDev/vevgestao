@@ -1324,13 +1324,14 @@ function TabMapa({viagem, updViagem, passageiros}) {
       <tr style="background:${i%2===0?"#f9f9f9":"#fff"}">
         <td style="padding:8px;text-align:center;font-weight:700">${r.assento}</td>
         <td style="padding:8px;font-weight:500">${r.nomeAvulso||"—"}</td>
+        <td style="padding:8px;color:#555">${r.telefoneResp||""}</td>
         <td style="padding:8px;color:#555">${getCpf(r)}</td>
         <td style="padding:8px;color:#555">${r.obs||""}</td>
       </tr>`).join("");
 
     const linhasSemAssento = semAss.length > 0
-      ? `<tr><td colspan="4" style="padding:12px 8px;background:#fff0f0;color:#cc0000;font-weight:700;font-size:13px">⚠ SEM ASSENTO DEFINIDO (${semAss.length} passageiro${semAss.length>1?"s":""})</td></tr>`
-        + semAss.map(r=>`<tr style="background:#fff5f5"><td style="padding:8px;text-align:center;color:#cc0000">—</td><td style="padding:8px;color:#cc0000;font-weight:500">${r.nomeAvulso||"—"}</td><td style="padding:8px;color:#cc0000">${getCpf(r)}</td><td style="padding:8px;color:#cc0000">${r.obs||""}</td></tr>`).join("")
+      ? `<tr><td colspan="5" style="padding:12px 8px;background:#fff0f0;color:#cc0000;font-weight:700;font-size:13px">⚠ SEM ASSENTO DEFINIDO (${semAss.length} passageiro${semAss.length>1?"s":""})</td></tr>`
+        + semAss.map(r=>`<tr style="background:#fff5f5"><td style="padding:8px;text-align:center;color:#cc0000">—</td><td style="padding:8px;color:#cc0000;font-weight:500">${r.nomeAvulso||"—"}</td><td style="padding:8px;color:#cc0000">${r.telefoneResp||""}</td><td style="padding:8px;color:#cc0000">${getCpf(r)}</td><td style="padding:8px;color:#cc0000">${r.obs||""}</td></tr>`).join("")
       : "";
 
     const html = `<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"/><title></title>
@@ -1339,7 +1340,7 @@ function TabMapa({viagem, updViagem, passageiros}) {
     <h1>Lista de Embarque — ${viagem.nome}</h1>
     <div class="sub">${viagem.dataIda ? "Ida: "+new Date(viagem.dataIda+"T12:00:00").toLocaleDateString("pt-BR") : ""} | Total: ${reservas.length} passageiros · Gerado em ${new Date().toLocaleDateString("pt-BR")}</div>
     <table>
-      <thead><tr><th style="width:55px">Assento</th><th>Nome</th><th>CPF / RG</th><th>Obs</th></tr></thead>
+      <thead><tr><th style="width:55px">Assento</th><th>Nome</th><th>Telefone</th><th>CPF / RG</th><th>Obs</th></tr></thead>
       <tbody>${linhasComAssento}${linhasSemAssento}</tbody>
     </table>
     <div class="total">Total com assento: <strong>${comAssento.length}</strong> · Sem assento: <strong style="color:${semAss.length>0?"#cc0000":"#006600"}">${semAss.length}</strong></div>
@@ -1504,9 +1505,11 @@ function Financeiro({viagens, go}) {
 // ── RELATÓRIOS ────────────────────────────────────────────────────────────────
 function Relatorios({viagens, passageiros}) {
   const [vid,setVid]=useState("");
-  const [tabRel,setTabRel]=useState("pagamentos"); // pagamentos | cadastros
+  const [vidGer,setVidGer]=useState("");
+  const [tabRel,setTabRel]=useState("pagamentos"); // pagamentos | cadastros | viagem | gerencial
   const [filtroCad,setFiltroCad]=useState(""); // viagem id ou "" para geral
   const viagem=viagens.find(v=>v.id===vid);
+  const viagemGer=viagens.find(v=>v.id===vidGer);
 
   // ── Pendentes de pagamento ──
   const pendentes=viagens.flatMap(v=>(v.reservas||[]).filter(r=>sumPgto(r)<Number(v.valor||0)).map(r=>({...r,vNome:v.nome,falta:Number(v.valor||0)-sumPgto(r)})));
@@ -1578,7 +1581,7 @@ function Relatorios({viagens, passageiros}) {
     <div className="ani">
       <div className="topbar"><h1>Relatórios</h1></div>
       <div className="tabs">
-        {[["pagamentos","Pagamentos Pendentes"],["cadastros","Cadastros Pendentes"],["viagem","Relatório por Viagem"]].map(([id,lb])=>(
+        {[["pagamentos","Pagamentos Pendentes"],["cadastros","Cadastros Pendentes"],["viagem","Relatório por Viagem"],["gerencial","Gerencial"]].map(([id,lb])=>(
           <button key={id} className={`tab ${tabRel===id?"on":""}`} onClick={()=>setTabRel(id)}>{lb}</button>
         ))}
       </div>
@@ -1671,6 +1674,176 @@ function Relatorios({viagens, passageiros}) {
           </button>
         </div>
       )}
+
+      {/* ── ABA GERENCIAL ── */}
+      {tabRel==="gerencial"&&(()=>{
+        // Monta dados cruzados: reserva + assento + hotel/quarto + CPF/RG + financeiro
+        const getQuarto = (reservaId) => {
+          if(!viagemGer) return "—";
+          for(const h of (viagemGer.hoteis||[])) {
+            for(const a of (h.aptos||[])) {
+              if((a.paxs||[]).includes(reservaId)) {
+                return a.nome ? `${a.nome}` : (a.tipo||"—");
+              }
+            }
+          }
+          return "—";
+        };
+        const getTipoQuarto = (reservaId) => {
+          if(!viagemGer) return "—";
+          for(const h of (viagemGer.hoteis||[])) {
+            for(const a of (h.aptos||[])) {
+              if((a.paxs||[]).includes(reservaId)) {
+                return a.tipo||"—";
+              }
+            }
+          }
+          return "—";
+        };
+        const getCpfGer = (r) => {
+          if(!passageiros) return "—";
+          const p = passageiros.find(x=>x.id===r.passageiroId)
+                 || passageiros.find(x=>x.nome?.toLowerCase()===r.nomeAvulso?.toLowerCase());
+          return p?.cpf || "—";
+        };
+        const getTelGer = (r) => {
+          if(!passageiros) return r.telefoneResp||"—";
+          const p = passageiros.find(x=>x.id===r.passageiroId);
+          return p?.telefone || r.telefoneResp || "—";
+        };
+
+        const reservasGer = viagemGer ? (viagemGer.reservas||[]).slice().sort((a,b)=>{
+          const na=Number(a.assento||9999), nb=Number(b.assento||9999);
+          return na-nb;
+        }) : [];
+
+        const gerarPDFGerencial = () => {
+          if(!viagemGer) return;
+          const fmt = v => `R$ ${Number(v||0).toLocaleString("pt-BR",{minimumFractionDigits:2})}`;
+          const linhas = reservasGer.map((r,i)=>{
+            const pago = sumPgto(r);
+            const falta = Number(viagemGer.valor||0) - pago;
+            const quitado = falta <= 0;
+            const quarto = getQuarto(r.id);
+            const tipoQ = getTipoQuarto(r.id);
+            const cpf = getCpfGer(r);
+            const tel = getTelGer(r);
+            const statusCell = quitado
+              ? `<td style="padding:8px;text-align:center;color:#16a34a;font-weight:700">Quitado</td>`
+              : `<td style="padding:8px;text-align:center;color:#dc2626;font-weight:700">${fmt(falta)}</td>`;
+            return `<tr style="background:${i%2===0?"#f9f9f9":"#fff"}">
+              <td style="padding:8px;text-align:center;font-weight:700;color:#1e293b">${r.assento||"—"}</td>
+              <td style="padding:8px;font-weight:600">${r.nomeAvulso||"—"}</td>
+              <td style="padding:8px;color:#555">${tel}</td>
+              <td style="padding:8px;color:#555">${cpf}</td>
+              <td style="padding:8px;color:#555">${quarto!=="—"?quarto+" — "+tipoQ:tipoQ!=="—"?tipoQ:"—"}</td>
+              ${statusCell}
+            </tr>`;
+          }).join("");
+          const total = reservasGer.length * Number(viagemGer.valor||0);
+          const recebido = reservasGer.reduce((s,r)=>s+sumPgto(r),0);
+          const html = `<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"/><title></title>
+          <style>body{font-family:Arial,sans-serif;color:#111;padding:24px;max-width:1000px;margin:0 auto}h1{font-size:20px;margin-bottom:4px}.sub{color:#555;font-size:12px;margin-bottom:20px}table{width:100%;border-collapse:collapse;font-size:12px}th{background:#1e293b;color:#fff;padding:10px 8px;text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.4px}td{border-bottom:1px solid #e5e7eb}.tot{margin-top:14px;display:flex;gap:20px;padding:12px 16px;background:#f8fafc;border-radius:6px;font-size:13px}.tot-item{display:flex;flex-direction:column;gap:2px}.tot-label{font-size:10px;text-transform:uppercase;color:#6b7280;letter-spacing:.4px}.tot-val{font-size:16px;font-weight:700}@media print{@page{size:landscape;margin:10mm}body{padding:0}tr{-webkit-print-color-adjust:exact;print-color-adjust:exact}}</style>
+          </head><body>
+          <h1>Relatório Gerencial — ${viagemGer.nome}</h1>
+          <div class="sub">${viagemGer.dataIda?"Ida: "+new Date(viagemGer.dataIda+"T12:00:00").toLocaleDateString("pt-BR"):""} ${viagemGer.dataVolta?"| Volta: "+new Date(viagemGer.dataVolta+"T12:00:00").toLocaleDateString("pt-BR"):""} | ${reservasGer.length} passageiros · Gerado em ${new Date().toLocaleDateString("pt-BR")}</div>
+          <table>
+            <thead><tr><th style="width:60px;text-align:center">Assento</th><th>Nome</th><th>Telefone</th><th>CPF / RG</th><th>Quarto</th><th style="text-align:center;width:100px">Situação</th></tr></thead>
+            <tbody>${linhas}</tbody>
+          </table>
+          <div class="tot">
+            <div class="tot-item"><div class="tot-label">Passageiros</div><div class="tot-val">${reservasGer.length}</div></div>
+            <div class="tot-item"><div class="tot-label">Total esperado</div><div class="tot-val">${fmt(total)}</div></div>
+            <div class="tot-item"><div class="tot-label">Recebido</div><div class="tot-val" style="color:#16a34a">${fmt(recebido)}</div></div>
+            <div class="tot-item"><div class="tot-label">Em aberto</div><div class="tot-val" style="color:${(total-recebido)>0?"#dc2626":"#6b7280"}">${fmt(total-recebido)}</div></div>
+          </div>
+          </body></html>`;
+          const win=window.open("","_blank");
+          if(!win)return alert("Permita pop-ups para gerar o PDF");
+          win.document.write(html);win.document.close();setTimeout(()=>win.print(),600);
+        };
+
+        return (
+          <div style={{padding:"16px 28px 0"}}>
+            <div style={{display:"flex",gap:10,alignItems:"flex-end",marginBottom:14,flexWrap:"wrap"}}>
+              <div className="fg" style={{flex:1,minWidth:200}}>
+                <label className="fl">Selecionar viagem</label>
+                <select className="fsel" value={vidGer} onChange={e=>setVidGer(e.target.value)}>
+                  <option value="">Selecionar viagem...</option>
+                  {viagens.map(v=><option key={v.id} value={v.id}>{v.nome} — {dt(v.dataIda)}</option>)}
+                </select>
+              </div>
+              {viagemGer&&<button className="btn btn-ghost btn-sm" style={{marginBottom:1}} onClick={gerarPDFGerencial}>{ICONS.pdf} Exportar PDF</button>}
+            </div>
+
+            {!viagemGer&&<div style={{color:"var(--dim2)",fontSize:13,padding:"20px 0"}}>Selecione uma viagem para ver o relatório gerencial.</div>}
+
+            {viagemGer&&reservasGer.length===0&&<div style={{color:"var(--dim2)",fontSize:13,padding:"20px 0"}}>Nenhuma reserva nesta viagem.</div>}
+
+            {viagemGer&&reservasGer.length>0&&(
+              <>
+                {/* Cards resumo */}
+                {(()=>{
+                  const total=reservasGer.length*Number(viagemGer.valor||0);
+                  const rec=reservasGer.reduce((s,r)=>s+sumPgto(r),0);
+                  return (
+                    <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:8,marginBottom:14}}>
+                      {[
+                        {label:"Passageiros",val:reservasGer.length,color:"var(--txt)"},
+                        {label:"Total esperado",val:R$(total),color:"var(--txt)"},
+                        {label:"Recebido",val:R$(rec),color:"var(--mint)"},
+                        {label:"Em aberto",val:R$(total-rec),color:(total-rec)>0?"var(--rose)":"var(--dim)"},
+                      ].map(c=>(
+                        <div key={c.label} style={{background:"var(--card)",border:"1px solid var(--brd)",borderRadius:10,padding:12}}>
+                          <div style={{fontSize:10,color:"var(--dim2)",textTransform:"uppercase",letterSpacing:".5px"}}>{c.label}</div>
+                          <div style={{fontSize:16,fontWeight:700,color:c.color,marginTop:4}}>{c.val}</div>
+                        </div>
+                      ))}
+                    </div>
+                  );
+                })()}
+
+                {/* Tabela */}
+                <div style={{overflowX:"auto"}}>
+                  <table style={{width:"100%",borderCollapse:"collapse",fontSize:12}}>
+                    <thead>
+                      <tr style={{borderBottom:"2px solid var(--brd)"}}>
+                        {["Assento","Nome","Telefone","CPF / RG","Quarto","Situação"].map(h=>(
+                          <th key={h} style={{padding:"8px 10px",textAlign:h==="Assento"||h==="Situação"?"center":"left",fontSize:10,fontWeight:700,color:"var(--dim2)",textTransform:"uppercase",letterSpacing:".5px",whiteSpace:"nowrap"}}>{h}</th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {reservasGer.map((r,i)=>{
+                        const pago=sumPgto(r);
+                        const falta=Number(viagemGer.valor||0)-pago;
+                        const quitado=falta<=0;
+                        const quarto=getQuarto(r.id);
+                        const tipoQ=getTipoQuarto(r.id);
+                        const quartoLabel=quarto!=="—"?`${quarto} (${tipoQ!=="—"?tipoQ:"?"})`:tipoQ!=="—"?tipoQ:"—";
+                        return (
+                          <tr key={r.id} style={{borderBottom:"1px solid var(--brd)",background:i%2===0?"transparent":"rgba(255,255,255,.02)"}}>
+                            <td style={{padding:"9px 10px",textAlign:"center",fontWeight:700,fontSize:13,color:"var(--sky)"}}>{r.assento||"—"}</td>
+                            <td style={{padding:"9px 10px",fontWeight:600,fontSize:13,color:"var(--txt)"}}>{r.nomeAvulso||"—"}</td>
+                            <td style={{padding:"9px 10px",fontSize:12,color:"var(--dim)"}}>{getTelGer(r)}</td>
+                            <td style={{padding:"9px 10px",fontSize:12,color:"var(--dim)"}}>{getCpfGer(r)}</td>
+                            <td style={{padding:"9px 10px",fontSize:12,color:"var(--dim)"}}>{quartoLabel}</td>
+                            <td style={{padding:"9px 10px",textAlign:"center"}}>
+                              <span className="bdg" style={{background:quitado?"rgba(52,211,153,.1)":"rgba(248,113,113,.1)",color:quitado?"var(--mint)":"var(--rose)",whiteSpace:"nowrap"}}>
+                                {quitado?"Quitado":`Falta ${R$(falta)}`}
+                              </span>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </>
+            )}
+          </div>
+        );
+      })()}
     </div>
   );
 }
