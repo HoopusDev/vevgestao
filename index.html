@@ -521,6 +521,8 @@ function AutoComplete({passageiros, value, onChange, placeholder}) {
 // ── HELPERS ──────────────────────────────────────────────────────────────────
 const genId = () => Math.random().toString(36).slice(2) + Date.now().toString(36);
 const sumPgto = r => (r.pagamentos||[]).reduce((s,p)=>s+Number(p.valor||0),0);
+// Valor que a reserva deveria pagar: 0 se isento, senão o valor cheio da viagem.
+const valorEsperado = (r,v) => r?.isento ? 0 : Number(v?.valor||0);
 const R$ = v => `R$ ${Number(v||0).toLocaleString("pt-BR",{minimumFractionDigits:2})}`;
 const dt = d => d ? new Date(d+"T12:00:00").toLocaleDateString("pt-BR") : "—";
 const SV = { aberta:{l:"Aberta",c:"#34d399"}, confirmada:{l:"Confirmada",c:"#60a5fa"}, encerrada:{l:"Encerrada",c:"#6b7280"} };
@@ -690,7 +692,7 @@ function App() {
         <div className="page">
           {pageEl()}
         </div>
-        <div className="app-version">v1.6.0</div>
+        <div className="app-version">v1.7.0</div>
         {/* Mobile nav */}
         <nav className="mobile-nav">
           {navItems.map(([id,ic,lb]) => (
@@ -731,8 +733,8 @@ function LoginScreen({onLogin}) {
 function Dashboard({viagens, passageiros, go}) {
   const ativas = viagens.filter(v=>v.status!=="encerrada");
   const totalRec = viagens.reduce((s,v)=>s+(v.reservas||[]).reduce((ss,r)=>ss+sumPgto(r),0),0);
-  const totalEsp = viagens.reduce((s,v)=>s+(v.reservas?.length||0)*Number(v.valor||0),0);
-  const pendentes = viagens.reduce((s,v)=>s+(v.reservas||[]).filter(r=>sumPgto(r)<Number(v.valor||0)).length,0);
+  const totalEsp = viagens.reduce((s,v)=>s+(v.reservas||[]).reduce((ss,r)=>ss+valorEsperado(r,v),0),0);
+  const pendentes = viagens.reduce((s,v)=>s+(v.reservas||[]).filter(r=>sumPgto(r)<valorEsperado(r,v)).length,0);
   return (
     <div className="ani">
       <div className="topbar"><h1>Dashboard</h1></div>
@@ -887,7 +889,7 @@ function TabReservas({viagem, passageiros, addPassageiro, updViagem}) {
       {reservas.length===0
         ?<div className="empty"><div className="empty-icon">{ICONS.users}</div><p>Nenhuma reserva ainda</p></div>
         :reservas.map(r=>{
-          const pago=sumPgto(r),total=Number(viagem.valor||0),falta=total-pago,pct=total>0?Math.min(100,Math.round((pago/total)*100)):0;
+          const pago=sumPgto(r),total=valorEsperado(r,viagem),falta=total-pago,pct=total>0?Math.min(100,Math.round((pago/total)*100)):0;
           const sr=SR[r.status]||SR.pendente;
           const respNome = r.responsavel || passageiros.find(p=>p.id===r.passageiroId)?.nome || null;
           const ehOutroResp = r.outroResp && respNome && respNome !== r.nomeAvulso;
@@ -896,7 +898,7 @@ function TabReservas({viagem, passageiros, addPassageiro, updViagem}) {
               <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}>
                 <div style={{flex:1,minWidth:0}}>
                   <div className="rn">{r.nomeAvulso||"—"}</div>
-                  <div className="rm">{r.assento?`Assento ${r.assento} • `:""}<span className="bdg" style={{background:sr.c+"22",color:sr.c}}>{sr.l}</span>{r.obs&&<span style={{marginLeft:6,fontSize:11,color:"var(--dim)"}}>{r.obs}</span>}</div>
+                  <div className="rm">{r.assento?`Assento ${r.assento} • `:""}<span className="bdg" style={{background:sr.c+"22",color:sr.c}}>{sr.l}</span>{r.isento&&<span className="bdg" style={{background:"rgba(52,211,153,.15)",color:"var(--mint)",marginLeft:5}}>Isento</span>}{r.obs&&<span style={{marginLeft:6,fontSize:11,color:"var(--dim)"}}>{r.obs}</span>}</div>
                   {ehOutroResp&&(
                     <div style={{marginTop:5,display:"inline-flex",alignItems:"center",gap:5,background:"rgba(167,139,250,.1)",border:"1px solid rgba(167,139,250,.2)",borderRadius:6,padding:"3px 8px"}}>
                       <span style={{fontSize:10,color:"var(--lilac)"}}>Resp:</span>
@@ -909,6 +911,10 @@ function TabReservas({viagem, passageiros, addPassageiro, updViagem}) {
                   <button className="btn btn-danger btn-icon btn-sm" onClick={()=>onDel(r.id)}>{ICONS.trash}</button>
                 </div>
               </div>
+              {r.isento ? (
+                <div style={{fontSize:12,color:"var(--dim2)",marginTop:8}}>Isento — sem cobrança</div>
+              ) : (
+              <>
               <div style={{display:"flex",justifyContent:"space-between",fontSize:12,marginTop:8}}>
                 <span style={{color:"var(--mint)"}}>Pago: {R$(pago)}</span>
                 <span style={{color:falta>0?"var(--rose)":"var(--dim)"}}>{falta>0?`Falta: ${R$(falta)}`:"Quitado"}</span>
@@ -917,6 +923,8 @@ function TabReservas({viagem, passageiros, addPassageiro, updViagem}) {
                 <div className="rpw"><div className="rp" style={{width:pct+"%",background:pct>=100?"var(--mint)":"var(--sky)"}}/></div>
                 <span style={{fontSize:11,color:"var(--dim)",width:28}}>{pct}%</span>
               </div>
+              </>
+              )}
             </div>
           );
         })
@@ -933,7 +941,7 @@ function ModalReserva({initial, viagem, passageiros, onSave, onClose, addPassage
 
   const initState = (ini) => {
     if(ini) return ini;
-    return {passageiroId:"",nomeAvulso:"",assento:"",status:"confirmada",obs:"",
+    return {passageiroId:"",nomeAvulso:"",assento:"",status:"confirmada",obs:"",isento:false,
             outroResp:false,respId:"",responsavel:"",telefoneResp:"",
             statusCobranca:"pendente",dataPrometida:""};
   };
@@ -1021,6 +1029,18 @@ function ModalReserva({initial, viagem, passageiros, onSave, onClose, addPassage
             </div>
           </div>
           <div className="fg"><label className="fl">Observações</label><input className="fi" value={f.obs} onChange={e=>set("obs",e.target.value)} placeholder="Preferências, necessidades especiais..."/></div>
+
+          <label style={{display:"flex",alignItems:"center",gap:10,cursor:"pointer",marginTop:2,padding:"10px 12px",background:"rgba(52,211,153,.06)",borderRadius:8,border:"1px solid rgba(52,211,153,.2)"}}>
+            <input type="checkbox" checked={f.isento||false} onChange={e=>set("isento",e.target.checked)}
+              style={{width:16,height:16,accentColor:"var(--mint)",cursor:"pointer"}}/>
+            <span style={{fontSize:13,color:"var(--txt)",fontWeight:500}}>Passageiro isento (não paga)</span>
+          </label>
+
+          {f.isento ? (
+            <div style={{background:"rgba(52,211,153,.06)",border:"1px solid rgba(52,211,153,.15)",borderRadius:8,padding:"10px 12px",fontSize:12,color:"var(--dim2)"}}>
+              Passageiro isento não entra na cobrança nem no relatório financeiro como pagante.
+            </div>
+          ) : (
           <div style={{borderTop:"1px solid var(--brd)",paddingTop:14,marginTop:2}}>
             <div style={{fontSize:10,fontWeight:600,color:"var(--sky)",textTransform:"uppercase",letterSpacing:".6px",marginBottom:12}}>Responsável pelo Pagamento</div>
             
@@ -1066,6 +1086,7 @@ function ModalReserva({initial, viagem, passageiros, onSave, onClose, addPassage
               {f.statusCobranca==="prometido"&&<div className="fg"><label className="fl">Data Prometida</label><input type="date" className="fi" value={f.dataPrometida||""} onChange={e=>set("dataPrometida",e.target.value)}/></div>}
             </div>
           </div>
+          )}
         </div></div>
         <div className="mact">
           <button className="btn btn-ghost btn-full" onClick={onClose}>Cancelar</button>
@@ -1081,7 +1102,7 @@ function TabPagamentos({viagem, updViagem}) {
   const [sel,setSel]=useState(null);
   const [search,setSearch]=useState("");
   const reservas=viagem.reservas||[];
-  const totalEsp=reservas.length*Number(viagem.valor||0);
+  const totalEsp=reservas.reduce((s,r)=>s+valorEsperado(r,viagem),0);
   const totalRec=reservas.reduce((s,r)=>s+sumPgto(r),0);
   const reserva=reservas.find(r=>r.id===sel);
   const updR = async r => await updViagem({...viagem,reservas:reservas.map(x=>x.id===r.id?r:x)});
@@ -1109,13 +1130,17 @@ function TabPagamentos({viagem, updViagem}) {
       {filtered.length===0
         ?<div className="empty"><div className="empty-icon">{ICONS.dollar}</div><p>{search?"Nenhum passageiro encontrado":"Nenhuma reserva"}</p></div>
         :filtered.map(r=>{
-          const pago=sumPgto(r),total=Number(viagem.valor||0),falta=total-pago,pct=total>0?Math.min(100,Math.round((pago/total)*100)):0;
+          const pago=sumPgto(r),total=valorEsperado(r,viagem),falta=total-pago,pct=total>0?Math.min(100,Math.round((pago/total)*100)):0;
           return (
             <div key={r.id} className="rc" style={{cursor:"pointer"}} onClick={()=>setSel(r.id)}>
               <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-                <div><div className="rn">{r.nomeAvulso||"Passageiro"}</div><div className="rm">{(r.pagamentos||[]).length} pagamento(s)</div></div>
+                <div><div className="rn">{r.nomeAvulso||"Passageiro"}{r.isento&&<span className="bdg" style={{background:"rgba(52,211,153,.15)",color:"var(--mint)",marginLeft:6}}>Isento</span>}</div><div className="rm">{(r.pagamentos||[]).length} pagamento(s)</div></div>
                 <span style={{color:"var(--sky)",fontSize:22}}>›</span>
               </div>
+              {r.isento ? (
+                <div style={{fontSize:12,color:"var(--dim2)",marginTop:6}}>Isento — sem cobrança</div>
+              ) : (
+              <>
               <div style={{display:"flex",justifyContent:"space-between",fontSize:12,marginTop:6}}>
                 <span style={{color:"var(--mint)"}}>{R$(pago)}</span>
                 <span style={{color:falta>0?"var(--rose)":"var(--dim)"}}>{falta>0?`falta ${R$(falta)}`:"Quitado"}</span>
@@ -1124,6 +1149,8 @@ function TabPagamentos({viagem, updViagem}) {
                 <div className="rpw"><div className="rp" style={{width:pct+"%",background:pct>=100?"var(--mint)":"var(--sky)"}}/></div>
                 <span style={{fontSize:11,color:"var(--dim)",width:28}}>{pct}%</span>
               </div>
+              </>
+              )}
             </div>
           );
         })
@@ -1136,7 +1163,7 @@ function PgtoDetalhe({reserva, viagem, onBack, onUpdate}) {
   const [modal,setModal]=useState(false);
   const [editP,setEditP]=useState(null);
   const pagamentos=reserva.pagamentos||[];
-  const total=Number(viagem.valor||0),pago=sumPgto(reserva),falta=total-pago,pct=total>0?Math.min(100,Math.round((pago/total)*100)):0;
+  const total=valorEsperado(reserva,viagem),pago=sumPgto(reserva),falta=total-pago,pct=total>0?Math.min(100,Math.round((pago/total)*100)):0;
   const savePgto = async p => {
     const newP=editP?pagamentos.map(x=>x.id===editP.id?{...editP,...p}:x):[...pagamentos,{...p,id:genId()}];
     await onUpdate({...reserva,pagamentos:newP});setModal(false);setEditP(null);
@@ -1469,7 +1496,7 @@ function ModalPax({initial, onSave, onClose}) {
 
 // ── FINANCEIRO ────────────────────────────────────────────────────────────────
 function Financeiro({viagens, go}) {
-  const totalEsp=viagens.reduce((s,v)=>s+(v.reservas?.length||0)*Number(v.valor||0),0);
+  const totalEsp=viagens.reduce((s,v)=>s+(v.reservas||[]).reduce((ss,r)=>ss+valorEsperado(r,v),0),0);
   const totalRec=viagens.reduce((s,v)=>s+(v.reservas||[]).reduce((ss,r)=>ss+sumPgto(r),0),0);
   return (
     <div className="ani">
@@ -1482,7 +1509,7 @@ function Financeiro({viagens, go}) {
       <div style={{padding:"20px 28px 8px",fontSize:11,fontWeight:700,color:"var(--dim)",textTransform:"uppercase",letterSpacing:".5px"}}>Por Viagem — clique para abrir</div>
       {viagens.length===0?<div className="empty"><div className="empty-icon">{ICONS.dollar}</div><p>Nenhuma viagem</p></div>
         :viagens.map(v=>{
-          const res=v.reservas||[],esp=res.length*Number(v.valor||0),rec=res.reduce((s,r)=>s+sumPgto(r),0),ab=esp-rec,pct=esp>0?Math.min(100,Math.round((rec/esp)*100)):0;
+          const res=v.reservas||[],esp=res.reduce((s,r)=>s+valorEsperado(r,v),0),rec=res.reduce((s,r)=>s+sumPgto(r),0),ab=esp-rec,pct=esp>0?Math.min(100,Math.round((rec/esp)*100)):0;
           return (
             <div key={v.id} className="fcard" onClick={()=>go("viagem",{viagem:v})}>
               <div className="fname">{v.nome} <span style={{fontSize:11,color:"var(--dim)",fontWeight:500}}>{dt(v.dataIda)}</span></div>
@@ -1514,7 +1541,7 @@ function Relatorios({viagens, passageiros}) {
   const viagemGer=viagens.find(v=>v.id===vidGer);
 
   // ── Pendentes de pagamento ──
-  const pendentes=viagens.flatMap(v=>(v.reservas||[]).filter(r=>sumPgto(r)<Number(v.valor||0)).map(r=>({...r,vNome:v.nome,falta:Number(v.valor||0)-sumPgto(r)})));
+  const pendentes=viagens.flatMap(v=>(v.reservas||[]).filter(r=>sumPgto(r)<valorEsperado(r,v)).map(r=>({...r,vNome:v.nome,falta:valorEsperado(r,v)-sumPgto(r)})));
 
   // ── Pendentes de cadastro ──
   const calcPendentesCadastro = (viagemId) => {
@@ -1565,14 +1592,15 @@ function Relatorios({viagens, passageiros}) {
   const gerarPDF=()=>{
     if(!viagem)return alert("Selecione uma viagem primeiro");
     const reservas=viagem.reservas||[];
-    const totalEsp=reservas.length*Number(viagem.valor||0);
+    const totalEsp=reservas.reduce((s,r)=>s+valorEsperado(r,viagem),0);
     const totalRec=reservas.reduce((s,r)=>s+sumPgto(r),0);
     const fmt=v=>`R$ ${Number(v).toLocaleString("pt-BR",{minimumFractionDigits:2})}`;
     const linhas=reservas.map((r,i)=>{
-      const pago=sumPgto(r),falta=Number(viagem.valor||0)-pago;
+      const pago=sumPgto(r),falta=valorEsperado(r,viagem)-pago;
       const pgtos=(r.pagamentos||[]).map(p=>`<tr style="font-size:11px"><td></td><td colspan="2" style="padding:3px 8px;color:#666">↳ ${METODOS_LABEL[p.metodo]||p.metodo} — ${p.data?new Date(p.data+"T12:00:00").toLocaleDateString("pt-BR"):"sem data"}${p.obs?" — "+p.obs:""}</td><td style="text-align:right;padding:3px 8px;color:#16a34a">+ ${fmt(p.valor)}</td></tr>`).join("");
       const paxCad = passageiros.find(p=>p.id===r.passageiroId) || passageiros.find(p=>p.nome?.toLowerCase()===r.nomeAvulso?.toLowerCase()); const cpfRg = paxCad ? (paxCad.cpf||"Sem CPF/RG") : "Avulso";
-      return `<tr style="background:${i%2===0?"#f9fafb":"#fff"}"><td style="padding:8px;font-weight:600">${i+1}. ${r.nomeAvulso||"—"}</td><td style="padding:8px;color:#555">${r.assento||"—"}</td><td style="padding:8px;color:#555">${cpfRg}</td><td style="padding:8px;text-align:right;color:#16a34a">${fmt(pago)}</td><td style="padding:8px;text-align:right;color:${falta>0?"#dc2626":"#6b7280"}">${falta>0?fmt(falta):"✓"}</td></tr>${pgtos}`;
+      const faltaCol = r.isento ? '<span style="color:#6b7280">Isento</span>' : (falta>0?fmt(falta):"✓");
+      return `<tr style="background:${i%2===0?"#f9fafb":"#fff"}"><td style="padding:8px;font-weight:600">${i+1}. ${r.nomeAvulso||"—"}${r.isento?' <span style="font-size:10px;color:#16a34a">(isento)</span>':""}</td><td style="padding:8px;color:#555">${r.assento||"—"}</td><td style="padding:8px;color:#555">${cpfRg}</td><td style="padding:8px;text-align:right;color:#16a34a">${fmt(pago)}</td><td style="padding:8px;text-align:right;color:${falta>0?"#dc2626":"#6b7280"}">${faltaCol}</td></tr>${pgtos}`;
     }).join("");
     const html=`<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"/><title></title><style>body{font-family:Arial,sans-serif;color:#111;padding:32px;max-width:800px;margin:0 auto}h1{font-size:22px;margin-bottom:4px}.sub{color:#555;font-size:13px;margin-bottom:24px}.section{margin-bottom:28px}.st{font-size:14px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#374151;border-bottom:2px solid #e5e7eb;padding-bottom:6px;margin-bottom:12px}.ig{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px}.ib{background:#f3f4f6;border-radius:8px;padding:10px 14px}.il{font-size:10px;text-transform:uppercase;color:#6b7280;letter-spacing:.4px}.iv{font-size:16px;font-weight:700;margin-top:2px}table{width:100%;border-collapse:collapse;font-size:13px}th{background:#1e293b;color:#fff;padding:8px;text-align:left;font-size:11px;text-transform:uppercase}th:last-child,td:last-child{text-align:right}.tr td{font-weight:700;background:#f1f5f9;padding:10px 8px}@media print{@page{size:auto;margin:10mm 10mm 10mm 10mm}body{padding:0}}</style></head><body><h1>${viagem.nome}</h1><div class="sub">${viagem.dataIda?"Ida: "+new Date(viagem.dataIda+"T12:00:00").toLocaleDateString("pt-BR"):""} ${viagem.dataVolta?"| Volta: "+new Date(viagem.dataVolta+"T12:00:00").toLocaleDateString("pt-BR"):""} | Gerado em ${new Date().toLocaleDateString("pt-BR")}</div><div class="section"><div class="st">Resumo</div><div class="ig"><div class="ib"><div class="il">Passageiros</div><div class="iv">${reservas.length}/${viagem.capacidade||0}</div></div><div class="ib"><div class="il">Valor/pessoa</div><div class="iv">${fmt(viagem.valor||0)}</div></div><div class="ib"><div class="il">Total esperado</div><div class="iv">${fmt(totalEsp)}</div></div><div class="ib"><div class="il">Total recebido</div><div class="iv" style="color:#16a34a">${fmt(totalRec)}</div></div><div class="ib"><div class="il">Em aberto</div><div class="iv" style="color:${(totalEsp-totalRec)>0?"#dc2626":"#6b7280"}">${fmt(totalEsp-totalRec)}</div></div><div class="ib"><div class="il">Status</div><div class="iv">${viagem.status||"—"}</div></div></div></div><div class="section"><div class="st">Passageiros e Pagamentos</div><table><thead><tr><th>Passageiro</th><th>Assento</th><th>CPF / RG</th><th style="text-align:right">Pago</th><th style="text-align:right">Falta</th></tr></thead><tbody>${linhas}<tr class="tr"><td colspan="2">TOTAL (${reservas.length} passageiros)</td><td style="color:#16a34a;text-align:right">${fmt(totalRec)}</td><td style="text-align:right;color:${(totalEsp-totalRec)>0?"#dc2626":"#6b7280"}">${(totalEsp-totalRec)>0?fmt(totalEsp-totalRec):"Quitado"}</td></tr></tbody></table></div>${viagem.descricao?`<div class="section"><div class="st">Observações</div><p style="font-size:13px;color:#555">${viagem.descricao}</p></div>`:""}</body></html>`;
     const win=window.open("","_blank");
@@ -1663,11 +1691,11 @@ function Relatorios({viagens, passageiros}) {
               {viagens.map(v=><option key={v.id} value={v.id}>{v.nome} — {dt(v.dataIda)}</option>)}
             </select>
           </div>
-          {viagem&&(viagem.reservas||[]).map((r,i)=>{const pago=sumPgto(r),q=pago>=Number(viagem.valor||0);return(
+          {viagem&&(viagem.reservas||[]).map((r,i)=>{const pago=sumPgto(r),tot=valorEsperado(r,viagem),q=r.isento||pago>=tot;return(
             <div key={r.id} style={{display:"flex",alignItems:"center",gap:8,padding:"8px 0",borderBottom:"1px solid var(--brd)"}}>
               <span style={{fontSize:11,color:"var(--dim2)",width:20}}>{i+1}</span>
               <div style={{flex:1}}><div style={{fontSize:13,fontWeight:600,color:"var(--txt)"}}>{r.nomeAvulso||"—"}</div><div style={{fontSize:11,color:"var(--dim2)"}}>Assento: {r.assento||"—"}</div></div>
-              <span className="bdg" style={{background:q?"rgba(52,211,153,.1)":"rgba(248,113,113,.1)",color:q?"var(--mint)":"var(--rose)"}}>{q?"Quitado":`Falta ${R$(Number(viagem.valor||0)-pago)}`}</span>
+              <span className="bdg" style={{background:r.isento?"rgba(52,211,153,.1)":q?"rgba(52,211,153,.1)":"rgba(248,113,113,.1)",color:r.isento?"var(--mint)":q?"var(--mint)":"var(--rose)"}}>{r.isento?"Isento":q?"Quitado":`Falta ${R$(tot-pago)}`}</span>
             </div>
           );})}
           {viagem&&(viagem.reservas||[]).length===0&&<div style={{color:"var(--dim2)",fontSize:13,marginBottom:12}}>Nenhuma reserva nesta viagem.</div>}
@@ -1738,12 +1766,14 @@ function Relatorios({viagens, passageiros}) {
           const fmt = v => `R$ ${Number(v||0).toLocaleString("pt-BR",{minimumFractionDigits:2})}`;
           const linhas = reservasGer.map((r,i)=>{
             const pago = sumPgto(r);
-            const falta = Number(viagemGer.valor||0) - pago;
-            const quitado = falta <= 0;
+            const falta = valorEsperado(r,viagemGer) - pago;
+            const quitado = r.isento || falta <= 0;
             const aptoInfoPdf = getAptoInfo(r.id);
             const cpf = getCpfGer(r);
             const tel = getTelGer(r);
-            const statusCell = quitado
+            const statusCell = r.isento
+              ? `<td style="padding:8px;text-align:center;color:#0369a1;font-weight:700">Isento</td>`
+              : quitado
               ? `<td style="padding:8px;text-align:center;color:#16a34a;font-weight:700">Quitado</td>`
               : `<td style="padding:8px;text-align:center;color:#dc2626;font-weight:700">${fmt(falta)}</td>`;
             return `<tr style="background:${i%2===0?"#f9f9f9":"#fff"}">
@@ -1755,7 +1785,7 @@ function Relatorios({viagens, passageiros}) {
               ${statusCell}
             </tr>`;
           }).join("");
-          const total = reservasGer.length * Number(viagemGer.valor||0);
+          const total = reservasGer.reduce((s,r)=>s+valorEsperado(r,viagemGer),0);
           const recebido = reservasGer.reduce((s,r)=>s+sumPgto(r),0);
           const html = `<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"/><title></title>
           <style>body{font-family:Arial,sans-serif;color:#111;padding:24px;max-width:1000px;margin:0 auto}h1{font-size:20px;margin-bottom:4px}.sub{color:#555;font-size:12px;margin-bottom:20px}table{width:100%;border-collapse:collapse;font-size:12px}th{background:#1e293b;color:#fff;padding:10px 8px;text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.4px}td{border-bottom:1px solid #e5e7eb}.tot{margin-top:14px;display:flex;gap:20px;padding:12px 16px;background:#f8fafc;border-radius:6px;font-size:13px}.tot-item{display:flex;flex-direction:column;gap:2px}.tot-label{font-size:10px;text-transform:uppercase;color:#6b7280;letter-spacing:.4px}.tot-val{font-size:16px;font-weight:700}@media print{@page{size:landscape;margin:10mm}body{padding:0}tr{-webkit-print-color-adjust:exact;print-color-adjust:exact}}</style>
@@ -1799,7 +1829,7 @@ function Relatorios({viagens, passageiros}) {
               <>
                 {/* Cards resumo */}
                 {(()=>{
-                  const total=reservasGer.length*Number(viagemGer.valor||0);
+                  const total=reservasGer.reduce((s,r)=>s+valorEsperado(r,viagemGer),0);
                   const rec=reservasGer.reduce((s,r)=>s+sumPgto(r),0);
                   return (
                     <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:8,marginBottom:14}}>
@@ -1831,8 +1861,8 @@ function Relatorios({viagens, passageiros}) {
                     <tbody>
                       {reservasGer.map((r,i)=>{
                         const pago=sumPgto(r);
-                        const falta=Number(viagemGer.valor||0)-pago;
-                        const quitado=falta<=0;
+                        const falta=valorEsperado(r,viagemGer)-pago;
+                        const quitado=r.isento||falta<=0;
                         const aptoInfo=getAptoInfo(r.id); const quartoLabel=aptoInfo?(aptoInfo.nomeApto?`${aptoInfo.nomeApto} — ${getTipoLabel(aptoInfo.tipo)}`:getTipoLabel(aptoInfo.tipo)):"—";
                         return (
                           <tr key={r.id} style={{borderBottom:"1px solid var(--brd)",background:i%2===0?"transparent":"rgba(255,255,255,.02)"}}>
@@ -1842,8 +1872,8 @@ function Relatorios({viagens, passageiros}) {
                             <td style={{padding:"9px 10px",fontSize:12,color:"var(--dim)"}}>{getCpfGer(r)}</td>
                             <td style={{padding:"9px 10px",fontSize:12,color:"var(--dim)"}}>{quartoLabel}</td>
                             <td style={{padding:"9px 10px",textAlign:"center"}}>
-                              <span className="bdg" style={{background:quitado?"rgba(52,211,153,.1)":"rgba(248,113,113,.1)",color:quitado?"var(--mint)":"var(--rose)",whiteSpace:"nowrap"}}>
-                                {quitado?"Quitado":`Falta ${R$(falta)}`}
+                              <span className="bdg" style={{background:r.isento?"rgba(56,189,248,.1)":quitado?"rgba(52,211,153,.1)":"rgba(248,113,113,.1)",color:r.isento?"var(--sky)":quitado?"var(--mint)":"var(--rose)",whiteSpace:"nowrap"}}>
+                                {r.isento?"Isento":quitado?"Quitado":`Falta ${R$(falta)}`}
                               </span>
                             </td>
                           </tr>
@@ -2486,7 +2516,7 @@ function Cobrancas({viagens, passageiros, updViagem, config}) {
   const grupos = React.useMemo(()=>{
     const mapa = {};
     reservas.forEach(r=>{
-      const falta = Number(viagem?.valor||0) - sumPgto(r);
+      const falta = valorEsperado(r, viagem) - sumPgto(r);
       if(falta<=0) return;
       // Fallback automático: usa passageiro cadastrado se não tiver responsável definido
       const paxCad = passageiros.find(p=>p.id===r.passageiroId);
