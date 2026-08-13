@@ -692,7 +692,7 @@ function App() {
         <div className="page">
           {pageEl()}
         </div>
-        <div className="app-version">v1.7.0</div>
+        <div className="app-version">v1.8.1</div>
         {/* Mobile nav */}
         <nav className="mobile-nav">
           {navItems.map(([id,ic,lb]) => (
@@ -732,9 +732,10 @@ function LoginScreen({onLogin}) {
 // ── DASHBOARD ─────────────────────────────────────────────────────────────────
 function Dashboard({viagens, passageiros, go}) {
   const ativas = viagens.filter(v=>v.status!=="encerrada");
-  const totalRec = viagens.reduce((s,v)=>s+(v.reservas||[]).reduce((ss,r)=>ss+sumPgto(r),0),0);
-  const totalEsp = viagens.reduce((s,v)=>s+(v.reservas||[]).reduce((ss,r)=>ss+valorEsperado(r,v),0),0);
-  const pendentes = viagens.reduce((s,v)=>s+(v.reservas||[]).filter(r=>sumPgto(r)<valorEsperado(r,v)).length,0);
+  const viagensConf = viagens.filter(v=>v.status==="confirmada");
+  const totalRec = viagensConf.reduce((s,v)=>s+(v.reservas||[]).reduce((ss,r)=>ss+sumPgto(r),0),0);
+  const totalEsp = viagensConf.reduce((s,v)=>s+(v.reservas||[]).reduce((ss,r)=>ss+valorEsperado(r,v),0),0);
+  const pendentes = viagensConf.reduce((s,v)=>s+(v.reservas||[]).filter(r=>sumPgto(r)<valorEsperado(r,v)).length,0);
   return (
     <div className="ani">
       <div className="topbar"><h1>Dashboard</h1></div>
@@ -742,7 +743,7 @@ function Dashboard({viagens, passageiros, go}) {
         <div className="stat-card"><div className="stat-label">Viagens Ativas</div><div className="stat-value">{ativas.length}</div><div className="stat-sub">{viagens.length} total</div></div>
         <div className="stat-card"><div className="stat-label">Passageiros</div><div className="stat-value">{passageiros.length}</div><div className="stat-sub">cadastrados</div></div>
         <div className="stat-card"><div className="stat-label">Total Recebido</div><div className="stat-value" style={{fontSize:18,color:"var(--mint)"}}>{R$(totalRec)}</div><div className="stat-sub">de {R$(totalEsp)} esperado</div></div>
-        <div className="stat-card"><div className="stat-label">Pagtos Pendentes</div><div className="stat-value" style={{color:pendentes>0?"var(--rose)":"var(--mint)"}}>{pendentes}</div><div className="stat-sub">passageiros em aberto</div></div>
+        <div className="stat-card"><div className="stat-label">Pagtos Pendentes</div><div className="stat-value" style={{color:pendentes>0?"var(--rose)":"var(--mint)"}}>{pendentes}</div><div className="stat-sub">em viagens confirmadas</div></div>
       </div>
       <div className="section" style={{marginTop:24}}>
         <div className="sec-hd"><span className="sec-hd-title">Viagens Ativas</span><span className="sec-hd-count">{ativas.length}</span></div>
@@ -786,13 +787,25 @@ function Viagens({viagens, addViagem, saveViagem, deleteViagem, go}) {
   const [modal,setModal]=useState(false);
   const [editing,setEditing]=useState(null);
   const [search,setSearch]=useState("");
-  const filtered = viagens.filter(v=>v.nome?.toLowerCase().includes(search.toLowerCase())).sort((a,b)=>(a.dataIda||"")>(b.dataIda||"")?1:-1);
+  const [showEncerradas,setShowEncerradas]=useState(false);
+  const encerradasCount = viagens.filter(v=>v.status==="encerrada").length;
+  const base = showEncerradas ? viagens : viagens.filter(v=>v.status!=="encerrada");
+  const filtered = base.filter(v=>v.nome?.toLowerCase().includes(search.toLowerCase())).sort((a,b)=>(a.dataIda||"")>(b.dataIda||"")?1:-1);
   const onSave = async f => { if(editing) await saveViagem({...editing,...f}); else await addViagem(f); setModal(false);setEditing(null); };
   const onDel = async id => { if(confirm("Excluir viagem?")) await deleteViagem(id); };
   return (
     <div className="ani">
-      <div className="topbar"><h1>Viagens</h1><span className="bdg" style={{background:"rgba(56,189,248,.1)",color:"var(--sky)"}}>{viagens.length}</span></div>
+      <div className="topbar"><h1>Viagens</h1><span className="bdg" style={{background:"rgba(56,189,248,.1)",color:"var(--sky)"}}>{filtered.length}</span></div>
       <div className="search-box"><span className="search-icon">{ICONS.search}</span><input className="fi" placeholder="Buscar viagem..." value={search} onChange={e=>setSearch(e.target.value)}/></div>
+      {encerradasCount>0&&(
+        <div style={{padding:"10px 28px 0",display:"flex",justifyContent:"flex-end"}}>
+          <label style={{display:"flex",alignItems:"center",gap:8,cursor:"pointer",fontSize:12,color:"var(--dim2)"}}>
+            <input type="checkbox" checked={showEncerradas} onChange={e=>setShowEncerradas(e.target.checked)}
+              style={{width:15,height:15,accentColor:"var(--sky)",cursor:"pointer"}}/>
+            Mostrar encerradas ({encerradasCount})
+          </label>
+        </div>
+      )}
       <div className="section" style={{marginTop:16}}>
         {filtered.length===0
           ? <div className="empty"><div className="empty-icon">{ICONS.bus}</div><p>Nenhuma viagem encontrada</p></div>
@@ -1496,19 +1509,21 @@ function ModalPax({initial, onSave, onClose}) {
 
 // ── FINANCEIRO ────────────────────────────────────────────────────────────────
 function Financeiro({viagens, go}) {
-  const totalEsp=viagens.reduce((s,v)=>s+(v.reservas||[]).reduce((ss,r)=>ss+valorEsperado(r,v),0),0);
-  const totalRec=viagens.reduce((s,v)=>s+(v.reservas||[]).reduce((ss,r)=>ss+sumPgto(r),0),0);
+  const viagensConf = viagens.filter(v=>v.status==="confirmada");
+  const totalEsp=viagensConf.reduce((s,v)=>s+(v.reservas||[]).reduce((ss,r)=>ss+valorEsperado(r,v),0),0);
+  const totalRec=viagensConf.reduce((s,v)=>s+(v.reservas||[]).reduce((ss,r)=>ss+sumPgto(r),0),0);
   return (
     <div className="ani">
       <div className="topbar"><h1>Financeiro</h1></div>
-      <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:12,padding:"20px 28px 0"}}>
+      <div style={{padding:"12px 28px 0",fontSize:12,color:"var(--dim2)"}}>Considerando apenas viagens <strong style={{color:"var(--txt)"}}>Confirmadas</strong>.</div>
+      <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:12,padding:"12px 28px 0"}}>
         <div style={{background:"var(--card)",border:"1px solid var(--brd)",borderRadius:14,padding:16}}><div style={{fontSize:10,fontWeight:700,color:"var(--dim)",textTransform:"uppercase",letterSpacing:".5px"}}>Esperado Total</div><div style={{fontSize:22,fontWeight:900,color:"var(--txt)",marginTop:5}}>{R$(totalEsp)}</div></div>
         <div style={{background:"var(--card)",border:"1px solid var(--brd)",borderRadius:14,padding:16}}><div style={{fontSize:10,fontWeight:700,color:"var(--dim)",textTransform:"uppercase",letterSpacing:".5px"}}>Recebido Total</div><div style={{fontSize:22,fontWeight:900,color:"var(--mint)",marginTop:5}}>{R$(totalRec)}</div></div>
         <div style={{background:"var(--card)",border:"1px solid var(--brd)",borderRadius:14,padding:16}}><div style={{fontSize:10,fontWeight:700,color:"var(--dim)",textTransform:"uppercase",letterSpacing:".5px"}}>Em Aberto</div><div style={{fontSize:22,fontWeight:900,color:(totalEsp-totalRec)>0?"var(--rose)":"var(--dim)",marginTop:5}}>{R$(totalEsp-totalRec)}</div></div>
       </div>
       <div style={{padding:"20px 28px 8px",fontSize:11,fontWeight:700,color:"var(--dim)",textTransform:"uppercase",letterSpacing:".5px"}}>Por Viagem — clique para abrir</div>
-      {viagens.length===0?<div className="empty"><div className="empty-icon">{ICONS.dollar}</div><p>Nenhuma viagem</p></div>
-        :viagens.map(v=>{
+      {viagensConf.length===0?<div className="empty"><div className="empty-icon">{ICONS.dollar}</div><p>Nenhuma viagem confirmada</p></div>
+        :viagensConf.map(v=>{
           const res=v.reservas||[],esp=res.reduce((s,r)=>s+valorEsperado(r,v),0),rec=res.reduce((s,r)=>s+sumPgto(r),0),ab=esp-rec,pct=esp>0?Math.min(100,Math.round((rec/esp)*100)):0;
           return (
             <div key={v.id} className="fcard" onClick={()=>go("viagem",{viagem:v})}>
@@ -1541,7 +1556,7 @@ function Relatorios({viagens, passageiros}) {
   const viagemGer=viagens.find(v=>v.id===vidGer);
 
   // ── Pendentes de pagamento ──
-  const pendentes=viagens.flatMap(v=>(v.reservas||[]).filter(r=>sumPgto(r)<valorEsperado(r,v)).map(r=>({...r,vNome:v.nome,falta:valorEsperado(r,v)-sumPgto(r)})));
+  const pendentes=viagens.filter(v=>v.status==="confirmada").flatMap(v=>(v.reservas||[]).filter(r=>sumPgto(r)<valorEsperado(r,v)).map(r=>({...r,vNome:v.nome,falta:valorEsperado(r,v)-sumPgto(r)})));
 
   // ── Pendentes de cadastro ──
   const calcPendentesCadastro = (viagemId) => {
@@ -1619,9 +1634,10 @@ function Relatorios({viagens, passageiros}) {
       {/* ── ABA PAGAMENTOS ── */}
       {tabRel==="pagamentos"&&(
         <div style={{padding:"16px 28px 0"}}>
-          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:4}}>
             <div style={{fontWeight:600,fontSize:13,color:"var(--txt)",display:"flex",alignItems:"center",gap:7}}>{ICONS.warn} {pendentes.length} pagamento(s) em aberto</div>
           </div>
+          <div style={{fontSize:11,color:"var(--dim2)",marginBottom:12}}>Considerando apenas viagens <strong style={{color:"var(--txt)"}}>Confirmadas</strong>.</div>
           {pendentes.length===0
             ?<div style={{color:"var(--mint)",fontSize:13,fontWeight:600,padding:"20px 0"}}>✓ Todos os pagamentos em dia!</div>
             :pendentes.map(r=>(
