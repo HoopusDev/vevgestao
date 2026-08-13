@@ -690,7 +690,7 @@ function App() {
         <div className="page">
           {pageEl()}
         </div>
-        <div className="app-version">v1.4.3</div>
+        <div className="app-version">v1.5.0</div>
         {/* Mobile nav */}
         <nav className="mobile-nav">
           {navItems.map(([id,ic,lb]) => (
@@ -1865,8 +1865,9 @@ function Relatorios({viagens, passageiros}) {
 // ── LÓGICA CALCULADORA (shared) ───────────────────────────────────────────────
 function useCalc(inicial) {
   const [onibus, setOnibus] = React.useState(inicial?.onibus || [{id:genId(),nome:"Ônibus 1",valor:""}]);
-  const [hoteis, setHoteis] = React.useState(inicial?.hoteis || [{id:genId(),nome:"Hotel 1",valor:""}]);
-  const [passageiros, setPassageiros] = React.useState(inicial?.passageiros || "");
+  const [hoteis, setHoteis] = React.useState(inicial?.hoteis || [{id:genId(),nome:"Hotel 1",modo:"total",valor:"",cortesias:""}]);
+  const [passageiros, setPassageiros] = React.useState(inicial?.passageiros || ""); // pagantes
+  const [organizacao, setOrganizacao] = React.useState(inicial?.organizacao || ""); // não pagam, mas ocupam vaga/quarto
   const [ganhoTipo, setGanhoTipo] = React.useState(inicial?.ganhoTipo || "pct");
   const [ganho, setGanho] = React.useState(inicial?.ganho || "");
 
@@ -1874,14 +1875,27 @@ function useCalc(inicial) {
   const remOnibus = id => setOnibus(v => v.filter(x=>x.id!==id));
   const updOnibus = (id,k,val) => setOnibus(v => v.map(x=>x.id===id?{...x,[k]:val}:x));
 
-  const addHotel = () => setHoteis(v => [...v, {id:genId(),nome:`Hotel ${v.length+1}`,valor:""}]);
+  const addHotel = () => setHoteis(v => [...v, {id:genId(),nome:`Hotel ${v.length+1}`,modo:"total",valor:"",cortesias:""}]);
   const remHotel = id => setHoteis(v => v.filter(x=>x.id!==id));
   const updHotel = (id,k,val) => setHoteis(v => v.map(x=>x.id===id?{...x,[k]:val}:x));
 
+  const nPagantes = Number(passageiros||0);
+  const nOrganizacao = Number(organizacao||0);
+  const nPaxTotal = nPagantes + nOrganizacao; // total de gente ocupando ônibus/hotel
+
   const custoOnibus = onibus.reduce((s,o)=>s+Number(o.valor||0),0);
-  const custoHotel = hoteis.reduce((s,h)=>s+Number(h.valor||0),0);
+  // Custo de cada hotel depende do modo: "pessoa" multiplica valor unitário pelo total de gente
+  // menos as cortesias dadas pelo hotel (ex: motorista, guia); "total" usa o valor fechado direto.
+  const custoHotelItem = h => {
+    if(h.modo==="pessoa") {
+      const pagos = Math.max(0, nPaxTotal - Number(h.cortesias||0));
+      return Number(h.valor||0) * pagos;
+    }
+    return Number(h.valor||0);
+  };
+  const custoHotel = hoteis.reduce((s,h)=>s+custoHotelItem(h),0);
   const custoTotal = custoOnibus + custoHotel;
-  const nPax = Number(passageiros||0);
+  const nPax = nPagantes; // divisão da conta é sempre só entre os pagantes
   const custoPorPax = nPax>0 ? custoTotal/nPax : 0;
   const ganhoVal = ganhoTipo==="pct"
     ? custoTotal * (Number(ganho||0)/100)
@@ -1891,15 +1905,15 @@ function useCalc(inicial) {
   const valorFinal = valorPorPax * nPax;
   const lucro = ganhoVal;
 
-  const dados = {onibus,hoteis,passageiros,ganhoTipo,ganho};
-  const resultado = {custoOnibus,custoHotel,custoTotal,nPax,custoPorPax,ganhoVal,lucroPorPax,valorPorPax,valorFinal,lucro};
+  const dados = {onibus,hoteis,passageiros,organizacao,ganhoTipo,ganho};
+  const resultado = {custoOnibus,custoHotel,custoTotal,nPax,nPagantes,nOrganizacao,nPaxTotal,custoPorPax,ganhoVal,lucroPorPax,valorPorPax,valorFinal,lucro};
 
-  return {onibus,hoteis,passageiros,setPassageiros,ganhoTipo,setGanhoTipo,ganho,setGanho,
+  return {onibus,hoteis,passageiros,setPassageiros,organizacao,setOrganizacao,ganhoTipo,setGanhoTipo,ganho,setGanho,
           addOnibus,remOnibus,updOnibus,addHotel,remHotel,updHotel,resultado,dados};
 }
 
 function CalcForm({state, showResult=true}) {
-  const {onibus,hoteis,passageiros,setPassageiros,ganhoTipo,setGanhoTipo,ganho,setGanho,
+  const {onibus,hoteis,passageiros,setPassageiros,organizacao,setOrganizacao,ganhoTipo,setGanhoTipo,ganho,setGanho,
          addOnibus,remOnibus,updOnibus,addHotel,remHotel,updHotel,resultado} = state;
   const r = resultado;
   return (
@@ -1926,13 +1940,38 @@ function CalcForm({state, showResult=true}) {
           <span style={{display:"flex",alignItems:"center",gap:6}}>{ICONS.hotel} Hotéis</span>
           <button className="btn btn-ghost btn-sm" onClick={addHotel}>{ICONS.plus} Adicionar</button>
         </div>
-        {hoteis.map(h=>(
-          <div key={h.id} className="calc-item">
-            <input className="fi" value={h.nome} onChange={e=>updHotel(h.id,"nome",e.target.value)} placeholder="Nome"/>
-            <input type="number" className="fi" value={h.valor} onChange={e=>updHotel(h.id,"valor",e.target.value)} placeholder="R$ valor"/>
-            {hoteis.length>1&&<button className="btn btn-danger btn-icon btn-sm" onClick={()=>remHotel(h.id)}>{ICONS.close}</button>}
-          </div>
-        ))}
+        {hoteis.map(h=>{
+          const modo = h.modo||"total";
+          return (
+            <div key={h.id} style={{border:"1px solid var(--brd)",borderRadius:8,padding:"10px 10px 12px",marginBottom:10}}>
+              <div style={{display:"flex",gap:8,alignItems:"center",marginBottom:8}}>
+                <input className="fi" style={{flex:1}} value={h.nome} onChange={e=>updHotel(h.id,"nome",e.target.value)} placeholder="Nome do hotel"/>
+                {hoteis.length>1&&<button className="btn btn-danger btn-icon btn-sm" onClick={()=>remHotel(h.id)}>{ICONS.close}</button>}
+              </div>
+              <div className="ganho-toggle" style={{marginBottom:8}}>
+                <div className={`ganho-btn ${modo==="total"?"on":""}`} onClick={()=>updHotel(h.id,"modo","total")}>Valor Total</div>
+                <div className={`ganho-btn ${modo==="pessoa"?"on":""}`} onClick={()=>updHotel(h.id,"modo","pessoa")}>Por Passageiro</div>
+              </div>
+              <div className="fgrid">
+                <div className="fg">
+                  <label className="fl">{modo==="pessoa"?"Valor por pessoa":"Valor total"}</label>
+                  <input type="number" className="fi" value={h.valor} onChange={e=>updHotel(h.id,"valor",e.target.value)} placeholder="R$ 0,00"/>
+                </div>
+                <div className="fg">
+                  <label className="fl">Cortesias (grátis)</label>
+                  <input type="number" className="fi" value={h.cortesias} onChange={e=>updHotel(h.id,"cortesias",e.target.value)} placeholder="Ex: 2"/>
+                </div>
+              </div>
+              {modo==="pessoa" && (
+                <div style={{fontSize:11,color:"var(--dim2)",marginTop:6}}>
+                  {Number(h.cortesias||0)>0
+                    ? <>Cobrado por {Math.max(0,(r.nPaxTotal||0)-Number(h.cortesias||0))} pessoa(s), de {r.nPaxTotal||0} no total</>
+                    : <>Cobrado por {r.nPaxTotal||0} pessoa(s)</>}
+                </div>
+              )}
+            </div>
+          );
+        })}
         <div style={{fontSize:12,color:"var(--dim)",marginTop:4}}>Subtotal: <strong style={{color:"var(--txt)"}}>{R$(r.custoHotel)}</strong></div>
       </div>
 
@@ -1940,7 +1979,15 @@ function CalcForm({state, showResult=true}) {
       <div className="calc-card">
         <div className="calc-card-title"><span style={{display:"flex",alignItems:"center",gap:6}}>{ICONS.users} Passageiros & Ganho</span></div>
         <div className="fgrid" style={{marginBottom:14}}>
-          <div className="fg"><label className="fl">Nº de Passageiros</label><input type="number" className="fi" value={passageiros} onChange={e=>setPassageiros(e.target.value)} placeholder="Ex: 44"/></div>
+          <div className="fg"><label className="fl">Passageiros pagantes</label><input type="number" className="fi" value={passageiros} onChange={e=>setPassageiros(e.target.value)} placeholder="Ex: 44"/></div>
+          <div className="fg"><label className="fl">Da organização (não pagam)</label><input type="number" className="fi" value={organizacao} onChange={e=>setOrganizacao(e.target.value)} placeholder="Ex: motorista, guia"/></div>
+        </div>
+        {Number(organizacao||0)>0 && (
+          <div style={{fontSize:11,color:"var(--dim2)",marginTop:-6,marginBottom:14}}>
+            Total de {r.nPaxTotal} pessoa(s) na viagem — a conta é dividida só entre os {r.nPagantes} pagante(s).
+          </div>
+        )}
+        <div className="fgrid" style={{marginBottom:14}}>
           <div className="fg">
             <label className="fl">Tipo de Ganho</label>
             <div className="ganho-toggle">
@@ -1948,10 +1995,10 @@ function CalcForm({state, showResult=true}) {
               <div className={`ganho-btn ${ganhoTipo==="fixo"?"on":""}`} onClick={()=>setGanhoTipo("fixo")}>R$ Valor fixo</div>
             </div>
           </div>
-        </div>
-        <div className="fg">
-          <label className="fl">{ganhoTipo==="pct"?"Porcentagem de Ganho (%)":"Valor de Lucro (R$)"}</label>
-          <input type="number" className="fi" value={ganho} onChange={e=>setGanho(e.target.value)} placeholder={ganhoTipo==="pct"?"Ex: 20":"Ex: 500"}/>
+          <div className="fg">
+            <label className="fl">{ganhoTipo==="pct"?"Porcentagem de Ganho (%)":"Valor de Lucro (R$)"}</label>
+            <input type="number" className="fi" value={ganho} onChange={e=>setGanho(e.target.value)} placeholder={ganhoTipo==="pct"?"Ex: 20":"Ex: 500"}/>
+          </div>
         </div>
       </div>
 
@@ -1962,6 +2009,8 @@ function CalcForm({state, showResult=true}) {
           <div className="calc-result-row"><span className="calc-result-label">Custo ônibus</span><span className="calc-result-value">{R$(r.custoOnibus)}</span></div>
           <div className="calc-result-row"><span className="calc-result-label">Custo hotel</span><span className="calc-result-value">{R$(r.custoHotel)}</span></div>
           <div className="calc-result-row"><span className="calc-result-label">Custo total</span><span className="calc-result-value">{R$(r.custoTotal)}</span></div>
+          <div className="calc-result-row"><span className="calc-result-label">Passageiros pagantes</span><span className="calc-result-value">{r.nPagantes}</span></div>
+          {r.nOrganizacao>0 && <div className="calc-result-row"><span className="calc-result-label">Da organização</span><span className="calc-result-value">{r.nOrganizacao}</span></div>}
           <div className="calc-result-row"><span className="calc-result-label">Custo por passageiro</span><span className="calc-result-value">{R$(r.custoPorPax)}</span></div>
           <div className="calc-result-row"><span className="calc-result-label">Lucro total</span><span className="calc-result-profit">{R$(r.lucro)}</span></div>
           <div className="calc-result-row"><span className="calc-result-label">Lucro por passageiro</span><span className="calc-result-value">{R$(r.lucroPorPax)}</span></div>
@@ -1977,8 +2026,23 @@ function gerarPDFCalc(resultado, onibus, hoteis, nomeViagem) {
   const r = resultado;
   const fmt = v => `R$ ${Number(v).toLocaleString("pt-BR",{minimumFractionDigits:2})}`;
   const linhasOnibus = onibus.map(o=>`<tr><td style="padding:8px">${o.nome}</td><td style="padding:8px;text-align:right">${fmt(o.valor||0)}</td></tr>`).join("");
-  const linhasHotel = hoteis.map(h=>`<tr><td style="padding:8px">${h.nome}</td><td style="padding:8px;text-align:right">${fmt(h.valor||0)}</td></tr>`).join("");
-  const html=`<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"/><title></title><style>body{font-family:Arial,sans-serif;color:#111;padding:32px;max-width:700px;margin:0 auto}h1{font-size:22px;margin-bottom:4px}.sub{color:#555;font-size:13px;margin-bottom:24px}h2{font-size:14px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#374151;border-bottom:2px solid #e5e7eb;padding-bottom:6px;margin:20px 0 10px}table{width:100%;border-collapse:collapse;font-size:13px}th{background:#1e293b;color:#fff;padding:8px;text-align:left}th:last-child,td:last-child{text-align:right}.res{background:#f8fafc;border-radius:8px;padding:16px;margin-top:20px}.res-row{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #e5e7eb;font-size:13px}.res-row:last-child{border-bottom:none}.dest{font-size:18px;font-weight:700;color:#0369a1}.dest2{font-size:22px;font-weight:700;color:#0369a1}@media print{@page{size:auto;margin:10mm 10mm 10mm 10mm}body{padding:0}}</style></head><body><h1>Orçamento de Viagem${nomeViagem?" — "+nomeViagem:""}</h1><div class="sub">Gerado em ${new Date().toLocaleDateString("pt-BR")}</div><h2>Ônibus</h2><table><thead><tr><th>Descrição</th><th style="text-align:right">Valor</th></tr></thead><tbody>${linhasOnibus}<tr style="background:#f1f5f9"><td style="padding:8px;font-weight:700">Subtotal Ônibus</td><td style="padding:8px;text-align:right;font-weight:700">${fmt(r.custoOnibus)}</td></tr></tbody></table><h2>Hotéis</h2><table><thead><tr><th>Descrição</th><th style="text-align:right">Valor</th></tr></thead><tbody>${linhasHotel}<tr style="background:#f1f5f9"><td style="padding:8px;font-weight:700">Subtotal Hotéis</td><td style="padding:8px;text-align:right;font-weight:700">${fmt(r.custoHotel)}</td></tr></tbody></table><div class="res"><div class="res-row"><span>Custo Total</span><span>${fmt(r.custoTotal)}</span></div><div class="res-row"><span>Nº de Passageiros</span><span>${r.nPax}</span></div><div class="res-row"><span>Custo por Passageiro</span><span>${fmt(r.custoPorPax)}</span></div><div class="res-row"><span>Lucro Total</span><span style="color:#16a34a">${fmt(r.lucro)}</span></div><div class="res-row"><span>Lucro por Passageiro</span><span style="color:#16a34a">${fmt(r.lucroPorPax)}</span></div><div class="res-row" style="margin-top:8px"><span style="font-size:15px;font-weight:700">Valor por Passageiro</span><span class="dest">${fmt(r.valorPorPax)}</span></div><div class="res-row"><span style="font-size:15px;font-weight:700">Valor Total da Viagem</span><span class="dest2">${fmt(r.valorFinal)}</span></div></div></body></html>`;
+  const linhasHotel = hoteis.map(h=>{
+    const modo = h.modo||"total";
+    const cortesias = Number(h.cortesias||0);
+    let desc = h.nome;
+    let valorCol;
+    if(modo==="pessoa") {
+      const pagos = Math.max(0,(r.nPaxTotal||0)-cortesias);
+      desc += ` (${fmt(h.valor||0)}/pessoa × ${pagos}${cortesias>0?` · ${cortesias} cortesia(s)`:""})`;
+      valorCol = fmt(Number(h.valor||0)*pagos);
+    } else {
+      desc += cortesias>0 ? ` (valor fechado · ${cortesias} cortesia(s))` : "";
+      valorCol = fmt(h.valor||0);
+    }
+    return `<tr><td style="padding:8px">${desc}</td><td style="padding:8px;text-align:right">${valorCol}</td></tr>`;
+  }).join("");
+  const linhaOrg = r.nOrganizacao>0 ? `<div class="res-row"><span>Da organização (não pagam)</span><span>${r.nOrganizacao}</span></div>` : "";
+  const html=`<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"/><title></title><style>body{font-family:Arial,sans-serif;color:#111;padding:32px;max-width:700px;margin:0 auto}h1{font-size:22px;margin-bottom:4px}.sub{color:#555;font-size:13px;margin-bottom:24px}h2{font-size:14px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#374151;border-bottom:2px solid #e5e7eb;padding-bottom:6px;margin:20px 0 10px}table{width:100%;border-collapse:collapse;font-size:13px}th{background:#1e293b;color:#fff;padding:8px;text-align:left}th:last-child,td:last-child{text-align:right}.res{background:#f8fafc;border-radius:8px;padding:16px;margin-top:20px}.res-row{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #e5e7eb;font-size:13px}.res-row:last-child{border-bottom:none}.dest{font-size:18px;font-weight:700;color:#0369a1}.dest2{font-size:22px;font-weight:700;color:#0369a1}@media print{@page{size:auto;margin:10mm 10mm 10mm 10mm}body{padding:0}}</style></head><body><h1>Orçamento de Viagem${nomeViagem?" — "+nomeViagem:""}</h1><div class="sub">Gerado em ${new Date().toLocaleDateString("pt-BR")}</div><h2>Ônibus</h2><table><thead><tr><th>Descrição</th><th style="text-align:right">Valor</th></tr></thead><tbody>${linhasOnibus}<tr style="background:#f1f5f9"><td style="padding:8px;font-weight:700">Subtotal Ônibus</td><td style="padding:8px;text-align:right;font-weight:700">${fmt(r.custoOnibus)}</td></tr></tbody></table><h2>Hotéis</h2><table><thead><tr><th>Descrição</th><th style="text-align:right">Valor</th></tr></thead><tbody>${linhasHotel}<tr style="background:#f1f5f9"><td style="padding:8px;font-weight:700">Subtotal Hotéis</td><td style="padding:8px;text-align:right;font-weight:700">${fmt(r.custoHotel)}</td></tr></tbody></table><div class="res"><div class="res-row"><span>Custo Total</span><span>${fmt(r.custoTotal)}</span></div><div class="res-row"><span>Passageiros Pagantes</span><span>${r.nPagantes}</span></div>${linhaOrg}<div class="res-row"><span>Custo por Passageiro</span><span>${fmt(r.custoPorPax)}</span></div><div class="res-row"><span>Lucro Total</span><span style="color:#16a34a">${fmt(r.lucro)}</span></div><div class="res-row"><span>Lucro por Passageiro</span><span style="color:#16a34a">${fmt(r.lucroPorPax)}</span></div><div class="res-row" style="margin-top:8px"><span style="font-size:15px;font-weight:700">Valor por Passageiro</span><span class="dest">${fmt(r.valorPorPax)}</span></div><div class="res-row"><span style="font-size:15px;font-weight:700">Valor Total da Viagem</span><span class="dest2">${fmt(r.valorFinal)}</span></div></div></body></html>`;
   const win=window.open("","_blank");
   if(!win)return alert("Permita pop-ups para gerar o PDF");
   win.document.write(html);win.document.close();setTimeout(()=>win.print(),600);
