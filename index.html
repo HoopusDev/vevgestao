@@ -692,7 +692,7 @@ function App() {
         <div className="page">
           {pageEl()}
         </div>
-        <div className="app-version">v1.8.1</div>
+        <div className="app-version">v1.9.0</div>
         {/* Mobile nav */}
         <nav className="mobile-nav">
           {navItems.map(([id,ic,lb]) => (
@@ -2502,73 +2502,169 @@ Quando fizer o pagamento, por gentileza envie o comprovante.
 
 V&V Viagens agradece! 😄`;
 
-function formatFone(fone) {
-  if(!fone) return "";
-  return "55" + fone.replace(/\D/g,"");
+const MODELO_CONFIRMACAO = `Olá {nome}, tudo bem? 😊
+
+Passando para confirmar que já deixamos na lista da viagem *{viagem}* ({data_viagem}):
+
+{itens}
+
+Para garantir a vaga, é necessário o pagamento da entrada de *{entrada}* por pessoa.
+
+Nossa chave Pix: *{pix}*
+
+Pode nos dizer uma data em que consegue fazer o pagamento? Assim já deixamos combinado por aqui.
+
+Quando fizer o pagamento, por gentileza envie o comprovante.
+
+V&V Viagens agradece! 😄`;
+
+const MODELO_ENTRADA = `Olá {nome}, tudo bem?
+
+Combinamos o pagamento da entrada da viagem *{viagem}* para o dia *{data}*:
+
+{itens}
+
+Nossa chave Pix: *{pix}*
+
+Assim que fizer o pagamento, envie o comprovante por aqui para registrarmos e garantirmos a sua vaga.
+
+Se não conseguir pagar hoje, nos avise uma nova data, por favor.
+
+V&V Viagens agradece! 😄`;
+
+const CFG_KEYS = {saldo:"modeloCobranca", confirmacao:"modeloConfirmacao", entrada:"modeloEntrada"};
+const MODELOS_PADRAO = {saldo:MODELO_PADRAO, confirmacao:MODELO_CONFIRMACAO, entrada:MODELO_ENTRADA};
+const TIPOS_COB = [["saldo","Saldo em aberto"],["confirmacao","Confirmação + entrada"],["entrada","Cobrar entrada"]];
+const VARS_MODELO = ["nome","viagem","itens","pix","entrada","total","data","data_viagem"];
+
+function primeiroNome(nome) {
+  const p = (nome||"").trim().split(/\s+/)[0];
+  if(!p || p==="Sem") return "cliente";
+  return p.charAt(0).toUpperCase() + p.slice(1).toLowerCase();
 }
 
-function gerarMensagem(modelo, nomeResp, nomeViagem, itens) {
-  const itensStr = itens.map(i=>`• ${i.nome}: *${R$(i.falta)}* em aberto`).join("\n");
-  return modelo
-    .replace(/\{nome\}/g, nomeResp||"cliente")
-    .replace(/\{viagem\}/g, nomeViagem)
-    .replace(/\{itens\}/g, itensStr)
-    .replace(/\{pix\}/g, PIX_DISPLAY);
+function pixExibicao(config) {
+  const p = (config?.pix||"").trim();
+  if(!p) return PIX_DISPLAY;
+  if(/^\d{14}$/.test(p)) return p.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/,"$1.$2.$3/$4-$5");
+  return p;
+}
+
+function formatFone(fone) {
+  if(!fone) return "";
+  const d = fone.replace(/\D/g,"");
+  if(d.startsWith("55") && d.length>=12) return d;
+  return "55" + d;
+}
+
+function hojeLocal() {
+  const d = new Date();
+  return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
+}
+
+function gerarMensagem(modelo, v) {
+  const sufixo = v.tipo==="saldo" ? "em aberto" : "de entrada";
+  const itensStr = v.itens.map(i=>`• ${i.nome}: *${R$(i.falta)}* ${sufixo}`).join("\n");
+  const mapa = {
+    nome: primeiroNome(v.nome),
+    viagem: v.viagem,
+    itens: itensStr,
+    pix: v.pix,
+    entrada: v.entrada,
+    total: v.total,
+    data: v.data,
+    data_viagem: v.dataViagem,
+  };
+  return modelo.replace(/\{(nome|viagem|itens|pix|entrada|total|data_viagem|data)\}/g, (_, k)=>mapa[k]);
 }
 
 function Cobrancas({viagens, passageiros, updViagem, config}) {
   const [vid, setVid] = useState("");
+  const [tipo, setTipo] = useState("saldo");
   const [filtro, setFiltro] = useState("todos");
-  const [modelo, setModelo] = useState(config?.modeloCobranca||MODELO_PADRAO);
   const [editModelo, setEditModelo] = useState(false);
-  const [modeloTemp, setModeloTemp] = useState(MODELO_PADRAO);
+  const [modeloTemp, setModeloTemp] = useState("");
+  const [salvandoModelo, setSalvandoModelo] = useState(false);
   const [sel, setSel] = useState(null); // grupo selecionado
   const [msgEdit, setMsgEdit] = useState(""); // mensagem editável pontual
 
+  const modelo = config?.[CFG_KEYS[tipo]] || MODELOS_PADRAO[tipo];
   const viagem = viagens.find(v=>v.id===vid);
   const reservas = viagem?.reservas||[];
+  const entradaVal = Number(viagem?.entrada||0);
+
+  // Quanto falta para este tipo de mensagem
+  const faltaDe = (r) => {
+    const falta = valorEsperado(r, viagem) - sumPgto(r);
+    if(tipo==="saldo") return falta;
+    return Math.min(falta, entradaVal - sumPgto(r));
+  };
 
   // Agrupar por telefone do responsável
   const grupos = React.useMemo(()=>{
     const mapa = {};
     reservas.forEach(r=>{
-      const falta = valorEsperado(r, viagem) - sumPgto(r);
+      const falta = faltaDe(r);
       if(falta<=0) return;
       // Fallback automático: usa passageiro cadastrado se não tiver responsável definido
       const paxCad = passageiros.find(p=>p.id===r.passageiroId);
       const resp = r.responsavel || paxCad?.nome || r.nomeAvulso || "Sem responsável";
       const fone = r.telefoneResp || paxCad?.telefone || "sem-telefone";
       const key = fone+"|"+resp;
+      const ultimo = tipo==="confirmacao" ? r.confirmadoEm : r.ultimaCobranca;
       if(!mapa[key]) mapa[key] = {resp, fone, paxs:[], ultimaCob:null};
-      mapa[key].paxs.push({id:r.id, nome:r.nomeAvulso, falta, statusCobranca:r.statusCobranca||"pendente", ultimaCob:r.ultimaCobranca, dataPrometida:r.dataPrometida});
-      if(r.ultimaCobranca && (!mapa[key].ultimaCob || r.ultimaCobranca > mapa[key].ultimaCob)) mapa[key].ultimaCob = r.ultimaCobranca;
+      mapa[key].paxs.push({id:r.id, nome:r.nomeAvulso, falta, statusCobranca:r.statusCobranca||"pendente", ultimaCob:ultimo, dataPrometida:r.dataPrometida});
+      if(ultimo && (!mapa[key].ultimaCob || ultimo > mapa[key].ultimaCob)) mapa[key].ultimaCob = ultimo;
     });
     return Object.values(mapa).sort((a,b)=>a.resp.localeCompare(b.resp));
-  }, [reservas, viagem, passageiros]);
+  }, [reservas, viagem, passageiros, tipo]);
 
-  const hoje = new Date().toISOString().slice(0,10);
+  const hoje = hojeLocal();
   const gruposFiltrados = grupos.filter(g=>{
     if(filtro==="nunca") return !g.ultimaCob;
     if(filtro==="prometido") return g.paxs.some(p=>p.statusCobranca==="prometido" && p.dataPrometida && p.dataPrometida < hoje);
+    if(filtro==="hoje") return g.paxs.some(p=>p.statusCobranca==="prometido" && p.dataPrometida===hoje);
     if(filtro==="cobrado") return g.ultimaCob;
     return true;
   });
 
-  const abrirGrupo = (g) => {
-    setSel(g);
-    const msg = gerarMensagem(modelo, g.resp, viagem?.nome||"", g.paxs);
-    setMsgEdit(msg);
+  const filtrosLabels = tipo==="confirmacao"
+    ? [["todos","Todos"],["nunca","Não avisados"],["cobrado","Já avisados"],["hoje","Combinados p/ hoje"],["prometido","Prometidos atrasados"]]
+    : [["todos","Todos"],["nunca","Nunca cobrados"],["cobrado","Já cobrados"],["hoje","Combinados p/ hoje"],["prometido","Prometidos atrasados"]];
+
+  const montarMsg = (g) => {
+    const total = g.paxs.reduce((s,p)=>s+p.falta,0);
+    const datas = g.paxs.filter(p=>p.statusCobranca==="prometido" && p.dataPrometida).map(p=>p.dataPrometida).sort();
+    return gerarMensagem(modelo, {
+      tipo, nome:g.resp, viagem:viagem?.nome||"", itens:g.paxs,
+      pix:pixExibicao(config), entrada:R$(entradaVal), total:R$(total),
+      data: datas[0] ? dt(datas[0]) : "combinado",
+      dataViagem: dt(viagem?.dataIda),
+    });
   };
+
+  const abrirGrupo = (g) => { setSel(g); setMsgEdit(montarMsg(g)); };
 
   const registrarCobranca = async (g) => {
     const agora = new Date().toISOString();
     const novasReservas = reservas.map(r=>{
       const pertence = g.paxs.some(p=>p.id===r.id);
-      if(pertence) return {...r, statusCobranca:"cobrado", ultimaCobranca:agora};
-      return r;
+      if(!pertence) return r;
+      // Confirmação apenas registra o aviso; não mexe no status de cobrança
+      if(tipo==="confirmacao") return {...r, confirmadoEm:agora};
+      // Mantém "Prometido" (e a data) para não perder o combinado
+      return {...r, ultimaCobranca:agora, statusCobranca: r.statusCobranca==="prometido" ? "prometido" : "cobrado"};
     });
     await updViagem({...viagem, reservas:novasReservas});
     setSel(null);
+  };
+
+  const salvarModelo = async () => {
+    setSalvandoModelo(true);
+    const cfgId = config?.id || "principal";
+    await db.collection("configs").doc(cfgId).set({id:cfgId, [CFG_KEYS[tipo]]:modeloTemp}, {merge:true});
+    setSalvandoModelo(false);
+    setEditModelo(false);
   };
 
   const abrirWhatsApp = (fone, msg) => {
@@ -2577,6 +2673,10 @@ function Cobrancas({viagens, passageiros, updViagem, config}) {
     const url = `https://wa.me/${num}?text=${encodeURIComponent(msg)}`;
     window.open(url,"_blank");
   };
+
+  const rotuloUltimo = tipo==="confirmacao" ? "Avisado em" : "Último contato";
+  const rotuloRegistrar = tipo==="confirmacao" ? "Registrar aviso feito" : "Registrar cobrança feita";
+  const tituloModelo = TIPOS_COB.find(t=>t[0]===tipo)[1];
 
   return (
     <div className="ani">
@@ -2591,30 +2691,37 @@ function Cobrancas({viagens, passageiros, updViagem, config}) {
             {viagens.map(v=><option key={v.id} value={v.id}>{v.nome} — {dt(v.dataIda)}</option>)}
           </select>
         </div>
-        {vid&&<div className="cob-filter">
-          {[["todos","Todos"],["nunca","Nunca cobrados"],["cobrado","Já cobrados"],["prometido","Prometidos atrasados"]].map(([id,lb])=>(
-            <div key={id} className={`cob-filter-btn ${filtro===id?"on":""}`} onClick={()=>setFiltro(id)}>{lb}</div>
-          ))}
-        </div>}
+        {vid&&<>
+          <div className="cob-filter">
+            {TIPOS_COB.map(([id,lb])=>(
+              <div key={id} className={`cob-filter-btn ${tipo===id?"on":""}`} onClick={()=>{setTipo(id);setFiltro("todos");setSel(null);setEditModelo(false);}}>{lb}</div>
+            ))}
+          </div>
+          <div className="cob-filter">
+            {filtrosLabels.map(([id,lb])=>(
+              <div key={id} className={`cob-filter-btn ${filtro===id?"on":""}`} onClick={()=>setFiltro(id)}>{lb}</div>
+            ))}
+          </div>
+        </>}
       </div>
 
       {/* Modelo de mensagem */}
       {vid&&<div className="cob-modelo">
         <div className="cob-modelo-title">
-          <span>Modelo de Mensagem</span>
+          <span>Modelo — {tituloModelo}</span>
           <button className="btn btn-ghost btn-sm" onClick={()=>{setModeloTemp(modelo);setEditModelo(!editModelo);}}>
             {editModelo?"Cancelar":ICONS.edit}
           </button>
         </div>
         {editModelo?(
           <>
-            <div style={{fontSize:11,color:"var(--dim2)",marginBottom:8,lineHeight:1.6}}>
-              Variáveis disponíveis: <code style={{color:"var(--sky)"}}>{"{nome}"}</code> · <code style={{color:"var(--sky)"}}>{"{viagem}"}</code> · <code style={{color:"var(--sky)"}}>{"{itens}"}</code> · <code style={{color:"var(--sky)"}}>{"{pix}"}</code>
+            <div style={{fontSize:11,color:"var(--dim2)",marginBottom:8,lineHeight:1.8}}>
+              Variáveis: {VARS_MODELO.map(v=><React.Fragment key={v}><code style={{color:"var(--sky)"}}>{"{"+v+"}"}</code>{" · "}</React.Fragment>)}
             </div>
             <textarea className="cob-msg-area" rows={10} value={modeloTemp} onChange={e=>setModeloTemp(e.target.value)}/>
             <div style={{display:"flex",gap:8,marginTop:10}}>
               <button className="btn btn-ghost btn-sm" onClick={()=>setEditModelo(false)}>Cancelar</button>
-              <button className="btn btn-primary btn-sm" onClick={()=>{setModelo(modeloTemp);setEditModelo(false);}}>Salvar Modelo</button>
+              <button className="btn btn-primary btn-sm" onClick={salvarModelo}>{salvandoModelo?"Salvando...":"Salvar Modelo"}</button>
             </div>
           </>
         ):(
@@ -2622,24 +2729,33 @@ function Cobrancas({viagens, passageiros, updViagem, config}) {
         )}
       </div>}
 
+      {/* Aviso: viagem sem entrada definida */}
+      {vid&&tipo!=="saldo"&&entradaVal<=0&&(
+        <div className="cob-modelo" style={{borderColor:"var(--amber)",color:"var(--amber)",fontSize:12,lineHeight:1.6}}>
+          Esta viagem não tem entrada mínima definida. Edite a viagem e informe o valor da entrada para usar este modelo.
+        </div>
+      )}
+
       {/* Lista de pendentes */}
       {vid&&(
         <div className="cob-lista">
           <div style={{fontSize:10,fontWeight:600,color:"var(--dim2)",textTransform:"uppercase",letterSpacing:".6px",marginBottom:10}}>
-            {gruposFiltrados.length} responsável(is) com pendências
+            {gruposFiltrados.length} responsável(is) {tipo==="saldo"?"com pendências":"com entrada em aberto"}
           </div>
           {gruposFiltrados.length===0
             ?<div className="empty"><div className="empty-icon">{ICONS.check}</div><p>Nenhum pendente nesse filtro</p></div>
             :gruposFiltrados.map((g,i)=>{
               const totalFalta = g.paxs.reduce((s,p)=>s+p.falta,0);
               const sc = SC[g.paxs[0]?.statusCobranca]||SC.pendente;
+              const datasP = g.paxs.filter(p=>p.statusCobranca==="prometido" && p.dataPrometida).map(p=>p.dataPrometida).sort();
               return (
                 <div key={i} className="cob-group">
                   <div className="cob-group-header" onClick={()=>abrirGrupo(g)}>
                     <div style={{flex:1}}>
                       <div className="cob-group-name">{g.resp}</div>
                       <div className="cob-group-phone">{g.fone!=="sem-telefone"?g.fone:"Sem telefone cadastrado"}</div>
-                      {g.ultimaCob&&<div className="cob-hist">Último contato: {new Date(g.ultimaCob).toLocaleDateString("pt-BR")}</div>}
+                      {g.ultimaCob&&<div className="cob-hist">{rotuloUltimo}: {new Date(g.ultimaCob).toLocaleDateString("pt-BR")}</div>}
+                      {datasP[0]&&<div className="cob-hist">Combinado para: {dt(datasP[0])}</div>}
                     </div>
                     <div style={{textAlign:"right"}}>
                       <div className="cob-group-total">{R$(totalFalta)}</div>
@@ -2672,7 +2788,7 @@ function Cobrancas({viagens, passageiros, updViagem, config}) {
             <div className="mhd">
               <div>
                 <div className="mtit">{sel.resp}</div>
-                <div style={{fontSize:11,color:"var(--dim2)",marginTop:2}}>{sel.fone!=="sem-telefone"?sel.fone:"Sem telefone"} · {R$(sel.paxs.reduce((s,p)=>s+p.falta,0))} em aberto</div>
+                <div style={{fontSize:11,color:"var(--dim2)",marginTop:2}}>{sel.fone!=="sem-telefone"?sel.fone:"Sem telefone"} · {R$(sel.paxs.reduce((s,p)=>s+p.falta,0))} {tipo==="saldo"?"em aberto":"de entrada"}</div>
               </div>
               <button className="btn btn-ghost btn-icon" onClick={()=>setSel(null)}>{ICONS.close}</button>
             </div>
@@ -2691,7 +2807,7 @@ function Cobrancas({viagens, passageiros, updViagem, config}) {
               </button>
               <button className="btn btn-ghost btn-full" style={{borderColor:"var(--mint)",color:"var(--mint)"}}
                 onClick={()=>registrarCobranca(sel)}>
-                {ICONS.check} Registrar cobrança feita
+                {ICONS.check} {rotuloRegistrar}
               </button>
             </div>
           </div>
@@ -2741,11 +2857,16 @@ function Configuracoes({config, usuarios, userAtual}) {
     if(config.email) setEmailEmp(config.email);
     if(config.pix) setPix(config.pix);
     if(config.modeloCobranca) setModelo(config.modeloCobranca);
+    if(config.modeloConfirmacao) setModeloConf(config.modeloConfirmacao);
+    if(config.modeloEntrada) setModeloEnt(config.modeloEntrada);
   }, [config.id]);
 
   // Modelo de cobrança
   const modeloPadrao = `Olá {nome},\n\nPassando para avisar que ainda temos em aberto o seguinte para a viagem *{viagem}*:\n\n{itens}\n\nNossa chave Pix: *{pix}*\n\nAguardamos o envio do valor restante ou parte dele para podermos registrar aqui. Caso queira, podemos combinar uma data para te lembrarmos sobre o valor.\n\nQuando fizer o pagamento, por gentileza envie o comprovante.\n\nV&V Viagens agradece! 😄`;
   const [modelo, setModelo] = useState(config.modeloCobranca||modeloPadrao);
+  const [modeloConf, setModeloConf] = useState(config.modeloConfirmacao||MODELO_CONFIRMACAO);
+  const [modeloEnt, setModeloEnt] = useState(config.modeloEntrada||MODELO_ENTRADA);
+  const [tabModelo, setTabModelo] = useState("saldo");
 
   // Tipos de apto
   const tiposPadrao = [
@@ -2765,7 +2886,7 @@ function Configuracoes({config, usuarios, userAtual}) {
     const cfgId = config.id || "principal";
     await db.collection("configs").doc(cfgId).set({
       id: cfgId, nomeEmpresa:nomeEmp, telefone:telEmp, email:emailEmp,
-      pix, modeloCobranca:modelo, tiposApto
+      pix, modeloCobranca:modelo, modeloConfirmacao:modeloConf, modeloEntrada:modeloEnt, tiposApto
     }, {merge:true});
     setSalvando(false); setSalvo(true);
     setTimeout(()=>setSalvo(false),2000);
@@ -2822,15 +2943,27 @@ function Configuracoes({config, usuarios, userAtual}) {
         <div className="config-section">
           <div className="config-card">
             <div className="config-card-title">
-              <span>Modelo de Mensagem WhatsApp</span>
+              <span>Modelos de Mensagem WhatsApp</span>
             </div>
-            <div style={{fontSize:11,color:"var(--dim2)",marginBottom:10,lineHeight:1.6}}>
-              Variáveis: <code style={{color:"var(--sky)"}}>{"{"+"nome"+"}"}</code> · <code style={{color:"var(--sky)"}}>{"{"+"viagem"+"}"}</code> · <code style={{color:"var(--sky)"}}>{"{"+"itens"+"}"}</code> · <code style={{color:"var(--sky)"}}>{"{"+"pix"+"}"}</code>
+            <div className="cob-filter" style={{marginTop:0,marginBottom:12}}>
+              {TIPOS_COB.map(([id,lb])=>(
+                <div key={id} className={`cob-filter-btn ${tabModelo===id?"on":""}`} onClick={()=>setTabModelo(id)}>{lb}</div>
+              ))}
             </div>
-            <textarea className="cob-msg-area" rows={12} value={modelo} onChange={e=>setModelo(e.target.value)}/>
+            <div style={{fontSize:11,color:"var(--dim2)",marginBottom:10,lineHeight:1.8}}>
+              Variáveis: {VARS_MODELO.map(v=><React.Fragment key={v}><code style={{color:"var(--sky)"}}>{"{"+v+"}"}</code>{" · "}</React.Fragment>)}
+              <br/>{"{nome}"} usa somente o primeiro nome. {"{entrada}"} = entrada mínima por pessoa. {"{data}"} = data combinada (Prometido).
+            </div>
+            <textarea className="cob-msg-area" rows={14}
+              value={tabModelo==="saldo"?modelo:tabModelo==="confirmacao"?modeloConf:modeloEnt}
+              onChange={e=>{const v=e.target.value; tabModelo==="saldo"?setModelo(v):tabModelo==="confirmacao"?setModeloConf(v):setModeloEnt(v);}}/>
+            <button className="btn btn-ghost btn-sm" style={{marginTop:8}}
+              onClick={()=>{const d=MODELOS_PADRAO[tabModelo]; tabModelo==="saldo"?setModelo(d):tabModelo==="confirmacao"?setModeloConf(d):setModeloEnt(d);}}>
+              Restaurar modelo padrão
+            </button>
           </div>
           <button className="btn btn-primary btn-full" onClick={salvarConfig}>
-            {salvando?"Salvando...":salvo?"✓ Salvo!":<>{ICONS.save} Salvar Modelo</>}
+            {salvando?"Salvando...":salvo?"✓ Salvo!":<>{ICONS.save} Salvar Modelos</>}
           </button>
         </div>
       )}
