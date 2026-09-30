@@ -11,6 +11,8 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
 <meta name="apple-mobile-web-app-title" content="V&V Gestão"/>
 <meta name="application-name" content="V&V Gestão"/>
+<link rel="manifest" href="manifest.json"/>
+<meta name="theme-color" content="#080e1a"/>
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
@@ -3045,6 +3047,9 @@ function Configuracoes({config, usuarios, userAtual}) {
 }
 
 ReactDOM.render(<App/>, document.getElementById("root"));
+</script>
+<script>
+if ("serviceWorker" in navigator) window.addEventListener("load", () => navigator.serviceWorker.register("sw.js").catch(() => {}));
 </script>
 </body>
 </html>
