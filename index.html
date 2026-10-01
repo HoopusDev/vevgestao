@@ -532,7 +532,7 @@ const genId = () => Math.random().toString(36).slice(2) + Date.now().toString(36
 // Isentos sempre no topo da lista de passageiros, mantendo a ordem definida dentro de cada grupo.
 const isentosPrimeiro = rs => [...rs.filter(r=>r.isento), ...rs.filter(r=>!r.isento)];
 // Busca sem diferenciar acentos e maiúsculas: casaBusca("joao", "João Silva") → true
-const normalizar = s => String(s??"").normalize("NFD").replace(/[̀-ͯ]/g,"").toLowerCase().trim();
+const normalizar = s => String(s??"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().trim();
 const casaBusca = (busca, ...campos) => { const q=normalizar(busca); return !q || campos.some(c=>normalizar(c).includes(q)); };
 function BuscaLista({value, onChange, placeholder, recuo}) {
   return (
