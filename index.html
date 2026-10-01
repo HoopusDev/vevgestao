@@ -733,7 +733,8 @@ function LoginScreen({onLogin}) {
 
 // ── DASHBOARD ─────────────────────────────────────────────────────────────────
 function Dashboard({viagens, passageiros, go}) {
-  const ativas = viagens.filter(v=>v.status!=="encerrada");
+  const ativas = viagens.filter(v=>v.status!=="encerrada")
+    .sort((a,b)=>(a.dataIda||"9999-99-99").localeCompare(b.dataIda||"9999-99-99"));
   const viagensConf = viagens.filter(v=>v.status==="confirmada");
   const totalRec = viagensConf.reduce((s,v)=>s+(v.reservas||[]).reduce((ss,r)=>ss+sumPgto(r),0),0);
   const totalEsp = viagensConf.reduce((s,v)=>s+(v.reservas||[]).reduce((ss,r)=>ss+valorEsperado(r,v),0),0);
