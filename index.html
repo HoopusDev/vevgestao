@@ -539,11 +539,15 @@ const METODOS = [
 const METODOS_LABEL = {credito:"Cartão de Crédito",debito:"Cartão de Débito",pix:"Pix",pix_parcelado:"Pix Parcelado",dinheiro:"Dinheiro"};
 
 // ── FIRESTORE HOOKS ───────────────────────────────────────────────────────────
+const porDataIda = (a,b) => (a.dataIda||"9999-99-99").localeCompare(b.dataIda||"9999-99-99");
 function useCol(col) {
   const [docs, setDocs] = useState(null);
   useEffect(() => {
     const unsub = db.collection(col).onSnapshot(snap => {
-      setDocs(snap.docs.map(d => ({id:d.id,...d.data()})));
+      const list = snap.docs.map(d => ({id:d.id,...d.data()}));
+      // viagens sempre da mais próxima para a mais distante (sem data vão para o fim)
+      if (col === "viagens") list.sort(porDataIda);
+      setDocs(list);
     }, () => setDocs([]));
     return unsub;
   }, [col]);
@@ -694,7 +698,7 @@ function App() {
         <div className="page">
           {pageEl()}
         </div>
-        <div className="app-version">v1.9.1</div>
+        <div className="app-version">v1.9.2</div>
         {/* Mobile nav */}
         <nav className="mobile-nav">
           {navItems.map(([id,ic,lb]) => (
@@ -733,8 +737,7 @@ function LoginScreen({onLogin}) {
 
 // ── DASHBOARD ─────────────────────────────────────────────────────────────────
 function Dashboard({viagens, passageiros, go}) {
-  const ativas = viagens.filter(v=>v.status!=="encerrada")
-    .sort((a,b)=>(a.dataIda||"9999-99-99").localeCompare(b.dataIda||"9999-99-99"));
+  const ativas = viagens.filter(v=>v.status!=="encerrada");
   const viagensConf = viagens.filter(v=>v.status==="confirmada");
   const totalRec = viagensConf.reduce((s,v)=>s+(v.reservas||[]).reduce((ss,r)=>ss+sumPgto(r),0),0);
   const totalEsp = viagensConf.reduce((s,v)=>s+(v.reservas||[]).reduce((ss,r)=>ss+valorEsperado(r,v),0),0);
@@ -793,7 +796,7 @@ function Viagens({viagens, addViagem, saveViagem, deleteViagem, go}) {
   const [showEncerradas,setShowEncerradas]=useState(false);
   const encerradasCount = viagens.filter(v=>v.status==="encerrada").length;
   const base = showEncerradas ? viagens : viagens.filter(v=>v.status!=="encerrada");
-  const filtered = base.filter(v=>v.nome?.toLowerCase().includes(search.toLowerCase())).sort((a,b)=>(a.dataIda||"")>(b.dataIda||"")?1:-1);
+  const filtered = base.filter(v=>v.nome?.toLowerCase().includes(search.toLowerCase())).sort(porDataIda);
   const onSave = async f => { if(editing) await saveViagem({...editing,...f}); else await addViagem(f); setModal(false);setEditing(null); };
   const onDel = async id => { if(confirm("Excluir viagem?")) await deleteViagem(id); };
   return (
