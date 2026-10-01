@@ -331,7 +331,7 @@ html,body{height:100%;background:var(--bg);overflow:hidden;}
 .aguard-wrap{display:flex;align-items:center;justify-content:center;height:100%;background:var(--bg);padding:20px;}
 .aguard-card{background:var(--surf);border:1px solid var(--brd);border-radius:16px;padding:40px 36px;max-width:400px;width:100%;text-align:center;}
 
-.app-version{position:fixed;bottom:6px;right:10px;font-size:10px;color:var(--dim);opacity:.4;z-index:50;pointer-events:none;letter-spacing:.3px;}
+.app-version{position:fixed;bottom:6px;right:10px;font-size:10px;color:#fff;font-weight:700;opacity:1;z-index:50;pointer-events:none;letter-spacing:.3px;}
 @media(max-width:768px){
 /* ── AUTOCOMPLETE ── */
 .ac-wrap{position:relative;}
@@ -698,7 +698,7 @@ function App() {
         <div className="page">
           {pageEl()}
         </div>
-        <div className="app-version">v1.9.2</div>
+        <div className="app-version">v1.9.3</div>
         {/* Mobile nav */}
         <nav className="mobile-nav">
           {navItems.map(([id,ic,lb]) => (
