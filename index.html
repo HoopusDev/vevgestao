@@ -700,7 +700,7 @@ function App() {
         <div className="page">
           {pageEl()}
         </div>
-        <div className="app-version">v1.10.0</div>
+        <div className="app-version">v1.10.1</div>
         {/* Mobile nav */}
         <nav className="mobile-nav">
           {navItems.map(([id,ic,lb]) => (
@@ -905,29 +905,102 @@ function TabReservas({viagem, passageiros, addPassageiro, updViagem}) {
     } else newR=[...reservas,{...r,id:genId(),pagamentos:[]}];
     await updViagem({...viagem,reservas:isentosPrimeiro(newR)}); setModal(false);setEditing(null);
   };
-  // move o passageiro uma posição para cima (-1) ou para baixo (+1), sem cruzar isentos/pagantes
-  const podeMover = (i,dir) => { const j=i+dir; return j>=0 && j<reservas.length && !!reservas[j].isento===!!reservas[i].isento; };
-  const mover = async (i,dir) => {
-    if(!podeMover(i,dir)) return;
-    const newR=[...reservas]; [newR[i],newR[i+dir]]=[newR[i+dir],newR[i]];
-    await updViagem({...viagem,reservas:newR});
+  // ── Arrastar para reordenar: segurar 2s no passageiro e arrastar (isentos e pagantes não se misturam)
+  const [ordem,setOrdem]=useState(null);         // ordem provisória enquanto arrasta
+  const [arrastando,setArrastando]=useState(null); // id do passageiro sendo arrastado
+  const lista=ordem||reservas;
+  const cardRefs=useRef({});
+  const drag=useRef({});
+  const cancelarEspera=()=>{ clearTimeout(drag.current.timer); drag.current.timer=null; };
+  const acharScroller=el=>{
+    for(let p=el?.parentElement;p;p=p.parentElement){
+      const oy=getComputedStyle(p).overflowY;
+      if((oy==="auto"||oy==="scroll")&&p.scrollHeight>p.clientHeight) return p;
+    }
+    return document.scrollingElement;
   };
+  const reposicionar=()=>{
+    const d=drag.current, lst=d.lista, i=lst.findIndex(r=>r.id===d.id), item=lst[i];
+    const outros=lst.filter(r=>r.id!==d.id);
+    let alvo=0;
+    for(const r of outros){ const el=cardRefs.current[r.id]; if(!el) continue; const b=el.getBoundingClientRect(); if(d.lastY>b.top+b.height/2) alvo++; }
+    const nIs=outros.filter(r=>r.isento).length;
+    alvo=item.isento?Math.min(alvo,nIs):Math.max(alvo,nIs);
+    if(alvo===i) return;
+    d.lista=[...outros.slice(0,alvo),item,...outros.slice(alvo)];
+    d.moveu=true; setOrdem(d.lista);
+  };
+  const encerrarArraste=async()=>{
+    const d=drag.current;
+    if(!d.ativo) return;
+    d.ativo=false; cancelAnimationFrame(d.raf);
+    window.removeEventListener("pointermove",d.onMove);
+    window.removeEventListener("pointerup",d.onUp);
+    window.removeEventListener("pointercancel",d.onUp);
+    window.removeEventListener("touchmove",d.bloquear);
+    setArrastando(null);
+    setTimeout(()=>{ d.suprimirClique=false; },300);
+    if(d.moveu) await updViagem({...viagem,reservas:d.lista});
+    setOrdem(null);
+  };
+  const ativarArraste=id=>{
+    const d=drag.current;
+    d.timer=null; d.ativo=true; d.moveu=false; d.suprimirClique=true; d.lista=reservas; d.lastY=d.y;
+    d.scroller=acharScroller(cardRefs.current[id]);
+    d.onMove=e=>{ d.lastY=e.clientY; reposicionar(); };
+    d.onUp=()=>encerrarArraste();
+    d.bloquear=e=>{ if(e.cancelable) e.preventDefault(); }; // impede a tela de rolar enquanto arrasta
+    window.addEventListener("pointermove",d.onMove);
+    window.addEventListener("pointerup",d.onUp);
+    window.addEventListener("pointercancel",d.onUp);
+    window.addEventListener("touchmove",d.bloquear,{passive:false});
+    // rola a tela sozinho quando o dedo chega perto da borda
+    const loop=()=>{
+      if(!d.ativo) return;
+      const borda=80, sc=d.scroller;
+      if(d.lastY<borda){ sc.scrollTop-=12; reposicionar(); }
+      else if(d.lastY>window.innerHeight-borda){ sc.scrollTop+=12; reposicionar(); }
+      d.raf=requestAnimationFrame(loop);
+    };
+    d.raf=requestAnimationFrame(loop);
+    navigator.vibrate?.(40);
+    setOrdem(reservas); setArrastando(id);
+  };
+  const onCardDown=(e,id)=>{
+    if(e.button>0||e.target.closest("button")) return;
+    const d=drag.current; d.id=id; d.x=e.clientX; d.y=e.clientY;
+    cancelarEspera();
+    d.timer=setTimeout(()=>ativarArraste(id),2000);
+  };
+  const onCardMove=e=>{
+    const d=drag.current;
+    if(d.timer&&(Math.abs(e.clientX-d.x)>10||Math.abs(e.clientY-d.y)>10)) cancelarEspera(); // está rolando, não segurando
+  };
+  useEffect(()=>()=>{ cancelarEspera(); drag.current.ativo&&encerrarArraste(); },[]);
   const onDel = async id => { if(confirm("Remover reserva?")) await updViagem({...viagem,reservas:reservas.filter(r=>r.id!==id)}); };
   return (
     <>
       <div style={{padding:"16px 28px 8px",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-        <span style={{fontSize:13,color:"var(--dim)"}}>{reservas.length}/{viagem.capacidade||0} • {(viagem.capacidade||0)-reservas.length} vagas livres</span>
+        <div>
+          <span style={{fontSize:13,color:"var(--dim)"}}>{reservas.length}/{viagem.capacidade||0} • {(viagem.capacidade||0)-reservas.length} vagas livres</span>
+          {reservas.length>1&&<div style={{fontSize:11,color:"var(--dim2)",marginTop:2}}>{arrastando?"Arraste e solte na posição desejada":"Segure um passageiro por 2s para mudar a ordem"}</div>}
+        </div>
         {reservas.length<(viagem.capacidade||0)&&<button className="btn btn-primary btn-sm" onClick={()=>{setEditing(null);setModal(true);}}>+ Adicionar Reserva</button>}
       </div>
       {reservas.length===0
         ?<div className="empty"><div className="empty-icon">{ICONS.users}</div><p>Nenhuma reserva ainda</p></div>
-        :reservas.map((r,idx)=>{
+        :lista.map(r=>{
           const pago=sumPgto(r),total=valorEsperado(r,viagem),falta=total-pago,pct=total>0?Math.min(100,Math.round((pago/total)*100)):0;
           const sr=SR[r.status]||SR.pendente;
           const respNome = r.responsavel || passageiros.find(p=>p.id===r.passageiroId)?.nome || null;
           const ehOutroResp = r.outroResp && respNome && respNome !== r.nomeAvulso;
           return (
-            <div key={r.id} className="rc" style={{cursor:"pointer"}} onClick={()=>{setEditing(r);setModal(true);}}>
+            <div key={r.id} ref={el=>{cardRefs.current[r.id]=el;}} className="rc"
+              style={{cursor:"pointer",userSelect:"none",WebkitUserSelect:"none",WebkitTouchCallout:"none",transition:"transform .15s, box-shadow .15s",
+                ...(arrastando===r.id?{borderColor:"var(--sky)",boxShadow:"0 8px 24px rgba(0,0,0,.5)",transform:"scale(1.02)",position:"relative",zIndex:5}:{})}}
+              onPointerDown={e=>onCardDown(e,r.id)} onPointerMove={onCardMove} onPointerUp={cancelarEspera} onPointerCancel={cancelarEspera} onPointerLeave={cancelarEspera}
+              onContextMenu={e=>e.preventDefault()}
+              onClick={()=>{ if(drag.current.suprimirClique) return; setEditing(r);setModal(true);}}>
               <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}>
                 <div style={{flex:1,minWidth:0}}>
                   <div className="rn">{r.nomeAvulso||"—"}</div>
@@ -940,8 +1013,6 @@ function TabReservas({viagem, passageiros, addPassageiro, updViagem}) {
                   )}
                 </div>
                 <div style={{display:"flex",gap:4,flexShrink:0}} onClick={e=>e.stopPropagation()}>
-                  <button className="btn btn-ghost btn-icon btn-sm" title="Subir" disabled={!podeMover(idx,-1)} style={{opacity:podeMover(idx,-1)?1:.3}} onClick={()=>mover(idx,-1)}>▲</button>
-                  <button className="btn btn-ghost btn-icon btn-sm" title="Descer" disabled={!podeMover(idx,1)} style={{opacity:podeMover(idx,1)?1:.3}} onClick={()=>mover(idx,1)}>▼</button>
                   <button className="btn btn-ghost btn-icon btn-sm" onClick={()=>{setEditing(r);setModal(true);}}>{ICONS.edit}</button>
                   <button className="btn btn-danger btn-icon btn-sm" onClick={()=>onDel(r.id)}>{ICONS.trash}</button>
                 </div>
