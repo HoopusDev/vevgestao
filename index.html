@@ -180,6 +180,13 @@ html,body{height:100%;background:var(--bg);overflow:hidden;}
 .mact{padding:12px 20px 8px;display:flex;gap:8px;border-top:1px solid var(--brd);}
 
 /* ── CARDS RESERVA/PAX ── */
+.busca-lista{position:relative;margin-bottom:12px;}
+.busca-lista.recuo{margin:0 28px 10px;}
+@media(max-width:768px){.busca-lista.recuo{margin:0 14px 10px;}}
+.busca-lista input{padding-left:38px !important;padding-right:36px !important;}
+.busca-lista-icon{position:absolute;left:13px;top:50%;transform:translateY(-50%);color:var(--dim2);pointer-events:none;display:flex;}
+.busca-lista-icon svg{width:14px;height:14px;}
+.busca-lista-x{position:absolute;right:6px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--dim2);font-size:20px;line-height:1;cursor:pointer;padding:4px 8px;}
 .rc{background:var(--card);border:1px solid var(--brd);border-radius:var(--radius);padding:14px;margin:0 28px 8px;}
 @media(max-width:768px){.rc{margin:0 14px 8px;}}
 .rn{font-size:14px;font-weight:600;color:var(--txt);margin-bottom:3px;}
@@ -524,6 +531,18 @@ function AutoComplete({passageiros, value, onChange, placeholder}) {
 const genId = () => Math.random().toString(36).slice(2) + Date.now().toString(36);
 // Isentos sempre no topo da lista de passageiros, mantendo a ordem definida dentro de cada grupo.
 const isentosPrimeiro = rs => [...rs.filter(r=>r.isento), ...rs.filter(r=>!r.isento)];
+// Busca sem diferenciar acentos e maiúsculas: casaBusca("joao", "João Silva") → true
+const normalizar = s => String(s??"").normalize("NFD").replace(/[̀-ͯ]/g,"").toLowerCase().trim();
+const casaBusca = (busca, ...campos) => { const q=normalizar(busca); return !q || campos.some(c=>normalizar(c).includes(q)); };
+function BuscaLista({value, onChange, placeholder, recuo}) {
+  return (
+    <div className={`busca-lista${recuo?" recuo":""}`}>
+      <span className="busca-lista-icon">{ICONS.search}</span>
+      <input className="fi" placeholder={placeholder||"Pesquisar..."} value={value} onChange={e=>onChange(e.target.value)}/>
+      {value&&<button className="busca-lista-x" title="Limpar" onClick={()=>onChange("")}>×</button>}
+    </div>
+  );
+}
 const sumPgto = r => (r.pagamentos||[]).reduce((s,p)=>s+Number(p.valor||0),0);
 // Valor que a reserva deveria pagar: 0 se isento, senão o valor cheio da viagem.
 const valorEsperado = (r,v) => r?.isento ? 0 : Number(v?.valor||0);
@@ -700,7 +719,7 @@ function App() {
         <div className="page">
           {pageEl()}
         </div>
-        <div className="app-version">v1.10.2</div>
+        <div className="app-version">v1.11.0</div>
         {/* Mobile nav */}
         <nav className="mobile-nav">
           {navItems.map(([id,ic,lb]) => (
@@ -909,6 +928,8 @@ function TabReservas({viagem, passageiros, addPassageiro, updViagem}) {
   const [ordem,setOrdem]=useState(null);         // ordem provisória enquanto arrasta
   const [arrastando,setArrastando]=useState(null); // id do passageiro sendo arrastado
   const lista=ordem||reservas;
+  const [busca,setBusca]=useState("");
+  const visiveis=busca.trim()?lista.filter(r=>casaBusca(busca,r.nomeAvulso,r.responsavel,r.assento,r.obs)):lista;
   const cardRefs=useRef({});
   const drag=useRef({});
   const cancelarEspera=()=>{ clearTimeout(drag.current.timer); drag.current.timer=null; };
@@ -967,7 +988,7 @@ function TabReservas({viagem, passageiros, addPassageiro, updViagem}) {
     setOrdem(reservas); setArrastando(id);
   };
   const onCardDown=(e,id)=>{
-    if(e.button>0||e.target.closest("button")) return;
+    if(e.button>0||e.target.closest("button")||busca.trim()) return; // não reordena com a busca ativa
     const d=drag.current; d.id=id; d.x=e.clientX; d.y=e.clientY;
     cancelarEspera();
     d.timer=setTimeout(()=>ativarArraste(id),1000);
@@ -983,13 +1004,16 @@ function TabReservas({viagem, passageiros, addPassageiro, updViagem}) {
       <div style={{padding:"16px 28px 8px",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
         <div>
           <span style={{fontSize:13,color:"var(--dim)"}}>{reservas.length}/{viagem.capacidade||0} • {(viagem.capacidade||0)-reservas.length} vagas livres</span>
-          {reservas.length>1&&<div style={{fontSize:11,color:"var(--dim2)",marginTop:2}}>{arrastando?"Arraste e solte na posição desejada":"Segure um passageiro por 1s para mudar a ordem"}</div>}
+          {reservas.length>1&&!busca.trim()&&<div style={{fontSize:11,color:"var(--dim2)",marginTop:2}}>{arrastando?"Arraste e solte na posição desejada":"Segure um passageiro por 1s para mudar a ordem"}</div>}
         </div>
         {reservas.length<(viagem.capacidade||0)&&<button className="btn btn-primary btn-sm" onClick={()=>{setEditing(null);setModal(true);}}>+ Adicionar Reserva</button>}
       </div>
+      {reservas.length>0&&<BuscaLista recuo value={busca} onChange={setBusca} placeholder="Pesquisar passageiro, responsável ou assento..."/>}
       {reservas.length===0
         ?<div className="empty"><div className="empty-icon">{ICONS.users}</div><p>Nenhuma reserva ainda</p></div>
-        :lista.map(r=>{
+        :visiveis.length===0
+        ?<div className="empty"><p>Nenhum passageiro encontrado</p></div>
+        :visiveis.map(r=>{
           const pago=sumPgto(r),total=valorEsperado(r,viagem),falta=total-pago,pct=total>0?Math.min(100,Math.round((pago/total)*100)):0;
           const sr=SR[r.status]||SR.pendente;
           const respNome = r.responsavel || passageiros.find(p=>p.id===r.passageiroId)?.nome || null;
@@ -1645,6 +1669,10 @@ function Relatorios({viagens, passageiros}) {
   const [vidGer,setVidGer]=useState("");
   const [tabRel,setTabRel]=useState("pagamentos"); // pagamentos | cadastros | viagem | gerencial
   const [filtroCad,setFiltroCad]=useState(""); // viagem id ou "" para geral
+  const [buscaPend,setBuscaPend]=useState("");
+  const [buscaCad,setBuscaCad]=useState("");
+  const [buscaRel,setBuscaRel]=useState("");
+  const [buscaGer,setBuscaGer]=useState("");
   const viagem=viagens.find(v=>v.id===vid);
   const viagemGer=viagens.find(v=>v.id===vidGer);
 
@@ -1731,9 +1759,10 @@ function Relatorios({viagens, passageiros}) {
             <div style={{fontWeight:600,fontSize:13,color:"var(--txt)",display:"flex",alignItems:"center",gap:7}}>{ICONS.warn} {pendentes.length} pagamento(s) em aberto</div>
           </div>
           <div style={{fontSize:11,color:"var(--dim2)",marginBottom:12}}>Considerando apenas viagens <strong style={{color:"var(--txt)"}}>Confirmadas</strong>.</div>
+          {pendentes.length>0&&<BuscaLista value={buscaPend} onChange={setBuscaPend} placeholder="Pesquisar passageiro ou viagem..."/>}
           {pendentes.length===0
             ?<div style={{color:"var(--mint)",fontSize:13,fontWeight:600,padding:"20px 0"}}>✓ Todos os pagamentos em dia!</div>
-            :pendentes.map(r=>(
+            :pendentes.filter(r=>casaBusca(buscaPend,r.nomeAvulso,r.vNome,r.responsavel)).map(r=>(
               <div key={r.id} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"10px 0",borderBottom:"1px solid var(--brd)"}}>
                 <div><div style={{fontSize:13,fontWeight:600,color:"var(--txt)"}}>{r.nomeAvulso||"Passageiro"}</div><div style={{fontSize:11,color:"var(--dim2)"}}>{r.vNome}</div></div>
                 <div style={{fontSize:13,fontWeight:700,color:"var(--rose)"}}>{R$(r.falta)}</div>
@@ -1773,9 +1802,10 @@ function Relatorios({viagens, passageiros}) {
             </div>
           </div>
 
+          {pendentesCad.length>0&&<BuscaLista value={buscaCad} onChange={setBuscaCad} placeholder="Pesquisar passageiro ou viagem..."/>}
           {pendentesCad.length===0
             ?<div style={{color:"var(--mint)",fontSize:13,fontWeight:600,padding:"20px 0"}}>✓ Todos os cadastros completos!</div>
-            :pendentesCad.map((r,i)=>(
+            :pendentesCad.filter(r=>casaBusca(buscaCad,r.nomeAvulso,r.vNome)).map((r,i)=>(
               <div key={r.id+i} style={{display:"flex",alignItems:"center",gap:10,padding:"10px 0",borderBottom:"1px solid var(--brd)"}}>
                 <div style={{flex:1}}>
                   <div style={{fontSize:13,fontWeight:600,color:"var(--txt)"}}>{r.nomeAvulso||"—"}</div>
@@ -1800,7 +1830,8 @@ function Relatorios({viagens, passageiros}) {
               {viagens.map(v=><option key={v.id} value={v.id}>{v.nome} — {dt(v.dataIda)}</option>)}
             </select>
           </div>
-          {viagem&&isentosPrimeiro(viagem.reservas||[]).map((r,i)=>{const pago=sumPgto(r),tot=valorEsperado(r,viagem),q=r.isento||pago>=tot;return(
+          {viagem&&(viagem.reservas||[]).length>0&&<BuscaLista value={buscaRel} onChange={setBuscaRel} placeholder="Pesquisar passageiro ou assento..."/>}
+          {viagem&&isentosPrimeiro(viagem.reservas||[]).map((r,i)=>[r,i]).filter(([r])=>casaBusca(buscaRel,r.nomeAvulso,r.assento)).map(([r,i])=>{const pago=sumPgto(r),tot=valorEsperado(r,viagem),q=r.isento||pago>=tot;return(
             <div key={r.id} style={{display:"flex",alignItems:"center",gap:8,padding:"8px 0",borderBottom:"1px solid var(--brd)"}}>
               <span style={{fontSize:11,color:"var(--dim2)",width:20}}>{i+1}</span>
               <div style={{flex:1}}><div style={{fontSize:13,fontWeight:600,color:"var(--txt)"}}>{r.nomeAvulso||"—"}</div><div style={{fontSize:11,color:"var(--dim2)"}}>Assento: {r.assento||"—"}</div></div>
@@ -1936,6 +1967,7 @@ function Relatorios({viagens, passageiros}) {
 
             {viagemGer&&reservasGer.length>0&&(
               <>
+                <BuscaLista value={buscaGer} onChange={setBuscaGer} placeholder="Pesquisar nome, telefone, CPF, assento ou quarto..."/>
                 {/* Cards resumo */}
                 {(()=>{
                   const total=reservasGer.reduce((s,r)=>s+valorEsperado(r,viagemGer),0);
@@ -1968,7 +2000,7 @@ function Relatorios({viagens, passageiros}) {
                       </tr>
                     </thead>
                     <tbody>
-                      {reservasGer.map((r,i)=>{
+                      {reservasGer.filter(r=>{const a=getAptoInfo(r.id);return casaBusca(buscaGer,r.nomeAvulso,r.assento,getTelGer(r),getCpfGer(r),a?.nomeApto,a&&getTipoLabel(a.tipo));}).map((r,i)=>{
                         const pago=sumPgto(r);
                         const falta=valorEsperado(r,viagemGer)-pago;
                         const quitado=r.isento||falta<=0;
@@ -2680,6 +2712,7 @@ function Cobrancas({viagens, passageiros, updViagem, config}) {
   const [salvandoModelo, setSalvandoModelo] = useState(false);
   const [sel, setSel] = useState(null); // grupo selecionado
   const [msgEdit, setMsgEdit] = useState(""); // mensagem editável pontual
+  const [busca, setBusca] = useState("");
 
   const modelo = config?.[CFG_KEYS[tipo]] || MODELOS_PADRAO[tipo];
   const viagem = viagens.find(v=>v.id===vid);
@@ -2719,7 +2752,7 @@ function Cobrancas({viagens, passageiros, updViagem, config}) {
     if(filtro==="hoje") return g.paxs.some(p=>p.statusCobranca==="prometido" && p.dataPrometida===hoje);
     if(filtro==="cobrado") return g.ultimaCob;
     return true;
-  });
+  }).filter(g=>casaBusca(busca, g.resp, g.fone, ...g.paxs.map(p=>p.nome)));
 
   const filtrosLabels = tipo==="confirmacao"
     ? [["todos","Todos"],["nunca","Não avisados"],["cobrado","Já avisados"],["hoje","Combinados p/ hoje"],["prometido","Prometidos atrasados"]]
@@ -2832,6 +2865,7 @@ function Cobrancas({viagens, passageiros, updViagem, config}) {
       {/* Lista de pendentes */}
       {vid&&(
         <div className="cob-lista">
+          <BuscaLista value={busca} onChange={setBusca} placeholder="Pesquisar responsável, passageiro ou telefone..."/>
           <div style={{fontSize:10,fontWeight:600,color:"var(--dim2)",textTransform:"uppercase",letterSpacing:".6px",marginBottom:10}}>
             {gruposFiltrados.length} responsável(is) {tipo==="saldo"?"com pendências":"com entrada em aberto"}
           </div>
