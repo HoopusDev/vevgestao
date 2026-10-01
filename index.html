@@ -700,7 +700,7 @@ function App() {
         <div className="page">
           {pageEl()}
         </div>
-        <div className="app-version">v1.10.1</div>
+        <div className="app-version">v1.10.2</div>
         {/* Mobile nav */}
         <nav className="mobile-nav">
           {navItems.map(([id,ic,lb]) => (
@@ -905,7 +905,7 @@ function TabReservas({viagem, passageiros, addPassageiro, updViagem}) {
     } else newR=[...reservas,{...r,id:genId(),pagamentos:[]}];
     await updViagem({...viagem,reservas:isentosPrimeiro(newR)}); setModal(false);setEditing(null);
   };
-  // ── Arrastar para reordenar: segurar 2s no passageiro e arrastar (isentos e pagantes não se misturam)
+  // ── Arrastar para reordenar: segurar 1s no passageiro e arrastar (isentos e pagantes não se misturam)
   const [ordem,setOrdem]=useState(null);         // ordem provisória enquanto arrasta
   const [arrastando,setArrastando]=useState(null); // id do passageiro sendo arrastado
   const lista=ordem||reservas;
@@ -970,7 +970,7 @@ function TabReservas({viagem, passageiros, addPassageiro, updViagem}) {
     if(e.button>0||e.target.closest("button")) return;
     const d=drag.current; d.id=id; d.x=e.clientX; d.y=e.clientY;
     cancelarEspera();
-    d.timer=setTimeout(()=>ativarArraste(id),2000);
+    d.timer=setTimeout(()=>ativarArraste(id),1000);
   };
   const onCardMove=e=>{
     const d=drag.current;
@@ -983,7 +983,7 @@ function TabReservas({viagem, passageiros, addPassageiro, updViagem}) {
       <div style={{padding:"16px 28px 8px",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
         <div>
           <span style={{fontSize:13,color:"var(--dim)"}}>{reservas.length}/{viagem.capacidade||0} • {(viagem.capacidade||0)-reservas.length} vagas livres</span>
-          {reservas.length>1&&<div style={{fontSize:11,color:"var(--dim2)",marginTop:2}}>{arrastando?"Arraste e solte na posição desejada":"Segure um passageiro por 2s para mudar a ordem"}</div>}
+          {reservas.length>1&&<div style={{fontSize:11,color:"var(--dim2)",marginTop:2}}>{arrastando?"Arraste e solte na posição desejada":"Segure um passageiro por 1s para mudar a ordem"}</div>}
         </div>
         {reservas.length<(viagem.capacidade||0)&&<button className="btn btn-primary btn-sm" onClick={()=>{setEditing(null);setModal(true);}}>+ Adicionar Reserva</button>}
       </div>
