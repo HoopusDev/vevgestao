@@ -77,6 +77,9 @@ html,body{height:100%;background:var(--bg);overflow:hidden;}
 .mni{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;padding:4px 2px;border:none;background:none;color:var(--dim2);font-size:10px;font-weight:500;transition:color .15s;letter-spacing:.2px;}
 .mni.on{color:var(--sky);}
 .mni svg{width:20px;height:20px;margin-bottom:1px;}
+.mni{min-width:0;}
+.mni span:last-child{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+@media(max-width:400px){.mni{font-size:9px;letter-spacing:0;}}
 
 /* ── TOPBAR ── */
 .topbar{padding:18px 28px 14px;background:var(--surf);border-bottom:1px solid var(--brd);display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:50;}
@@ -401,6 +404,28 @@ html,body{height:100%;background:var(--bg);overflow:hidden;}
 .ani{animation:up .2s ease;}
 select option{background:var(--surf);color:var(--txt);}
 
+/* ── AGENDA ── */
+.ag-mes{display:flex;align-items:center;gap:8px;margin-bottom:10px;}
+.ag-mes-tit{flex:1;text-align:center;font-size:15px;font-weight:600;color:var(--txt);text-transform:capitalize;}
+.ag-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;}
+.ag-sem{font-size:10px;font-weight:600;color:var(--dim2);text-align:center;text-transform:uppercase;padding:4px 0;}
+.ag-dia{background:var(--card);border:1px solid var(--brd);border-radius:8px;min-height:48px;padding:5px 2px 4px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:4px;font-size:13px;color:var(--txt);}
+.ag-dia.fora{opacity:.35;}
+.ag-dia.hoje{border-color:var(--sky);color:var(--sky);font-weight:700;}
+.ag-dia.sel{background:rgba(56,189,248,.15);border-color:var(--sky);}
+.ag-dots{display:flex;gap:3px;flex-wrap:wrap;justify-content:center;}
+.ag-dot{width:6px;height:6px;border-radius:50%;display:inline-block;}
+.ag-item{background:var(--card);border:1px solid var(--brd);border-left:3px solid var(--sky);border-radius:var(--radius);padding:11px 12px;margin-bottom:8px;display:flex;align-items:center;gap:10px;cursor:pointer;}
+.ag-item.feito{opacity:.5;}
+.ag-item.feito .ag-item-tit{text-decoration:line-through;}
+.ag-item-tit{font-size:14px;font-weight:600;color:var(--txt);}
+.ag-item-sub{font-size:11px;color:var(--dim2);margin-top:2px;}
+.ag-check{width:24px;height:24px;border-radius:7px;border:1.5px solid var(--brd);background:none;flex-shrink:0;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--mint);padding:0;}
+.ag-check svg{width:14px;height:14px;}
+.ag-check.on{border-color:var(--mint);background:rgba(52,211,153,.12);}
+.ag-legenda{display:flex;gap:14px;flex-wrap:wrap;font-size:11px;color:var(--dim2);margin-top:10px;}
+.ag-legenda span{display:flex;align-items:center;gap:5px;}
+
 </style>
 </head>
 <body>
@@ -592,6 +617,7 @@ function App() {
   const passageiros = useCol("passageiros");
   const configDocs = useCol("configs");
   const usuariosDocs = useCol("usuarios");
+  const agendaDocs = useCol("agenda");
   const config = configDocs?.[0] || {};
   const usuariosPendentes = (usuariosDocs||[]).filter(u=>u.status==="pendente");
 
@@ -658,6 +684,7 @@ function App() {
 
   const navItems = [
     ["dashboard","home","Início"],
+    ["agenda","calendar","Agenda"],
     ["viagens","bus","Viagens"],
     ["passageiros","users","Passageiros"],
     ["financeiro","dollar","Financeiro"],
@@ -667,14 +694,15 @@ function App() {
   ];
 
   const pageEl = () => {
-    if(page==="dashboard")   return <Dashboard viagens={viagens} passageiros={passageiros} go={go}/>;
+    if(page==="dashboard")   return <Dashboard viagens={viagens} passageiros={passageiros} agenda={agendaDocs||[]} go={go}/>;
     if(page==="viagens")     return <Viagens viagens={viagens} addViagem={addViagem} saveViagem={saveViagem} deleteViagem={deleteViagem} go={go}/>;
     if(page==="viagem")      return <ViagemDetail viagens={viagens} passageiros={passageiros} addPassageiro={addPassageiro} viagem={curViagem} updViagem={updViagem} go={go}/>;
     if(page==="passageiros") return <Passageiros passageiros={passageiros} viagens={viagens} savePassageiro={savePassageiro} addPassageiro={addPassageiro} deletePassageiro={deletePassageiro}/>;
     if(page==="financeiro")  return <Financeiro viagens={viagens} go={go}/>;
     if(page==="relatorios")  return <Relatorios viagens={viagens} passageiros={passageiros}/>;
     if(page==="calculadora") return <Calculadora/>;
-    if(page==="cobrancas")  return <Cobrancas viagens={viagens} passageiros={passageiros} updViagem={updViagem} config={config}/>;
+    if(page==="agenda")      return <Agenda viagens={viagens} passageiros={passageiros} agenda={agendaDocs||[]} go={go}/>;
+    if(page==="cobrancas")  return <Cobrancas viagens={viagens} passageiros={passageiros} updViagem={updViagem} config={config} vidInicial={ctx.vid}/>;
     if(page==="configuracoes") return <Configuracoes config={config} usuarios={usuariosDocs||[]} userAtual={user}/>;
   };
 
@@ -719,7 +747,7 @@ function App() {
         <div className="page">
           {pageEl()}
         </div>
-        <div className="app-version">v1.11.0</div>
+        <div className="app-version">v1.12.0</div>
         {/* Mobile nav */}
         <nav className="mobile-nav">
           {navItems.map(([id,ic,lb]) => (
@@ -757,7 +785,7 @@ function LoginScreen({onLogin}) {
 }
 
 // ── DASHBOARD ─────────────────────────────────────────────────────────────────
-function Dashboard({viagens, passageiros, go}) {
+function Dashboard({viagens, passageiros, agenda, go}) {
   const ativas = viagens.filter(v=>v.status!=="encerrada");
   const viagensConf = viagens.filter(v=>v.status==="confirmada");
   const totalRec = viagensConf.reduce((s,v)=>s+(v.reservas||[]).reduce((ss,r)=>ss+sumPgto(r),0),0);
@@ -772,12 +800,215 @@ function Dashboard({viagens, passageiros, go}) {
         <div className="stat-card"><div className="stat-label">Total Recebido</div><div className="stat-value" style={{fontSize:18,color:"var(--mint)"}}>{R$(totalRec)}</div><div className="stat-sub">de {R$(totalEsp)} esperado</div></div>
         <div className="stat-card"><div className="stat-label">Pagtos Pendentes</div><div className="stat-value" style={{color:pendentes>0?"var(--rose)":"var(--mint)"}}>{pendentes}</div><div className="stat-sub">em viagens confirmadas</div></div>
       </div>
+      <ResumoAgenda viagens={viagens} passageiros={passageiros} agenda={agenda} go={go}/>
       <div className="section" style={{marginTop:24}}>
         <div className="sec-hd"><span className="sec-hd-title">Viagens Ativas</span><span className="sec-hd-count">{ativas.length}</span></div>
         {ativas.length===0
           ? <div className="empty"><div className="empty-icon">{ICONS.bus}</div><p>Nenhuma viagem ativa</p></div>
           : <div className="viagens-grid">{ativas.map(v=><VCard key={v.id} v={v} onClick={()=>go("viagem",{viagem:v})}/>)}</div>
         }
+      </div>
+    </div>
+  );
+}
+
+// ── AGENDA ────────────────────────────────────────────────────────────────────
+// Junta numa lista só: ida/volta das viagens, pagamentos prometidos (Cobranças) e compromissos manuais (coleção "agenda").
+const TIPOS_AG = {
+  viagem:     {l:"Viagem",      c:"var(--sky)"},
+  cobranca:   {l:"Cobrança",    c:"var(--amber)"},
+  compromisso:{l:"Compromisso", c:"var(--lilac)"},
+};
+const somaDias = (iso, n) => { const d=new Date(iso+"T12:00:00"); d.setDate(d.getDate()+n); return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); };
+const diaSemana = iso => new Date(iso+"T12:00:00").toLocaleDateString("pt-BR",{weekday:"short",day:"2-digit",month:"2-digit"});
+
+function eventosAgenda(viagens, passageiros, agenda) {
+  const ev = [];
+  viagens.forEach(v=>{
+    if(v.dataIda) ev.push({id:"ida-"+v.id, tipo:"viagem", data:v.dataIda, titulo:"🚌 Ida: "+v.nome, sub:(v.reservas?.length||0)+"/"+(v.capacidade||0)+" vagas", viagem:v, feito:v.status==="encerrada"});
+    if(v.dataVolta && v.dataVolta!==v.dataIda) ev.push({id:"volta-"+v.id, tipo:"viagem", data:v.dataVolta, titulo:"🏠 Volta: "+v.nome, viagem:v, feito:v.status==="encerrada"});
+    (v.reservas||[]).forEach(r=>{
+      if(r.statusCobranca!=="prometido" || !r.dataPrometida) return;
+      const falta = valorEsperado(r,v) - sumPgto(r);
+      if(falta<=0) return;
+      const nome = passageiros.find(p=>p.id===r.passageiroId)?.nome || r.nomeAvulso || "Passageiro";
+      ev.push({id:"cob-"+v.id+"-"+r.id, tipo:"cobranca", data:r.dataPrometida, titulo:"💰 "+nome+" prometeu pagar", sub:R$(falta)+" • "+v.nome, viagem:v});
+    });
+  });
+  agenda.forEach(a=>{
+    if(!a.data) return;
+    const v = viagens.find(x=>x.id===a.viagemId);
+    ev.push({id:"ag-"+a.id, tipo:"compromisso", data:a.data, hora:a.hora||"", titulo:"📌 "+(a.titulo||"Compromisso"), sub:[v?.nome, a.obs].filter(Boolean).join(" • "), feito:!!a.feito, doc:a});
+  });
+  return ev.sort((a,b)=>(a.data+(a.hora||"00:00")).localeCompare(b.data+(b.hora||"00:00")));
+}
+
+function ItemAgenda({e, onAbrir, onFeito, mostrarData}) {
+  return (
+    <div className={`ag-item ${e.feito?"feito":""}`} style={{borderLeftColor:TIPOS_AG[e.tipo].c}} onClick={()=>onAbrir(e)}>
+      {e.tipo==="compromisso"&&(
+        <button className={`ag-check ${e.feito?"on":""}`} title={e.feito?"Desmarcar":"Marcar como feito"} onClick={ev=>{ev.stopPropagation();onFeito(e);}}>{e.feito&&ICONS.check}</button>
+      )}
+      <div style={{flex:1,minWidth:0}}>
+        <div className="ag-item-tit">{e.titulo}</div>
+        {(mostrarData||e.hora||e.sub)&&<div className="ag-item-sub">{[mostrarData&&diaSemana(e.data), e.hora, e.sub].filter(Boolean).join(" • ")}</div>}
+      </div>
+    </div>
+  );
+}
+
+// Abrir um item: viagem → tela da viagem; cobrança → Cobranças já na viagem; compromisso → editar.
+const abrirItemAgenda = (e, go, editar) => {
+  if(e.tipo==="viagem") go("viagem",{viagem:e.viagem});
+  else if(e.tipo==="cobranca") go("cobrancas",{vid:e.viagem.id});
+  else editar(e.doc);
+};
+const alternarFeito = e => fsSet("agenda", e.doc.id, {...e.doc, feito:!e.doc.feito}).catch(()=>alert("Não foi possível salvar. Verifique a conexão."));
+
+function ResumoAgenda({viagens, passageiros, agenda, go}) {
+  const hoje = hojeLocal(), limite = somaDias(hoje, 7);
+  const ev = eventosAgenda(viagens, passageiros, agenda);
+  const atrasados = ev.filter(e=>e.data<hoje && !e.feito && e.tipo!=="viagem");
+  const proximos = ev.filter(e=>e.data>=hoje && e.data<=limite && !e.feito);
+  const lista = [...atrasados, ...proximos];
+  return (
+    <div className="section" style={{marginTop:24}}>
+      <div className="sec-hd">
+        <span className="sec-hd-title">Agenda • próximos 7 dias</span>
+        <span className="sec-hd-count">{lista.length}</span>
+        <span className="sec-hd-action" onClick={()=>go("agenda")}>Ver agenda →</span>
+      </div>
+      {lista.length===0
+        ? <div style={{fontSize:13,color:"var(--dim2)",padding:"4px 0 8px"}}>Nada marcado para os próximos 7 dias.</div>
+        : lista.slice(0,8).map(e=>(
+            <div key={e.id}>
+              {e.data<hoje&&<div style={{fontSize:10,fontWeight:700,color:"var(--rose)",margin:"0 0 3px 2px",textTransform:"uppercase"}}>Atrasado</div>}
+              <ItemAgenda e={e} mostrarData onAbrir={x=>abrirItemAgenda(x, go, ()=>go("agenda"))} onFeito={alternarFeito}/>
+            </div>
+          ))
+      }
+      {lista.length>8&&<div className="sec-hd-action" style={{justifyContent:"center",marginLeft:0}} onClick={()=>go("agenda")}>+ {lista.length-8} itens na agenda</div>}
+    </div>
+  );
+}
+
+function Agenda({viagens, passageiros, agenda, go}) {
+  const hoje = hojeLocal();
+  const [sel, setSel] = useState(hoje);
+  const [mes, setMes] = useState(hoje.slice(0,7)); // "AAAA-MM"
+  const [modal, setModal] = useState(null); // null | {data} novo | doc editando
+  const ev = eventosAgenda(viagens, passageiros, agenda);
+  const porDia = {};
+  ev.forEach(e=>{ (porDia[e.data] = porDia[e.data]||[]).push(e); });
+
+  // Grade do mês de domingo a sábado, completando com dias dos meses vizinhos
+  const primeiro = mes+"-01";
+  const inicio = somaDias(primeiro, -new Date(primeiro+"T12:00:00").getDay());
+  const dias = [];
+  for(let d=inicio; dias.length<42; d=somaDias(d,1)) dias.push(d);
+  while(dias.length>35 && dias[dias.length-7].slice(0,7)!==mes) dias.splice(-7);
+  const tituloMes = new Date(primeiro+"T12:00:00").toLocaleDateString("pt-BR",{month:"long",year:"numeric"});
+  const mudaMes = n => { const d=new Date(primeiro+"T12:00:00"); d.setMonth(d.getMonth()+n); setMes(d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")); };
+  const irHoje = () => { setMes(hoje.slice(0,7)); setSel(hoje); };
+
+  const doDia = porDia[sel]||[];
+  const atrasados = ev.filter(e=>e.data<hoje && !e.feito && e.tipo!=="viagem");
+
+  const salvar = async f => {
+    const id = f.id || genId();
+    try { await fsSet("agenda", id, {...f, id, feito:!!f.feito}); setModal(null); }
+    catch(err) { alert("Não foi possível salvar o compromisso. Verifique a conexão ou as permissões do Firebase."); }
+  };
+  const excluir = async id => {
+    if(!confirm("Excluir compromisso?")) return;
+    try { await fsDel("agenda", id); setModal(null); } catch(err) { alert("Não foi possível excluir."); }
+  };
+
+  return (
+    <div className="ani">
+      <div className="topbar"><h1>Agenda</h1><button className="btn btn-ghost btn-sm" onClick={irHoje}>Hoje</button></div>
+      <div className="section">
+        <div className="ag-mes">
+          <button className="btn btn-ghost btn-icon" onClick={()=>mudaMes(-1)}>{ICONS.back}</button>
+          <div className="ag-mes-tit">{tituloMes}</div>
+          <button className="btn btn-ghost btn-icon" style={{transform:"scaleX(-1)"}} onClick={()=>mudaMes(1)}>{ICONS.back}</button>
+        </div>
+        <div className="ag-grid">
+          {["dom","seg","ter","qua","qui","sex","sáb"].map(d=><div key={d} className="ag-sem">{d}</div>)}
+          {dias.map(d=>{
+            const tipos = [...new Set((porDia[d]||[]).filter(e=>!e.feito).map(e=>e.tipo))];
+            return (
+              <div key={d} className={`ag-dia ${d.slice(0,7)!==mes?"fora":""} ${d===hoje?"hoje":""} ${d===sel?"sel":""}`}
+                onClick={()=>{setSel(d); if(d.slice(0,7)!==mes) setMes(d.slice(0,7));}}>
+                <span>{Number(d.slice(8))}</span>
+                <div className="ag-dots">{tipos.map(t=><span key={t} className="ag-dot" style={{background:TIPOS_AG[t].c}}/>)}</div>
+              </div>
+            );
+          })}
+        </div>
+        <div className="ag-legenda">
+          {Object.entries(TIPOS_AG).map(([k,t])=><span key={k}><span className="ag-dot" style={{background:t.c}}/>{t.l}</span>)}
+        </div>
+      </div>
+
+      <div className="section" style={{marginTop:20}}>
+        <div className="sec-hd">
+          <span className="sec-hd-title">{new Date(sel+"T12:00:00").toLocaleDateString("pt-BR",{weekday:"long",day:"2-digit",month:"long"})}</span>
+          <span className="sec-hd-count">{doDia.length}</span>
+          <span className="sec-hd-action" onClick={()=>setModal({data:sel})}>+ Adicionar</span>
+        </div>
+        {doDia.length===0
+          ? <div style={{fontSize:13,color:"var(--dim2)",padding:"4px 0 8px"}}>Nada marcado neste dia.</div>
+          : doDia.map(e=><ItemAgenda key={e.id} e={e} onAbrir={x=>abrirItemAgenda(x, go, setModal)} onFeito={alternarFeito}/>)
+        }
+      </div>
+
+      {atrasados.length>0&&(
+        <div className="section" style={{marginTop:20}}>
+          <div className="sec-hd"><span className="sec-hd-title" style={{color:"var(--rose)"}}>Atrasados</span><span className="sec-hd-count" style={{color:"var(--rose)",background:"rgba(248,113,113,.1)"}}>{atrasados.length}</span></div>
+          {atrasados.map(e=><ItemAgenda key={e.id} e={e} mostrarData onAbrir={x=>abrirItemAgenda(x, go, setModal)} onFeito={alternarFeito}/>)}
+        </div>
+      )}
+      <div style={{height:90}}/>
+
+      <button className="fab" onClick={()=>setModal({data:sel})}>{ICONS.plus}</button>
+      {modal&&<ModalCompromisso initial={modal} viagens={viagens} onSave={salvar} onDelete={excluir} onClose={()=>setModal(null)}/>}
+    </div>
+  );
+}
+
+function ModalCompromisso({initial, viagens, onSave, onDelete, onClose}) {
+  const [f,setF]=useState({titulo:"",data:hojeLocal(),hora:"",viagemId:"",obs:"",feito:false,...initial});
+  const s=(k,v)=>setF(x=>({...x,[k]:v}));
+  return (
+    <div className="mo" onClick={e=>e.target===e.currentTarget&&onClose()}>
+      <div className="md ani">
+        <div className="mhdl"/><div className="mhd"><span className="mtit">{initial.id?"Editar Compromisso":"Novo Compromisso"}</span><button className="btn btn-ghost btn-icon" onClick={onClose}>{ICONS.close}</button></div>
+        <div className="mbdy"><div className="form-section">
+          <div className="fg"><label className="fl">O que fazer *</label><input className="fi" value={f.titulo} onChange={e=>s("titulo",e.target.value)} placeholder="Ex: Fechar hotel, pagar ônibus..."/></div>
+          <div className="fgrid">
+            <div className="fg"><label className="fl">Data *</label><input type="date" className="fi" value={f.data} onChange={e=>s("data",e.target.value)}/></div>
+            <div className="fg"><label className="fl">Hora</label><input type="time" className="fi" value={f.hora} onChange={e=>s("hora",e.target.value)}/></div>
+          </div>
+          <div className="fg"><label className="fl">Viagem (opcional)</label>
+            <select className="fsel" value={f.viagemId} onChange={e=>s("viagemId",e.target.value)}>
+              <option value="">Nenhuma</option>
+              {viagens.map(v=><option key={v.id} value={v.id}>{v.nome} — {dt(v.dataIda)}</option>)}
+            </select>
+          </div>
+          <div className="fg"><label className="fl">Observação</label><textarea className="fta" rows={2} value={f.obs} onChange={e=>s("obs",e.target.value)}/></div>
+          {initial.id&&(
+            <label style={{display:"flex",alignItems:"center",gap:8,cursor:"pointer",fontSize:13,color:"var(--txt)"}}>
+              <input type="checkbox" checked={!!f.feito} onChange={e=>s("feito",e.target.checked)} style={{width:16,height:16,accentColor:"var(--mint)"}}/>
+              Feito
+            </label>
+          )}
+        </div></div>
+        <div className="mact">
+          {initial.id&&<button className="btn btn-danger btn-icon" title="Excluir" onClick={()=>onDelete(initial.id)}>{ICONS.trash}</button>}
+          <button className="btn btn-ghost btn-full" onClick={onClose}>Cancelar</button>
+          <button className="btn btn-primary btn-full" onClick={()=>{if(!f.titulo.trim())return alert("Informe o que fazer");if(!f.data)return alert("Informe a data");onSave(f);}}>Salvar</button>
+        </div>
       </div>
     </div>
   );
@@ -2703,8 +2934,8 @@ function gerarMensagem(modelo, v) {
   return modelo.replace(/\{(nome|viagem|itens|pix|entrada|total|data_viagem|data)\}/g, (_, k)=>mapa[k]);
 }
 
-function Cobrancas({viagens, passageiros, updViagem, config}) {
-  const [vid, setVid] = useState("");
+function Cobrancas({viagens, passageiros, updViagem, config, vidInicial}) {
+  const [vid, setVid] = useState(vidInicial||"");
   const [tipo, setTipo] = useState("saldo");
   const [filtro, setFiltro] = useState("todos");
   const [editModelo, setEditModelo] = useState(false);
