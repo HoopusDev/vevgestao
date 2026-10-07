@@ -586,6 +586,8 @@ const METODOS_LABEL = {credito:"Cartão de Crédito",debito:"Cartão de Débito"
 
 // ── FIRESTORE HOOKS ───────────────────────────────────────────────────────────
 const porDataIda = (a,b) => (a.dataIda||"9999-99-99").localeCompare(b.dataIda||"9999-99-99");
+// Listas para selecionar viagem: encerradas ficam de fora (viram só consulta), exceto a que já estiver selecionada.
+const selecionaveis = (viagens, atual) => viagens.filter(v=>v.status!=="encerrada" || v.id===atual);
 function useCol(col) {
   const [docs, setDocs] = useState(null);
   useEffect(() => {
@@ -747,7 +749,7 @@ function App() {
         <div className="page">
           {pageEl()}
         </div>
-        <div className="app-version">v1.12.0</div>
+        <div className="app-version">v1.12.1</div>
         {/* Mobile nav */}
         <nav className="mobile-nav">
           {navItems.map(([id,ic,lb]) => (
@@ -993,7 +995,7 @@ function ModalCompromisso({initial, viagens, onSave, onDelete, onClose}) {
           <div className="fg"><label className="fl">Viagem (opcional)</label>
             <select className="fsel" value={f.viagemId} onChange={e=>s("viagemId",e.target.value)}>
               <option value="">Nenhuma</option>
-              {viagens.map(v=><option key={v.id} value={v.id}>{v.nome} — {dt(v.dataIda)}</option>)}
+              {selecionaveis(viagens, f.viagemId).map(v=><option key={v.id} value={v.id}>{v.nome} — {dt(v.dataIda)}</option>)}
             </select>
           </div>
           <div className="fg"><label className="fl">Observação</label><textarea className="fta" rows={2} value={f.obs} onChange={e=>s("obs",e.target.value)}/></div>
@@ -2011,7 +2013,7 @@ function Relatorios({viagens, passageiros}) {
               <label className="fl">Filtrar por viagem</label>
               <select className="fsel" value={filtroCad} onChange={e=>setFiltroCad(e.target.value)}>
                 <option value="">Todos os passageiros</option>
-                {viagens.map(v=><option key={v.id} value={v.id}>{v.nome} — {dt(v.dataIda)}</option>)}
+                {selecionaveis(viagens, filtroCad).map(v=><option key={v.id} value={v.id}>{v.nome} — {dt(v.dataIda)}</option>)}
               </select>
             </div>
             <button className="btn btn-ghost btn-sm" style={{marginBottom:1}} onClick={gerarPDFCadastros}>{ICONS.pdf} Exportar PDF</button>
@@ -2058,7 +2060,7 @@ function Relatorios({viagens, passageiros}) {
           <div className="fg" style={{marginBottom:12}}>
             <select className="fsel" value={vid} onChange={e=>setVid(e.target.value)}>
               <option value="">Selecionar viagem...</option>
-              {viagens.map(v=><option key={v.id} value={v.id}>{v.nome} — {dt(v.dataIda)}</option>)}
+              {selecionaveis(viagens, vid).map(v=><option key={v.id} value={v.id}>{v.nome} — {dt(v.dataIda)}</option>)}
             </select>
           </div>
           {viagem&&(viagem.reservas||[]).length>0&&<BuscaLista value={buscaRel} onChange={setBuscaRel} placeholder="Pesquisar passageiro ou assento..."/>}
@@ -2186,7 +2188,7 @@ function Relatorios({viagens, passageiros}) {
                 <label className="fl">Selecionar viagem</label>
                 <select className="fsel" value={vidGer} onChange={e=>setVidGer(e.target.value)}>
                   <option value="">Selecionar viagem...</option>
-                  {viagens.map(v=><option key={v.id} value={v.id}>{v.nome} — {dt(v.dataIda)}</option>)}
+                  {selecionaveis(viagens, vidGer).map(v=><option key={v.id} value={v.id}>{v.nome} — {dt(v.dataIda)}</option>)}
                 </select>
               </div>
               {viagemGer&&<button className="btn btn-ghost btn-sm" style={{marginBottom:1}} onClick={gerarPDFGerencial}>{ICONS.pdf} Exportar PDF</button>}
@@ -3045,7 +3047,7 @@ function Cobrancas({viagens, passageiros, updViagem, config, vidInicial}) {
           <label className="fl">Selecione a Viagem</label>
           <select className="fsel" value={vid} onChange={e=>{setVid(e.target.value);setSel(null);}}>
             <option value="">Selecionar viagem...</option>
-            {viagens.map(v=><option key={v.id} value={v.id}>{v.nome} — {dt(v.dataIda)}</option>)}
+            {selecionaveis(viagens, vid).map(v=><option key={v.id} value={v.id}>{v.nome} — {dt(v.dataIda)}</option>)}
           </select>
         </div>
         {vid&&<>
