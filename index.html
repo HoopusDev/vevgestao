@@ -710,7 +710,7 @@ function App() {
     if(page==="relatorios")  return <Relatorios viagens={viagens} passageiros={passageiros}/>;
     if(page==="calculadora") return <Calculadora/>;
     if(page==="agenda")      return <Agenda viagens={viagens} passageiros={passageiros} agenda={agendaDocs||[]} go={go}/>;
-    if(page==="cobrancas")  return <Cobrancas viagens={viagens} passageiros={passageiros} updViagem={updViagem} config={config} vidInicial={ctx.vid}/>;
+    if(page==="cobrancas")  return <Cobrancas viagens={viagens} passageiros={passageiros} updViagem={updViagem} config={config} vidInicial={ctx.vid} paxInicial={ctx.paxId}/>;
     if(page==="configuracoes") return <Configuracoes config={config} usuarios={usuariosDocs||[]} userAtual={user}/>;
   };
 
@@ -755,7 +755,7 @@ function App() {
         <div className="page">
           {pageEl()}
         </div>
-        <div className="app-version">v1.12.3</div>
+        <div className="app-version">v1.13.0</div>
         {/* Mobile nav */}
         <nav className="mobile-nav">
           {navItems.map(([id,ic,lb]) => (
@@ -835,13 +835,20 @@ function eventosAgenda(viagens, passageiros, agenda) {
   viagens.forEach(v=>{
     if(v.dataIda) ev.push({id:"ida-"+v.id, tipo:"viagem", data:v.dataIda, titulo:"🚌 Ida: "+v.nome, sub:(v.reservas?.length||0)+"/"+(v.capacidade||0)+" vagas", viagem:v, feito:v.status==="encerrada"});
     if(v.dataVolta && v.dataVolta!==v.dataIda) ev.push({id:"volta-"+v.id, tipo:"viagem", data:v.dataVolta, titulo:"🏠 Volta: "+v.nome, viagem:v, feito:v.status==="encerrada"});
+    // Datas combinadas nas Cobranças, agrupadas por responsável (mesmo agrupamento da tela de Cobranças)
+    const grupos = {};
     (v.reservas||[]).forEach(r=>{
       if(r.statusCobranca!=="prometido" || !r.dataPrometida) return;
       const falta = valorEsperado(r,v) - sumPgto(r);
       if(falta<=0) return;
-      const nome = passageiros.find(p=>p.id===r.passageiroId)?.nome || r.nomeAvulso || "Passageiro";
-      ev.push({id:"cob-"+v.id+"-"+r.id, tipo:"cobranca", data:r.dataPrometida, titulo:"💰 "+nome+" prometeu pagar", sub:R$(falta)+" • "+v.nome, viagem:v});
+      const pax = passageiros.find(p=>p.id===r.passageiroId);
+      const resp = r.responsavel || pax?.nome || r.nomeAvulso || "Passageiro";
+      const fone = r.telefoneResp || pax?.telefone || "";
+      const k = fone+"|"+resp+"|"+r.dataPrometida;
+      if(!grupos[k]) grupos[k] = {id:"cob-"+v.id+"-"+r.id, tipo:"cobranca", data:r.dataPrometida, resp, falta:0, n:0, viagem:v, paxId:r.id};
+      grupos[k].falta += falta; grupos[k].n++;
     });
+    Object.values(grupos).forEach(c=>ev.push({...c, titulo:"💰 Cobrar "+c.resp, sub:R$(c.falta)+(c.n>1?" • "+c.n+" passageiros":"")+" • "+v.nome}));
   });
   agenda.forEach(a=>{
     if(!a.data) return;
@@ -861,14 +868,17 @@ function ItemAgenda({e, onAbrir, onFeito, mostrarData}) {
         <div className="ag-item-tit">{e.titulo}</div>
         {(mostrarData||e.hora||e.sub)&&<div className="ag-item-sub">{[mostrarData&&diaSemana(e.data), e.hora, e.sub].filter(Boolean).join(" • ")}</div>}
       </div>
+      {e.tipo==="cobranca"&&e.data<=hojeLocal()&&(
+        <button className="btn btn-sm" style={{background:"#25D366",color:"#fff",flexShrink:0}} onClick={ev=>{ev.stopPropagation();onAbrir(e);}}>{ICONS.whatsapp} Cobrar</button>
+      )}
     </div>
   );
 }
 
-// Abrir um item: viagem → tela da viagem; cobrança → Cobranças já na viagem; compromisso → editar.
+// Abrir um item: viagem → tela da viagem; cobrança → mensagem do responsável já aberta em Cobranças; compromisso → editar.
 const abrirItemAgenda = (e, go, editar) => {
   if(e.tipo==="viagem") go("viagem",{viagem:e.viagem});
-  else if(e.tipo==="cobranca") go("cobrancas",{vid:e.viagem.id});
+  else if(e.tipo==="cobranca") go("cobrancas",{vid:e.viagem.id, paxId:e.paxId});
   else editar(e.doc);
 };
 const alternarFeito = e => fsSet("agenda", e.doc.id, {...e.doc, feito:!e.doc.feito}).catch(()=>alert("Não foi possível salvar. Verifique a conexão."));
@@ -2942,7 +2952,7 @@ function gerarMensagem(modelo, v) {
   return modelo.replace(/\{(nome|viagem|itens|pix|entrada|total|data_viagem|data)\}/g, (_, k)=>mapa[k]);
 }
 
-function Cobrancas({viagens, passageiros, updViagem, config, vidInicial}) {
+function Cobrancas({viagens, passageiros, updViagem, config, vidInicial, paxInicial}) {
   const [vid, setVid] = useState(vidInicial||"");
   const [tipo, setTipo] = useState("saldo");
   const [filtro, setFiltro] = useState("todos");
@@ -2952,6 +2962,9 @@ function Cobrancas({viagens, passageiros, updViagem, config, vidInicial}) {
   const [sel, setSel] = useState(null); // grupo selecionado
   const [msgEdit, setMsgEdit] = useState(""); // mensagem editável pontual
   const [busca, setBusca] = useState("");
+  const [dataComb, setDataComb] = useState(""); // data combinada editada no modal
+  const [salvandoData, setSalvandoData] = useState(false);
+  const paxAberto = React.useRef(false);
 
   const modelo = config?.[CFG_KEYS[tipo]] || MODELOS_PADRAO[tipo];
   const viagem = viagens.find(v=>v.id===vid);
@@ -3008,7 +3021,31 @@ function Cobrancas({viagens, passageiros, updViagem, config, vidInicial}) {
     });
   };
 
-  const abrirGrupo = (g) => { setSel(g); setMsgEdit(montarMsg(g)); };
+  const datasCombinadas = g => g.paxs.filter(p=>p.statusCobranca==="prometido" && p.dataPrometida).map(p=>p.dataPrometida).sort();
+  const abrirGrupo = (g) => { setSel(g); setMsgEdit(montarMsg(g)); setDataComb(datasCombinadas(g)[0]||""); };
+
+  // Vindo da Agenda: abre direto a mensagem do responsável daquele passageiro
+  useEffect(()=>{
+    if(!paxInicial || paxAberto.current) return;
+    const g = grupos.find(x=>x.paxs.some(p=>p.id===paxInicial));
+    if(g){ paxAberto.current = true; abrirGrupo(g); }
+  }, [grupos]);
+
+  // Data combinada: marca as reservas do grupo como "Prometido" com a data (aparece na Agenda); vazio remove o combinado
+  const salvarDataCombinada = async (g, data) => {
+    setSalvandoData(true);
+    const novasReservas = reservas.map(r=>{
+      if(!g.paxs.some(p=>p.id===r.id)) return r;
+      if(data) return {...r, statusCobranca:"prometido", dataPrometida:data};
+      return {...r, statusCobranca: r.ultimaCobranca ? "cobrado" : "pendente", dataPrometida:""};
+    });
+    try {
+      await updViagem({...viagem, reservas:novasReservas});
+      const ng = {...g, paxs:g.paxs.map(p=>({...p, statusCobranca: data ? "prometido" : (p.ultimaCob ? "cobrado" : "pendente"), dataPrometida:data}))};
+      setSel(ng); setMsgEdit(montarMsg(ng)); setDataComb(data);
+    } catch(err) { alert("Não foi possível salvar a data. Verifique a conexão."); }
+    setSalvandoData(false);
+  };
 
   const registrarCobranca = async (g) => {
     const agora = new Date().toISOString();
@@ -3161,6 +3198,17 @@ function Cobrancas({viagens, passageiros, updViagem, config, vidInicial}) {
             <div className="mbdy" style={{padding:"0 20px 8px"}}>
               <div style={{fontSize:10,fontWeight:600,color:"var(--dim2)",textTransform:"uppercase",letterSpacing:".5px",marginBottom:8}}>Mensagem — edite se necessário</div>
               <textarea className="cob-msg-area" rows={12} value={msgEdit} onChange={e=>setMsgEdit(e.target.value)}/>
+              <div style={{fontSize:10,fontWeight:600,color:"var(--dim2)",textTransform:"uppercase",letterSpacing:".5px",margin:"14px 0 8px"}}>Data combinada</div>
+              <div style={{display:"flex",gap:8,alignItems:"center"}}>
+                <input type="date" className="fi" style={{flex:1}} value={dataComb} onChange={e=>setDataComb(e.target.value)}/>
+                <button className="btn btn-primary btn-sm" disabled={salvandoData||!dataComb||dataComb===(datasCombinadas(sel)[0]||"")}
+                  style={{opacity:(!dataComb||dataComb===(datasCombinadas(sel)[0]||""))?.5:1}}
+                  onClick={()=>salvarDataCombinada(sel, dataComb)}>{salvandoData?"Salvando...":"Salvar data"}</button>
+                {datasCombinadas(sel)[0]&&<button className="btn btn-ghost btn-sm" title="Remover data combinada" disabled={salvandoData} onClick={()=>salvarDataCombinada(sel, "")}>{ICONS.close}</button>}
+              </div>
+              <div style={{fontSize:11,color:"var(--dim2)",marginTop:6}}>
+                {datasCombinadas(sel)[0] ? `📅 Na agenda em ${dt(datasCombinadas(sel)[0])}. No dia, aparece o botão "Cobrar" na Agenda e no Início.` : "Ao salvar, a cobrança vai para a Agenda nesse dia."}
+              </div>
             </div>
             <div className="mact" style={{flexWrap:"wrap",gap:8}}>
               <button className="btn btn-ghost btn-full" onClick={()=>{navigator.clipboard.writeText(msgEdit);alert("Mensagem copiada!");}}>
