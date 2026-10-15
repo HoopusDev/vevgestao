@@ -755,7 +755,7 @@ function App() {
         <div className="page">
           {pageEl()}
         </div>
-        <div className="app-version">v1.13.0</div>
+        <div className="app-version">v1.13.1</div>
         {/* Mobile nav */}
         <nav className="mobile-nav">
           {navItems.map(([id,ic,lb]) => (
@@ -3072,8 +3072,11 @@ function Cobrancas({viagens, passageiros, updViagem, config, vidInicial, paxInic
   const abrirWhatsApp = (fone, msg) => {
     const num = formatFone(fone);
     if(!num || num.length < 12) return alert("Número de WhatsApp inválido ou não cadastrado.");
-    const url = `https://wa.me/${num}?text=${encodeURIComponent(msg)}`;
-    window.open(url,"_blank");
+    // No computador abre o WhatsApp Web (sempre na mesma aba); no celular, o aplicativo
+    const celular = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+    const texto = encodeURIComponent(msg);
+    if(celular) window.open(`https://wa.me/${num}?text=${texto}`,"_blank");
+    else window.open(`https://web.whatsapp.com/send?phone=${num}&text=${texto}`,"whatsapp_web");
   };
 
   const rotuloUltimo = tipo==="confirmacao" ? "Avisado em" : "Último contato";
