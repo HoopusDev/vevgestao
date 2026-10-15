@@ -167,6 +167,9 @@ html,body{height:100%;background:var(--bg);overflow:hidden;}
 .fl{font-size:10px;font-weight:600;color:var(--dim2);text-transform:uppercase;letter-spacing:.6px;}
 .fi,.fsel,.fta{background:var(--bg);border:1px solid var(--brd);border-radius:8px;padding:10px 13px;font-size:14px;color:var(--txt);outline:none;-webkit-appearance:none;width:100%;font-weight:400;}
 .fi:focus,.fsel:focus,.fta:focus{border-color:var(--sky);}
+/* campos de data/hora: ícone claro no tema escuro e altura mínima (no iPhone o campo vazio encolhia) */
+.fi[type=date],.fi[type=time]{color-scheme:dark;min-height:42px;cursor:pointer;}
+.fi[type=date]::-webkit-calendar-picker-indicator,.fi[type=time]::-webkit-calendar-picker-indicator{cursor:pointer;opacity:.8;}
 .fgrid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
 .fta{resize:none;}
 
@@ -554,6 +557,8 @@ function AutoComplete({passageiros, value, onChange, placeholder}) {
 
 // ── HELPERS ──────────────────────────────────────────────────────────────────
 const genId = () => Math.random().toString(36).slice(2) + Date.now().toString(36);
+// Clicar em qualquer parte de um campo de data/hora abre o calendário (no computador só abria clicando no ícone).
+document.addEventListener("click", e => { const el=e.target; if(el.tagName==="INPUT" && (el.type==="date"||el.type==="time") && el.showPicker) { try { el.showPicker(); } catch(_) {} } });
 // Isentos sempre no topo da lista de passageiros, mantendo a ordem definida dentro de cada grupo.
 const isentosPrimeiro = rs => [...rs.filter(r=>r.isento), ...rs.filter(r=>!r.isento)];
 // Busca sem diferenciar acentos e maiúsculas: casaBusca("joao", "João Silva") → true
@@ -749,7 +754,7 @@ function App() {
         <div className="page">
           {pageEl()}
         </div>
-        <div className="app-version">v1.12.1</div>
+        <div className="app-version">v1.12.2</div>
         {/* Mobile nav */}
         <nav className="mobile-nav">
           {navItems.map(([id,ic,lb]) => (
