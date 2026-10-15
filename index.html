@@ -408,6 +408,20 @@ html,body{height:100%;background:var(--bg);overflow:hidden;}
 .ani{animation:up .2s ease;}
 select option{background:var(--surf);color:var(--txt);}
 
+/* ── ATALHOS DE CÓPIA (INÍCIO) ── */
+.atalhos{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:16px 28px 0;}
+@media(max-width:768px){.atalhos{grid-template-columns:1fr;padding:12px 14px 0;gap:8px;}}
+.atalho{display:flex;align-items:center;gap:12px;background:var(--card);border:1px solid var(--brd);border-radius:var(--radius);padding:12px 14px;cursor:pointer;color:var(--txt);transition:border-color .15s,background .15s;width:100%;}
+.atalho:hover{border-color:rgba(56,189,248,.35);}
+.atalho.ok{border-color:var(--mint);background:rgba(52,211,153,.06);}
+.atalho-ic{width:34px;height:34px;border-radius:9px;background:rgba(56,189,248,.1);color:var(--sky);display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.atalho.ok .atalho-ic{background:rgba(52,211,153,.12);color:var(--mint);}
+.atalho-ic svg{width:16px;height:16px;}
+.atalho-l{display:block;font-size:10px;font-weight:600;color:var(--dim2);text-transform:uppercase;letter-spacing:.6px;}
+.atalho-v{display:block;font-size:15px;font-weight:600;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.atalho-acao{font-size:12px;font-weight:600;color:var(--sky);flex-shrink:0;}
+.atalho.ok .atalho-acao{color:var(--mint);}
+
 /* ── AGENDA ── */
 .ag-mes{display:flex;align-items:center;gap:8px;margin-bottom:10px;}
 .ag-mes-tit{flex:1;text-align:center;font-size:15px;font-weight:600;color:var(--txt);text-transform:capitalize;}
@@ -702,7 +716,7 @@ function App() {
   ];
 
   const pageEl = () => {
-    if(page==="dashboard")   return <Dashboard viagens={viagens} passageiros={passageiros} agenda={agendaDocs||[]} go={go}/>;
+    if(page==="dashboard")   return <Dashboard viagens={viagens} passageiros={passageiros} agenda={agendaDocs||[]} config={config} go={go}/>;
     if(page==="viagens")     return <Viagens viagens={viagens} addViagem={addViagem} saveViagem={saveViagem} deleteViagem={deleteViagem} go={go}/>;
     if(page==="viagem")      return <ViagemDetail viagens={viagens} passageiros={passageiros} addPassageiro={addPassageiro} viagem={curViagem} updViagem={updViagem} go={go}/>;
     if(page==="passageiros") return <Passageiros passageiros={passageiros} viagens={viagens} savePassageiro={savePassageiro} addPassageiro={addPassageiro} deletePassageiro={deletePassageiro}/>;
@@ -755,7 +769,7 @@ function App() {
         <div className="page">
           {pageEl()}
         </div>
-        <div className="app-version">v1.14.1</div>
+        <div className="app-version">v1.15.0</div>
         {/* Mobile nav */}
         <nav className="mobile-nav">
           {navItems.map(([id,ic,lb]) => (
@@ -793,7 +807,44 @@ function LoginScreen({onLogin}) {
 }
 
 // ── DASHBOARD ─────────────────────────────────────────────────────────────────
-function Dashboard({viagens, passageiros, agenda, go}) {
+// Copia texto para a área de transferência (com alternativa para navegadores sem clipboard API)
+async function copiarTexto(txt) {
+  try { await navigator.clipboard.writeText(txt); return true; }
+  catch(_) {
+    const t=document.createElement("textarea"); t.value=txt; t.style.position="fixed"; t.style.opacity="0";
+    document.body.appendChild(t); t.select(); const ok=document.execCommand("copy"); t.remove(); return ok;
+  }
+}
+
+// Atalhos do Início para copiar o Pix e o telefone da empresa (cadastrados em Configurações → Empresa)
+function AtalhosCopiar({config}) {
+  const [copiado, setCopiado] = useState("");
+  const pix = pixExibicao(config);
+  const pixCopia = (config?.pix||"").trim() || PIX_DISPLAY.replace(/\D/g,""); // copia só os números (aceito por todos os bancos)
+  const tel = (config?.telefone||"").trim();
+  const copiar = async (id, txt) => {
+    if(!txt) return alert("Cadastre o telefone em Configurações → Empresa.");
+    if(await copiarTexto(txt)) { setCopiado(id); setTimeout(()=>setCopiado(c=>c===id?"":c), 2000); }
+    else alert("Não foi possível copiar.");
+  };
+  const itens = [["pix","Chave Pix",ICONS.pix,pix,pixCopia],["tel","Telefone V&V",ICONS.phone,tel,tel]];
+  return (
+    <div className="atalhos">
+      {itens.map(([id,lb,ic,txt,copia])=>(
+        <button key={id} className={`atalho ${copiado===id?"ok":""}`} onClick={()=>copiar(id,copia)}>
+          <span className="atalho-ic">{copiado===id?ICONS.check:ic}</span>
+          <span style={{flex:1,minWidth:0,textAlign:"left"}}>
+            <span className="atalho-l">{lb}</span>
+            <span className="atalho-v">{txt||"Não cadastrado"}</span>
+          </span>
+          <span className="atalho-acao">{copiado===id?"Copiado!":"Copiar"}</span>
+        </button>
+      ))}
+    </div>
+  );
+}
+
+function Dashboard({viagens, passageiros, agenda, config, go}) {
   const ativas = viagens.filter(v=>v.status!=="encerrada");
   const viagensConf = viagens.filter(v=>v.status==="confirmada");
   const totalRec = viagensConf.reduce((s,v)=>s+(v.reservas||[]).reduce((ss,r)=>ss+sumPgto(r),0),0);
@@ -808,6 +859,7 @@ function Dashboard({viagens, passageiros, agenda, go}) {
         <div className="stat-card"><div className="stat-label">Total Recebido</div><div className="stat-value" style={{fontSize:18,color:"var(--mint)"}}>{R$(totalRec)}</div><div className="stat-sub">de {R$(totalEsp)} esperado</div></div>
         <div className="stat-card"><div className="stat-label">Pagtos Pendentes</div><div className="stat-value" style={{color:pendentes>0?"var(--rose)":"var(--mint)"}}>{pendentes}</div><div className="stat-sub">em viagens confirmadas</div></div>
       </div>
+      <AtalhosCopiar config={config}/>
       <ResumoAgenda viagens={viagens} passageiros={passageiros} agenda={agenda} go={go}/>
       <div className="section" style={{marginTop:24}}>
         <div className="sec-hd"><span className="sec-hd-title">Viagens Ativas</span><span className="sec-hd-count">{ativas.length}</span></div>
