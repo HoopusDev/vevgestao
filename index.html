@@ -228,6 +228,7 @@ html,body{height:100%;background:var(--bg);overflow:hidden;}
 .mbtn svg{width:22px;height:22px;color:var(--sky);margin-bottom:5px;}
 .chip{display:inline-flex;align-items:center;gap:5px;background:rgba(56,189,248,.08);border:1px solid rgba(56,189,248,.15);border-radius:20px;padding:4px 10px;font-size:12px;color:var(--sky);font-weight:500;}
 .chip svg{width:13px;height:13px;flex-shrink:0;}
+.ic-inline svg{width:14px;height:14px;vertical-align:-2px;margin-right:4px;}
 
 /* ── EMPTY / LOADING ── */
 .empty{text-align:center;padding:56px 20px;color:var(--dim2);}
@@ -484,6 +485,7 @@ const ICONS = {
   calendar: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>,
   seat: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M6 2v6l-2 4v8h16v-8l-2-4V2"/><path d="M6 12h12"/></svg>,
   credit: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>,
+  gift: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="8" width="18" height="4" rx="1"/><path d="M12 8v13"/><path d="M19 12v7a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-7"/><path d="M7.5 8a2.5 2.5 0 0 1 0-5C10 3 12 8 12 8s2-5 4.5-5a2.5 2.5 0 0 1 0 5"/></svg>,
   pix: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>,
   cash: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="3"/></svg>,
   whatsapp: <svg viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.149-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.124.554 4.118 1.528 5.852L0 24l6.335-1.508A11.95 11.95 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-1.89 0-3.663-.5-5.2-1.373l-.374-.222-3.876.922.976-3.768-.243-.387A9.96 9.96 0 012 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/></svg>,
@@ -589,8 +591,25 @@ function BuscaLista({value, onChange, placeholder, recuo}) {
   );
 }
 const sumPgto = r => (r.pagamentos||[]).reduce((s,p)=>s+Number(p.valor||0),0);
-// Valor que a reserva deveria pagar: 0 se isento, senão o valor cheio da viagem.
-const valorEsperado = (r,v) => r?.isento ? 0 : Number(v?.valor||0);
+// Desconto da reserva em R$: valor fixo ou % sobre o valor da viagem (nunca maior que o valor da viagem).
+const descontoReserva = (r,v) => {
+  const base=Number(v?.valor||0), d=Number(r?.desconto||0);
+  if(r?.isento || !(d>0)) return 0;
+  return Math.min(base, r.descontoTipo==="pct" ? Math.round(base*d)/100 : d);
+};
+// Valor que a reserva deveria pagar: 0 se isento, senão o valor da viagem menos o desconto.
+const valorEsperado = (r,v) => r?.isento ? 0 : Math.max(0, Number(v?.valor||0) - descontoReserva(r,v));
+// ── Crédito do passageiro para viagens futuras ──
+// Os créditos ficam no cadastro do passageiro (passageiro.creditos). Usar o crédito = registrar um pagamento com a
+// forma CREDITO_USO numa reserva dele. Saldo = créditos recebidos − créditos já usados (em qualquer viagem).
+// Quando o crédito vem de um valor já pago numa viagem, essa viagem ganha um lançamento negativo (CREDITO_SAIDA),
+// para o mesmo dinheiro não ser contado duas vezes (na viagem antiga e na nova).
+const CREDITO_USO = "credito_pax";
+const CREDITO_SAIDA = "credito_saida";
+const somaValores = l => (l||[]).reduce((s,x)=>s+Number(x.valor||0),0);
+const creditoUsado = (pid, viagens) => !pid ? 0 : viagens.reduce((s,v)=>s+(v.reservas||[]).filter(r=>r.passageiroId===pid)
+  .reduce((ss,r)=>ss+somaValores((r.pagamentos||[]).filter(p=>p.metodo===CREDITO_USO)),0),0);
+const saldoCredito = (pax, viagens) => Math.round((somaValores(pax?.creditos) - creditoUsado(pax?.id, viagens))*100)/100;
 const R$ = v => `R$ ${Number(v||0).toLocaleString("pt-BR",{minimumFractionDigits:2})}`;
 const dt = d => d ? new Date(d+"T12:00:00").toLocaleDateString("pt-BR") : "—";
 const SV = { aberta:{l:"Aberta",c:"#34d399"}, confirmada:{l:"Confirmada",c:"#60a5fa"}, encerrada:{l:"Encerrada",c:"#6b7280"} };
@@ -602,7 +621,8 @@ const METODOS = [
   {id:"pix_parcelado",label:"Pix Parcelado",icon:"pix"},
   {id:"dinheiro",label:"Dinheiro",icon:"cash"},
 ];
-const METODOS_LABEL = {credito:"Cartão de Crédito",debito:"Cartão de Débito",pix:"Pix",pix_parcelado:"Pix Parcelado",dinheiro:"Dinheiro"};
+const METODO_CREDITO_PAX = {id:CREDITO_USO,label:"Crédito do passageiro",icon:"gift"};
+const METODOS_LABEL = {credito:"Cartão de Crédito",debito:"Cartão de Débito",pix:"Pix",pix_parcelado:"Pix Parcelado",dinheiro:"Dinheiro",[CREDITO_USO]:"Crédito do passageiro",[CREDITO_SAIDA]:"Convertido em crédito"};
 
 // ── FIRESTORE HOOKS ───────────────────────────────────────────────────────────
 const porDataIda = (a,b) => (a.dataIda||"9999-99-99").localeCompare(b.dataIda||"9999-99-99");
@@ -718,7 +738,7 @@ function App() {
   const pageEl = () => {
     if(page==="dashboard")   return <Dashboard viagens={viagens} passageiros={passageiros} agenda={agendaDocs||[]} config={config} go={go}/>;
     if(page==="viagens")     return <Viagens viagens={viagens} addViagem={addViagem} saveViagem={saveViagem} deleteViagem={deleteViagem} go={go}/>;
-    if(page==="viagem")      return <ViagemDetail viagens={viagens} passageiros={passageiros} addPassageiro={addPassageiro} viagem={curViagem} updViagem={updViagem} go={go}/>;
+    if(page==="viagem")      return <ViagemDetail viagens={viagens} passageiros={passageiros} addPassageiro={addPassageiro} savePassageiro={savePassageiro} viagem={curViagem} updViagem={updViagem} go={go}/>;
     if(page==="passageiros") return <Passageiros passageiros={passageiros} viagens={viagens} savePassageiro={savePassageiro} addPassageiro={addPassageiro} deletePassageiro={deletePassageiro}/>;
     if(page==="financeiro")  return <Financeiro viagens={viagens} go={go}/>;
     if(page==="relatorios")  return <Relatorios viagens={viagens} passageiros={passageiros}/>;
@@ -769,7 +789,7 @@ function App() {
         <div className="page">
           {pageEl()}
         </div>
-        <div className="app-version">v1.15.0</div>
+        <div className="app-version">v1.16.0</div>
         {/* Mobile nav */}
         <nav className="mobile-nav">
           {navItems.map(([id,ic,lb]) => (
@@ -1181,7 +1201,7 @@ function ModalViagem({initial, onSave, onClose}) {
 }
 
 // ── VIAGEM DETALHE ────────────────────────────────────────────────────────────
-function ViagemDetail({viagens, passageiros, addPassageiro, viagem, updViagem, go}) {
+function ViagemDetail({viagens, passageiros, addPassageiro, savePassageiro, viagem, updViagem, go}) {
   const [tab,setTab]=useState("reservas");
   if(!viagem){go("viagens");return null;}
   const s=SV[viagem.status]||SV.aberta;
@@ -1202,9 +1222,9 @@ function ViagemDetail({viagens, passageiros, addPassageiro, viagem, updViagem, g
           <button key={id} className={`tab ${tab===id?"on":""}`} onClick={()=>setTab(id)}>{lb}</button>
         ))}
       </div>
-      {tab==="reservas"   && <TabReservas viagem={viagem} passageiros={passageiros} addPassageiro={addPassageiro} updViagem={updViagem}/>}
+      {tab==="reservas"   && <TabReservas viagem={viagem} viagens={viagens} passageiros={passageiros} addPassageiro={addPassageiro} updViagem={updViagem}/>}
       {tab==="mapa"       && <TabMapa viagem={viagem} updViagem={updViagem} passageiros={passageiros}/>}
-      {tab==="pagamentos" && <TabPagamentos viagem={viagem} updViagem={updViagem}/>}
+      {tab==="pagamentos" && <TabPagamentos viagem={viagem} viagens={viagens} passageiros={passageiros} savePassageiro={savePassageiro} updViagem={updViagem}/>}
       {tab==="orcamento"   && <TabOrcamento viagem={viagem} updViagem={updViagem}/>}
       {tab==="hotel"      && <TabHotel viagem={viagem} updViagem={updViagem} passageiros={passageiros}/>}
     </div>
@@ -1212,7 +1232,7 @@ function ViagemDetail({viagens, passageiros, addPassageiro, viagem, updViagem, g
 }
 
 // ── TAB RESERVAS ──────────────────────────────────────────────────────────────
-function TabReservas({viagem, passageiros, addPassageiro, updViagem}) {
+function TabReservas({viagem, viagens, passageiros, addPassageiro, updViagem}) {
   const [modal,setModal]=useState(false);
   const [editing,setEditing]=useState(null);
   const reservas=isentosPrimeiro(viagem.reservas||[]);
@@ -1329,7 +1349,7 @@ function TabReservas({viagem, passageiros, addPassageiro, updViagem}) {
               <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}>
                 <div style={{flex:1,minWidth:0}}>
                   <div className="rn">{r.nomeAvulso||"—"}</div>
-                  <div className="rm">{r.assento?`Assento ${r.assento} • `:""}<span className="bdg" style={{background:sr.c+"22",color:sr.c}}>{sr.l}</span>{r.isento&&<span className="bdg" style={{background:"rgba(52,211,153,.15)",color:"var(--mint)",marginLeft:5}}>Isento</span>}{r.obs&&<span style={{marginLeft:6,fontSize:11,color:"var(--dim)"}}>{r.obs}</span>}</div>
+                  <div className="rm">{r.assento?`Assento ${r.assento} • `:""}<span className="bdg" style={{background:sr.c+"22",color:sr.c}}>{sr.l}</span>{r.isento&&<span className="bdg" style={{background:"rgba(52,211,153,.15)",color:"var(--mint)",marginLeft:5}}>Isento</span>}{descontoReserva(r,viagem)>0&&<span className="bdg" style={{background:"rgba(251,191,36,.15)",color:"var(--amber)",marginLeft:5}} title={r.motivoDesconto||""}>Desconto {R$(descontoReserva(r,viagem))}</span>}{r.obs&&<span style={{marginLeft:6,fontSize:11,color:"var(--dim)"}}>{r.obs}</span>}</div>
                   {ehOutroResp&&(
                     <div style={{marginTop:5,display:"inline-flex",alignItems:"center",gap:5,background:"rgba(167,139,250,.1)",border:"1px solid rgba(167,139,250,.2)",borderRadius:6,padding:"3px 8px"}}>
                       <span style={{fontSize:10,color:"var(--lilac)"}}>Resp:</span>
@@ -1360,12 +1380,12 @@ function TabReservas({viagem, passageiros, addPassageiro, updViagem}) {
           );
         })
       }
-      {modal&&<ModalReserva initial={editing} viagem={viagem} passageiros={passageiros} onSave={onSave} onClose={()=>{setModal(false);setEditing(null);}} addPassageiro={addPassageiro}/>}
+      {modal&&<ModalReserva initial={editing} viagem={viagem} viagens={viagens} passageiros={passageiros} onSave={onSave} onClose={()=>{setModal(false);setEditing(null);}} addPassageiro={addPassageiro}/>}
     </>
   );
 }
 
-function ModalReserva({initial, viagem, passageiros, onSave, onClose, addPassageiro}) {
+function ModalReserva({initial, viagem, viagens, passageiros, onSave, onClose, addPassageiro}) {
   // Puxar telefone do passageiro selecionado como default do responsável
   const getPaxTel = (pid) => { const p = passageiros.find(x=>x.id===pid); return p?.telefone||""; };
   const getPaxNome = (pid) => { const p = passageiros.find(x=>x.id===pid); return p?.nome||""; };
@@ -1381,6 +1401,7 @@ function ModalReserva({initial, viagem, passageiros, onSave, onClose, addPassage
   const [pf,setPf]=useState({nome:"",telefone:"",cpf:""});
   const set=(k,v)=>setF(x=>({...x,[k]:v}));
   const ocup=(viagem.reservas||[]).filter(r=>r.id!==initial?.id).map(r=>r.assento).filter(Boolean);
+  const paxSaldo = f.passageiroId ? saldoCredito(passageiros.find(p=>p.id===f.passageiroId), viagens||[]) : 0;
 
   // Quando muda passageiro principal, atualiza responsável se não for "outro"
   const onChangePax = (pid) => {
@@ -1473,8 +1494,33 @@ function ModalReserva({initial, viagem, passageiros, onSave, onClose, addPassage
             </div>
           ) : (
           <div style={{borderTop:"1px solid var(--brd)",paddingTop:14,marginTop:2}}>
-            <div style={{fontSize:10,fontWeight:600,color:"var(--sky)",textTransform:"uppercase",letterSpacing:".6px",marginBottom:12}}>Responsável pelo Pagamento</div>
-            
+            {/* Desconto */}
+            <div style={{fontSize:10,fontWeight:600,color:"var(--sky)",textTransform:"uppercase",letterSpacing:".6px",marginBottom:12}}>Valor e Desconto</div>
+            <div className="fgrid">
+              <div className="fg"><label className="fl">Desconto</label>
+                <div style={{display:"flex",gap:6}}>
+                  <input type="number" min="0" className="fi" style={{flex:1,minWidth:0}} value={f.desconto??""} onChange={e=>set("desconto",e.target.value)} placeholder="0"/>
+                  <select className="fsel" style={{width:70}} value={f.descontoTipo||"valor"} onChange={e=>set("descontoTipo",e.target.value)}>
+                    <option value="valor">R$</option>
+                    <option value="pct">%</option>
+                  </select>
+                </div>
+              </div>
+              <div className="fg"><label className="fl">Motivo do desconto</label><input className="fi" value={f.motivoDesconto||""} onChange={e=>set("motivoDesconto",e.target.value)} placeholder="Ex: criança, indicação..."/></div>
+            </div>
+            <div style={{background:"var(--bg)",border:"1px solid var(--brd)",borderRadius:8,padding:"10px 12px",margin:"10px 0 4px",fontSize:12,color:"var(--dim2)",display:"flex",flexWrap:"wrap",gap:"4px 14px"}}>
+              <span>Viagem: <strong style={{color:"var(--txt)"}}>{R$(viagem.valor)}</strong></span>
+              {descontoReserva(f,viagem)>0&&<span>Desconto: <strong style={{color:"var(--amber)"}}>− {R$(descontoReserva(f,viagem))}</strong></span>}
+              <span>A pagar: <strong style={{color:"var(--mint)"}}>{R$(valorEsperado(f,viagem))}</strong></span>
+            </div>
+            {paxSaldo>0&&(
+              <div style={{background:"rgba(167,139,250,.08)",border:"1px solid rgba(167,139,250,.25)",borderRadius:8,padding:"10px 12px",marginTop:8,fontSize:12,color:"var(--lilac)"}}>
+                <span className="ic-inline">{ICONS.gift}</span>Este passageiro tem <strong>{R$(paxSaldo)}</strong> de crédito. Para usar, registre na aba Pagamentos com a forma "Crédito do passageiro".
+              </div>
+            )}
+
+            <div style={{fontSize:10,fontWeight:600,color:"var(--sky)",textTransform:"uppercase",letterSpacing:".6px",margin:"18px 0 12px"}}>Responsável pelo Pagamento</div>
+
             {/* Toggle outro responsável */}
             <label style={{display:"flex",alignItems:"center",gap:10,cursor:"pointer",marginBottom:12,padding:"10px 12px",background:"var(--bg)",borderRadius:8,border:"1px solid var(--brd)"}}>
               <input type="checkbox" checked={f.outroResp||false} onChange={e=>onToggleOutro(e.target.checked)}
@@ -1529,7 +1575,7 @@ function ModalReserva({initial, viagem, passageiros, onSave, onClose, addPassage
 }
 
 // ── TAB PAGAMENTOS ────────────────────────────────────────────────────────────
-function TabPagamentos({viagem, updViagem}) {
+function TabPagamentos({viagem, viagens, passageiros, savePassageiro, updViagem}) {
   const [sel,setSel]=useState(null);
   const [search,setSearch]=useState("");
   const reservas=isentosPrimeiro(viagem.reservas||[]);
@@ -1540,7 +1586,7 @@ function TabPagamentos({viagem, updViagem}) {
   const filtered = search.trim()
     ? reservas.filter(r=>(r.nomeAvulso||"").toLowerCase().includes(search.toLowerCase()))
     : reservas;
-  if(sel&&reserva) return <PgtoDetalhe reserva={reserva} viagem={viagem} onBack={()=>setSel(null)} onUpdate={updR}/>;
+  if(sel&&reserva) return <PgtoDetalhe reserva={reserva} viagem={viagem} viagens={viagens} passageiros={passageiros} savePassageiro={savePassageiro} onBack={()=>setSel(null)} onUpdate={updR}/>;
   return (
     <>
       <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:12,padding:"16px 28px 0"}}>
@@ -1590,21 +1636,46 @@ function TabPagamentos({viagem, updViagem}) {
   );
 }
 
-function PgtoDetalhe({reserva, viagem, onBack, onUpdate}) {
+function PgtoDetalhe({reserva, viagem, viagens, passageiros, savePassageiro, onBack, onUpdate}) {
   const [modal,setModal]=useState(false);
   const [editP,setEditP]=useState(null);
+  const [modalCred,setModalCred]=useState(false);
   const pagamentos=reserva.pagamentos||[];
   const total=valorEsperado(reserva,viagem),pago=sumPgto(reserva),falta=total-pago,pct=total>0?Math.min(100,Math.round((pago/total)*100)):0;
+  const desc=descontoReserva(reserva,viagem);
+  const pax=passageiros.find(p=>p.id===reserva.passageiroId);
+  const saldo=pax?saldoCredito(pax,viagens):0;
+  // crédito disponível para este pagamento (ao editar um uso de crédito, o valor dele volta para o saldo)
+  const creditoDisp = !pax ? 0 : saldo + (editP?.metodo===CREDITO_USO ? Number(editP.valor||0) : 0);
   const savePgto = async p => {
     const newP=editP?pagamentos.map(x=>x.id===editP.id?{...editP,...p}:x):[...pagamentos,{...p,id:genId()}];
     await onUpdate({...reserva,pagamentos:newP});setModal(false);setEditP(null);
   };
-  const delPgto = async id => { if(confirm("Excluir pagamento?")) await onUpdate({...reserva,pagamentos:pagamentos.filter(p=>p.id!==id)}); };
+  const delPgto = async p => {
+    if(p.metodo===CREDITO_SAIDA){
+      const valor=-Number(p.valor||0);
+      if(pax && saldo < valor-0.001) return alert(`Não dá para desfazer: parte desse crédito já foi usada em outra viagem (saldo atual ${R$(saldo)}).`);
+      if(!confirm(`Desfazer a conversão? O valor de ${R$(valor)} volta a contar como pago nesta viagem e sai do crédito do passageiro.`)) return;
+      await onUpdate({...reserva,pagamentos:pagamentos.filter(x=>x.id!==p.id)});
+      if(pax) await savePassageiro({...pax,creditos:(pax.creditos||[]).filter(c=>c.pgtoId!==p.id)});
+      return;
+    }
+    if(confirm(p.metodo===CREDITO_USO?"Excluir este uso de crédito? O valor volta para o saldo do passageiro.":"Excluir pagamento?")) await onUpdate({...reserva,pagamentos:pagamentos.filter(x=>x.id!==p.id)});
+  };
+  // Transforma um valor já pago nesta viagem em crédito do passageiro para uma viagem futura
+  const converterCredito = async ({valor, motivo}) => {
+    const pgtoId=genId(), hoje=hojeLocal();
+    await onUpdate({...reserva,pagamentos:[...pagamentos,{id:pgtoId,metodo:CREDITO_SAIDA,valor:-valor,data:hoje,obs:motivo}]});
+    await savePassageiro({...pax,creditos:[...(pax.creditos||[]),{id:genId(),valor,data:hoje,motivo,viagemId:viagem.id,viagemNome:viagem.nome,reservaId:reserva.id,pgtoId}]});
+    setModalCred(false);
+  };
   return (
     <>
       <div style={{padding:"14px 28px 0"}}><button className="btn btn-ghost btn-sm" onClick={onBack}><>{ICONS.back} Voltar</></button></div>
       <div className="rc" style={{marginTop:12}}>
         <div className="rn">{reserva.nomeAvulso||"Passageiro"}</div>
+        {desc>0&&<div style={{fontSize:12,color:"var(--dim2)",marginTop:6}}>Viagem {R$(viagem.valor)} • <span style={{color:"var(--amber)"}}>Desconto − {R$(desc)}</span>{reserva.motivoDesconto?` (${reserva.motivoDesconto})`:""}</div>}
+        {saldo>0&&<div style={{fontSize:12,color:"var(--lilac)",marginTop:6}}><span className="ic-inline">{ICONS.gift}</span>Crédito disponível: <strong>{R$(saldo)}</strong></div>}
         <div style={{display:"flex",justifyContent:"space-between",fontSize:13,margin:"8px 0 4px"}}>
           <span style={{color:"var(--txt)"}}>Total: <strong>{R$(total)}</strong></span>
           <span style={{color:"var(--mint)"}}>Pago: <strong>{R$(pago)}</strong></span>
@@ -1617,38 +1688,85 @@ function PgtoDetalhe({reserva, viagem, onBack, onUpdate}) {
       </div>
       <div style={{padding:"12px 28px 4px",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
         <span style={{fontSize:12,fontWeight:700,color:"var(--dim)",textTransform:"uppercase",letterSpacing:".4px"}}>Pagamentos</span>
-        <button className="btn btn-primary btn-sm" onClick={()=>{setEditP(null);setModal(true);}}>+ Registrar</button>
+        <div style={{display:"flex",gap:6}}>
+          {pax&&pago>0&&<button className="btn btn-ghost btn-sm" onClick={()=>setModalCred(true)}><span className="ic-inline">{ICONS.gift}</span>Converter em crédito</button>}
+          <button className="btn btn-primary btn-sm" onClick={()=>{setEditP(null);setModal(true);}}>+ Registrar</button>
+        </div>
       </div>
       {pagamentos.length===0?<div className="empty" style={{padding:"30px 20px"}}><div className="empty-icon">{ICONS.credit}</div><p>Nenhum pagamento ainda</p></div>
         :<div style={{padding:"4px 28px"}}>
-          {pagamentos.map(p=>{const m=METODOS.find(x=>x.id===p.metodo);return(
+          {pagamentos.map(p=>{const m=p.metodo===CREDITO_USO?METODO_CREDITO_PAX:METODOS.find(x=>x.id===p.metodo);const saida=p.metodo===CREDITO_SAIDA;return(
             <div key={p.id} className="pit">
               <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}>
                 <div>
-                  <div className="pmet">{m?ICONS[m.icon]:ICONS.credit} {m?.label||p.metodo}</div>
-                  <div className="pval">{R$(p.valor)}</div>
+                  <div className="pmet">{saida?ICONS.gift:m?ICONS[m.icon]:ICONS.credit} {saida?"Convertido em crédito":m?.label||p.metodo}</div>
+                  <div className="pval" style={saida?{color:"var(--rose)"}:undefined}>{saida?`− ${R$(-Number(p.valor||0))}`:R$(p.valor)}</div>
                   <div style={{fontSize:11,color:"var(--dim)",marginTop:2}}>{p.data?`${dt(p.data)}`:""}{p.obs?` • ${p.obs}`:""}</div>
                 </div>
                 <div style={{display:"flex",gap:4}}>
-                  <button className="btn btn-ghost btn-icon btn-sm" onClick={()=>{setEditP(p);setModal(true);}}>{ICONS.edit}</button>
-                  <button className="btn btn-danger btn-icon btn-sm" onClick={()=>delPgto(p.id)}>{ICONS.trash}</button>
+                  {!saida&&<button className="btn btn-ghost btn-icon btn-sm" onClick={()=>{setEditP(p);setModal(true);}}>{ICONS.edit}</button>}
+                  <button className="btn btn-danger btn-icon btn-sm" onClick={()=>delPgto(p)}>{ICONS.trash}</button>
                 </div>
               </div>
             </div>
           );})}
         </div>
       }
-      {modal&&<ModalPgto initial={editP} onSave={savePgto} onClose={()=>{setModal(false);setEditP(null);}}/>}
+      {modal&&<ModalPgto initial={editP} creditoDisp={creditoDisp} falta={Math.max(0,falta+(editP?Number(editP.valor||0):0))} onSave={savePgto} onClose={()=>{setModal(false);setEditP(null);}}/>}
+      {modalCred&&<ModalConverterCredito pago={pago} sugestao={reserva.status==="cancelada"?pago:Math.max(0,pago-total)} motivoPadrao={`Viagem ${viagem.nome}${reserva.status==="cancelada"?" (cancelada)":""}`} onSave={converterCredito} onClose={()=>setModalCred(false)}/>}
     </>
   );
 }
 
-function ModalPgto({initial, onSave, onClose}) {
+function ModalConverterCredito({pago, sugestao, motivoPadrao, onSave, onClose}) {
+  const [valor,setValor]=useState(sugestao>0?String(sugestao):"");
+  const [motivo,setMotivo]=useState(motivoPadrao);
+  const [salvando,setSalvando]=useState(false);
+  const salvar = async () => {
+    const v=Math.round(Number(valor)*100)/100;
+    if(!(v>0)) return alert("Informe o valor");
+    if(v>pago+0.001) return alert(`O valor não pode passar do que já foi pago nesta viagem (${R$(pago)}).`);
+    setSalvando(true);
+    try { await onSave({valor:v, motivo:motivo.trim()}); } finally { setSalvando(false); }
+  };
+  return (
+    <div className="mo" onClick={e=>e.target===e.currentTarget&&onClose()}>
+      <div className="md ani">
+        <div className="mhdl"/>
+        <div className="mhd"><span className="mtit">Converter em crédito</span><button className="btn btn-ghost btn-icon" onClick={onClose}>{ICONS.close}</button></div>
+        <div className="mbdy"><div className="form-section">
+          <div style={{fontSize:12,color:"var(--dim2)",lineHeight:1.5}}>
+            O valor sai do que foi pago nesta viagem e fica guardado como crédito no cadastro do passageiro, para usar numa viagem futura.
+          </div>
+          <div className="fg"><label className="fl">Valor do crédito * <span style={{color:"var(--dim)"}}>(pago: {R$(pago)})</span></label><input type="number" className="fi" value={valor} onChange={e=>setValor(e.target.value)} placeholder="0,00"/></div>
+          <div className="fg"><label className="fl">Motivo</label><input className="fi" value={motivo} onChange={e=>setMotivo(e.target.value)} placeholder="Ex: desistiu da viagem, pagou a mais..."/></div>
+        </div></div>
+        <div className="mact">
+          <button className="btn btn-ghost btn-full" onClick={onClose}>Cancelar</button>
+          <button className="btn btn-primary btn-full" disabled={salvando} onClick={salvar}>{salvando?"Salvando...":"Gerar crédito"}</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ModalPgto({initial, creditoDisp=0, falta=0, onSave, onClose}) {
   const [step,setStep]=useState(initial?"form":"metodo");
   const [metodo,setMetodo]=useState(initial?.metodo||"");
   const [f,setF]=useState(initial||{valor:"",data:"",obs:""});
   const set=(k,v)=>setF(x=>({...x,[k]:v}));
-  const m=METODOS.find(x=>x.id===metodo);
+  // "Crédito do passageiro" só aparece quando ele tem saldo
+  const metodos = creditoDisp>0 ? [...METODOS, METODO_CREDITO_PAX] : METODOS;
+  const m=metodos.find(x=>x.id===metodo);
+  const escolher = id => {
+    setMetodo(id);
+    if(id===CREDITO_USO && !f.valor) set("valor", String(Math.min(creditoDisp, falta||creditoDisp)));
+  };
+  const salvar = () => {
+    if(!f.valor) return alert("Informe o valor");
+    if(metodo===CREDITO_USO && Number(f.valor)>creditoDisp+0.001) return alert(`O passageiro só tem ${R$(creditoDisp)} de crédito.`);
+    onSave({...f,metodo});
+  };
   return (
     <div className="mo" onClick={e=>e.target===e.currentTarget&&onClose()}>
       <div className="md ani">
@@ -1656,14 +1774,15 @@ function ModalPgto({initial, onSave, onClose}) {
         <div className="mhd"><span className="mtit">{initial?"Editar Pagamento":step==="metodo"?"Forma de Pagamento":"Registrar Pagamento"}</span><button className="btn btn-ghost btn-icon" onClick={onClose}>{ICONS.close}</button></div>
         {step==="metodo"&&!initial?(
           <>
-            <div className="mg">{METODOS.map(mt=><div key={mt.id} className={`mbtn ${metodo===mt.id?"on":""}`} onClick={()=>setMetodo(mt.id)}><div style={{display:"flex",justifyContent:"center",marginBottom:5,color:"var(--sky)"}}>{ICONS[mt.icon]||mt.icon}</div><div style={{fontSize:12,fontWeight:700,color:"var(--txt)"}}>{mt.label}</div></div>)}</div>
+            <div className="mg">{metodos.map(mt=><div key={mt.id} className={`mbtn ${metodo===mt.id?"on":""}`} onClick={()=>escolher(mt.id)}><div style={{display:"flex",justifyContent:"center",marginBottom:5,color:"var(--sky)"}}>{ICONS[mt.icon]||mt.icon}</div><div style={{fontSize:12,fontWeight:700,color:"var(--txt)"}}>{mt.label}</div></div>)}</div>
             <div className="mact"><button className="btn btn-ghost btn-full" onClick={onClose}>Cancelar</button><button className="btn btn-primary btn-full" onClick={()=>{if(!metodo)return alert("Selecione a forma");setStep("form");}}>Continuar →</button></div>
           </>
         ):(
           <>
             <div className="mbdy"><div className="form-section">
               {!initial&&m&&<div><span className="chip">{ICONS[m.icon]}{m.label}</span><button style={{background:"none",border:"none",color:"var(--dim)",fontSize:12,cursor:"pointer",marginLeft:8}} onClick={()=>setStep("metodo")}>trocar</button></div>}
-              {initial&&<div className="fg"><label className="fl">Forma</label><select className="fsel" value={metodo} onChange={e=>setMetodo(e.target.value)}>{METODOS.map(mt=><option key={mt.id} value={mt.id}>{mt.label}</option>)}</select></div>}
+              {initial&&<div className="fg"><label className="fl">Forma</label><select className="fsel" value={metodo} onChange={e=>escolher(e.target.value)}>{metodos.map(mt=><option key={mt.id} value={mt.id}>{mt.label}</option>)}</select></div>}
+              {metodo===CREDITO_USO&&<div style={{fontSize:12,color:"var(--lilac)"}}>Crédito disponível: <strong>{R$(creditoDisp)}</strong></div>}
               <div className="fg"><label className="fl">Valor *</label><input type="number" className="fi" value={f.valor} onChange={e=>set("valor",e.target.value)} placeholder="0,00"/></div>
               <div className="fg"><label className="fl">Data do Pagamento</label><input type="date" className="fi" value={f.data} onChange={e=>set("data",e.target.value)}/></div>
               <div className="fg"><label className="fl">Observações</label><textarea className="fta" rows={2} value={f.obs} onChange={e=>set("obs",e.target.value)} placeholder="Ex: entrada, 1ª parcela..."/></div>
@@ -1671,7 +1790,7 @@ function ModalPgto({initial, onSave, onClose}) {
             <div className="mact">
               {!initial&&<button className="btn btn-ghost" onClick={()=>setStep("metodo")}><>{ICONS.back} Voltar</></button>}
               {initial&&<button className="btn btn-ghost btn-full" onClick={onClose}>Cancelar</button>}
-              <button className="btn btn-primary btn-full" onClick={()=>{if(!f.valor)return alert("Informe o valor");onSave({...f,metodo});}}>Salvar Pagamento</button>
+              <button className="btn btn-primary btn-full" onClick={salvar}>Salvar Pagamento</button>
             </div>
           </>
         )}
@@ -1866,13 +1985,21 @@ function Passageiros({passageiros, viagens, savePassageiro, addPassageiro, delet
   const [modal,setModal]=useState(false);
   const [editing,setEditing]=useState(null);
   const [search,setSearch]=useState("");
-  const filtered=passageiros.filter(p=>p.nome?.toLowerCase().includes(search.toLowerCase())||p.cpf?.includes(search)||p.telefone?.includes(search));
+  const [soCredito,setSoCredito]=useState(false);
+  const saldos=React.useMemo(()=>Object.fromEntries(passageiros.map(p=>[p.id,saldoCredito(p,viagens)])),[passageiros,viagens]);
+  const comCredito=passageiros.filter(p=>saldos[p.id]>0);
+  const filtered=(soCredito?comCredito:passageiros).filter(p=>p.nome?.toLowerCase().includes(search.toLowerCase())||p.cpf?.includes(search)||p.telefone?.includes(search));
   const onSave = async f => { if(editing) await savePassageiro({...editing,...f}); else await addPassageiro(f); setModal(false);setEditing(null); };
-  const onDel = async id => { if(confirm("Excluir passageiro?")) await deletePassageiro(id); };
+  const onDel = async id => {
+    const aviso = saldos[id]>0 ? `Este passageiro tem ${R$(saldos[id])} de crédito, que será perdido.\n\n` : "";
+    if(confirm(aviso+"Excluir passageiro?")) await deletePassageiro(id);
+  };
   const vc=pid=>viagens.filter(v=>v.reservas?.some(r=>r.passageiroId===pid)).length;
   return (
     <div className="ani">
-      <div className="topbar"><h1>Passageiros</h1><span className="bdg" style={{background:"rgba(56,189,248,.1)",color:"var(--sky)"}}>{passageiros.length}</span></div>
+      <div className="topbar"><h1>Passageiros</h1><span className="bdg" style={{background:"rgba(56,189,248,.1)",color:"var(--sky)"}}>{passageiros.length}</span>
+        {comCredito.length>0&&<button className="bdg" onClick={()=>setSoCredito(x=>!x)} style={{cursor:"pointer",fontFamily:"inherit",border:soCredito?"1px solid var(--lilac)":"1px solid transparent",background:"rgba(167,139,250,.12)",color:"var(--lilac)"}}>{soCredito?"Mostrar todos":`${comCredito.length} com crédito`}</button>}
+      </div>
       <div className="search-box"><span className="search-icon">{ICONS.search}</span><input className="fi" placeholder="Nome, CPF ou telefone..." value={search} onChange={e=>setSearch(e.target.value)}/></div>
       <div style={{marginTop:14}}>
         {filtered.length===0?<div className="empty"><div className="empty-icon">{ICONS.users}</div><p>Nenhum passageiro</p></div>
@@ -1883,6 +2010,7 @@ function Passageiros({passageiros, viagens, savePassageiro, addPassageiro, delet
                 <div style={{fontSize:14,fontWeight:800,color:"var(--txt)"}}>{p.nome}</div>
                 <div style={{fontSize:12,color:"var(--dim)"}}>{p.telefone||p.cpf||"Sem contato"}</div>
                 {vc(p.id)>0&&<div style={{fontSize:11,color:"var(--sky)",marginTop:2}}>{vc(p.id)} viagem(ns)</div>}
+                {saldos[p.id]>0&&<div style={{fontSize:11,color:"var(--lilac)",marginTop:2,fontWeight:700}}>Crédito: {R$(saldos[p.id])}</div>}
               </div>
               <div style={{display:"flex",gap:4}}>
                 <button className="btn btn-ghost btn-icon btn-sm" onClick={()=>{setEditing(p);setModal(true);}}>{ICONS.edit}</button>
@@ -1893,14 +2021,31 @@ function Passageiros({passageiros, viagens, savePassageiro, addPassageiro, delet
         }
       </div>
       <button className="fab" onClick={()=>{setEditing(null);setModal(true);}}>{ICONS.plus}</button>
-      {modal&&<ModalPax initial={editing} onSave={onSave} onClose={()=>{setModal(false);setEditing(null);}}/>}
+      {modal&&<ModalPax initial={editing} viagens={viagens} onSave={onSave} onClose={()=>{setModal(false);setEditing(null);}}/>}
     </div>
   );
 }
 
-function ModalPax({initial, onSave, onClose}) {
+function ModalPax({initial, viagens=[], onSave, onClose}) {
   const [f,setF]=useState(initial||{nome:"",cpf:"",dataNasc:"",telefone:"",email:"",endereco:"",obs:""});
   const s=(k,v)=>setF(x=>({...x,[k]:v}));
+  // ── Créditos para viagens futuras
+  const [novoCred,setNovoCred]=useState(null); // {valor, motivo} enquanto adiciona
+  const creditos=f.creditos||[];
+  const usos=initial?.id ? viagens.flatMap(v=>(v.reservas||[]).filter(r=>r.passageiroId===initial.id)
+    .flatMap(r=>(r.pagamentos||[]).filter(p=>p.metodo===CREDITO_USO).map(p=>({...p,viagemNome:v.nome})))) : [];
+  const saldo=Math.round((somaValores(creditos)-somaValores(usos))*100)/100;
+  const addCredito=()=>{
+    const v=Math.round(Number(novoCred?.valor)*100)/100;
+    if(!(v>0)) return alert("Informe o valor do crédito");
+    s("creditos",[...creditos,{id:genId(),valor:v,data:hojeLocal(),motivo:(novoCred.motivo||"").trim()}]);
+    setNovoCred(null);
+  };
+  const delCredito=c=>{
+    if(c.pgtoId) return alert(`Este crédito veio de um pagamento da viagem "${c.viagemNome||""}". Para desfazer, exclua o lançamento "Convertido em crédito" na aba Pagamentos dessa viagem.`);
+    if(saldo-Number(c.valor||0) < -0.001) return alert("Não dá para remover: parte desse crédito já foi usada.");
+    if(confirm(`Remover o crédito de ${R$(c.valor)}?`)) s("creditos",creditos.filter(x=>x.id!==c.id));
+  };
   return (
     <div className="mo" onClick={e=>e.target===e.currentTarget&&onClose()}>
       <div className="md ani">
@@ -1915,6 +2060,39 @@ function ModalPax({initial, onSave, onClose}) {
           <div className="fg"><label className="fl">E-mail</label><input className="fi" value={f.email} onChange={e=>s("email",e.target.value)}/></div>
           <div className="fg"><label className="fl">Endereço</label><input className="fi" value={f.endereco} onChange={e=>s("endereco",e.target.value)}/></div>
           <div className="fg"><label className="fl">Observações</label><textarea className="fta" rows={2} value={f.obs} onChange={e=>s("obs",e.target.value)}/></div>
+
+          <div style={{borderTop:"1px solid var(--brd)",paddingTop:14,marginTop:2}}>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
+              <span style={{fontSize:10,fontWeight:600,color:"var(--lilac)",textTransform:"uppercase",letterSpacing:".6px"}}>Crédito para viagens futuras</span>
+              <span style={{fontSize:14,fontWeight:900,color:saldo>0?"var(--lilac)":"var(--dim)"}}>{R$(saldo)}</span>
+            </div>
+            {creditos.length===0&&usos.length===0&&!novoCred&&<div style={{fontSize:12,color:"var(--dim2)",marginBottom:8}}>Nenhum crédito. Também dá para gerar crédito pela aba Pagamentos de uma viagem ("Converter em crédito").</div>}
+            {[...creditos.map(c=>({...c,tipo:"entrada"})),...usos.map(u=>({...u,tipo:"uso"}))]
+              .sort((a,b)=>(a.data||"").localeCompare(b.data||"")).map(c=>(
+              <div key={c.tipo+c.id} style={{display:"flex",justifyContent:"space-between",alignItems:"center",gap:8,padding:"8px 10px",background:"var(--bg)",border:"1px solid var(--brd)",borderRadius:8,marginBottom:6}}>
+                <div style={{minWidth:0}}>
+                  <div style={{fontSize:13,fontWeight:700,color:c.tipo==="entrada"?"var(--mint)":"var(--rose)"}}>{c.tipo==="entrada"?"+ ":"− "}{R$(c.valor)}</div>
+                  <div style={{fontSize:11,color:"var(--dim)"}}>{c.data?dt(c.data)+" • ":""}{c.tipo==="entrada"?(c.motivo||"Crédito"):`Usado em ${c.viagemNome}`}</div>
+                </div>
+                {c.tipo==="entrada"&&<button className="btn btn-danger btn-icon btn-sm" onClick={()=>delCredito(c)}>{ICONS.trash}</button>}
+              </div>
+            ))}
+            {novoCred ? (
+              <div style={{background:"rgba(167,139,250,.06)",border:"1px solid rgba(167,139,250,.25)",borderRadius:8,padding:10,display:"flex",flexDirection:"column",gap:8}}>
+                <div className="fgrid">
+                  <div className="fg"><label className="fl">Valor *</label><input type="number" className="fi" value={novoCred.valor} onChange={e=>setNovoCred(x=>({...x,valor:e.target.value}))} placeholder="0,00"/></div>
+                  <div className="fg"><label className="fl">Motivo</label><input className="fi" value={novoCred.motivo} onChange={e=>setNovoCred(x=>({...x,motivo:e.target.value}))} placeholder="Ex: cortesia, reembolso..."/></div>
+                </div>
+                <div style={{display:"flex",gap:6,justifyContent:"flex-end"}}>
+                  <button className="btn btn-ghost btn-sm" onClick={()=>setNovoCred(null)}>Cancelar</button>
+                  <button className="btn btn-primary btn-sm" onClick={addCredito}>Adicionar</button>
+                </div>
+              </div>
+            ) : (
+              <button className="btn btn-ghost btn-sm" style={{alignSelf:"flex-start"}} onClick={()=>setNovoCred({valor:"",motivo:""})}>{ICONS.plus} Adicionar crédito</button>
+            )}
+            {novoCred===null&&f.creditos!==initial?.creditos&&<div style={{fontSize:11,color:"var(--amber)",marginTop:6}}>Toque em Salvar para gravar os créditos.</div>}
+          </div>
         </div></div>
         <div className="mact">
           <button className="btn btn-ghost btn-full" onClick={onClose}>Cancelar</button>
@@ -2160,8 +2338,8 @@ function Relatorios({viagens, passageiros}) {
       const paxCad = passageiros.find(p=>p.id===r.passageiroId) || passageiros.find(p=>p.nome?.toLowerCase()===r.nomeAvulso?.toLowerCase());
       const cpfRg = paxCad ? (paxCad.cpf?escHTML(paxCad.cpf):`<span class="cinza">Sem CPF/RG</span>`) : `<span class="cinza">Avulso</span>`;
       const situacao = r.isento ? pdfPill("Isento","isento") : falta>0 ? pdfPill("Falta "+pdfMoeda(falta),"falta") : pdfPill("✓ Quitado","ok");
-      const pgtos=(r.pagamentos||[]).map(p=>`<tr class="pg ${z}"><td></td><td colspan="3">↳ <span class="pg-forma">${escHTML(METODOS_LABEL[p.metodo]||p.metodo)}</span>${p.data?pdfData(p.data):"sem data"}${p.obs?" · "+escHTML(p.obs):""}</td><td class="dir verde">+ ${pdfMoeda(p.valor)}</td><td></td></tr>`).join("");
-      return `<tr class="${z}"><td class="num">${i+1}</td><td><div class="nome">${escHTML(r.nomeAvulso||"—")}</div>${r.responsavel&&r.responsavel!==r.nomeAvulso?`<div class="mini">Responsável: ${escHTML(r.responsavel)}</div>`:""}</td><td class="cen"><span class="assento${r.assento?"":" sem"}">${r.assento||"—"}</span></td><td>${cpfRg}</td><td class="dir verde">${pdfMoeda(pago)}</td><td class="dir">${situacao}</td></tr>${pgtos}`;
+      const pgtos=(r.pagamentos||[]).map(p=>`<tr class="pg ${z}"><td></td><td colspan="3">↳ <span class="pg-forma">${escHTML(METODOS_LABEL[p.metodo]||p.metodo)}</span>${p.data?pdfData(p.data):"sem data"}${p.obs?" · "+escHTML(p.obs):""}</td>${Number(p.valor)<0?`<td class="dir" style="color:#dc2626">− ${pdfMoeda(-Number(p.valor))}</td>`:`<td class="dir verde">+ ${pdfMoeda(p.valor)}</td>`}<td></td></tr>`).join("");
+      return `<tr class="${z}"><td class="num">${i+1}</td><td><div class="nome">${escHTML(r.nomeAvulso||"—")}</div>${r.responsavel&&r.responsavel!==r.nomeAvulso?`<div class="mini">Responsável: ${escHTML(r.responsavel)}</div>`:""}${descontoReserva(r,viagem)>0?`<div class="mini">Desconto: ${pdfMoeda(descontoReserva(r,viagem))}${r.motivoDesconto?" · "+escHTML(r.motivoDesconto):""}</div>`:""}</td><td class="cen"><span class="assento${r.assento?"":" sem"}">${r.assento||"—"}</span></td><td>${cpfRg}</td><td class="dir verde">${pdfMoeda(pago)}</td><td class="dir">${situacao}</td></tr>${pgtos}`;
     }).join("");
     const corpo = `${pdfTopo(configRel, "Relatório da Viagem")}
       <div class="titulo">${escHTML(viagem.nome)}</div>
