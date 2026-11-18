@@ -789,7 +789,7 @@ function App() {
         <div className="page">
           {pageEl()}
         </div>
-        <div className="app-version">v1.16.0</div>
+        <div className="app-version">v1.16.1</div>
         {/* Mobile nav */}
         <nav className="mobile-nav">
           {navItems.map(([id,ic,lb]) => (
@@ -1801,6 +1801,8 @@ function ModalPgto({initial, creditoDisp=0, falta=0, onSave, onClose}) {
 
 // ── TAB MAPA ──────────────────────────────────────────────────────────────────
 function TabMapa({viagem, updViagem, passageiros}) {
+  const configDocsMapa = useCol("configs"); // dados da empresa para o cabeçalho dos PDFs
+  const config = configDocsMapa?.[0] || {};
   const [drag,setDrag]=useState(null);
   const [infoSeat,setInfoSeat]=useState(null);
   const cap=viagem.capacidade||44;
@@ -1831,100 +1833,92 @@ function TabMapa({viagem, updViagem, passageiros}) {
       {r?<span style={{fontSize:9,textAlign:"center",lineHeight:1.2}}>{num}<br/>{(r.nomeAvulso||"").split(" ")[0]?.slice(0,4)||"✓"}</span>:num}
     </div>;
   };
-  // ── PDF Mapa Visual ──
-  const gerarPDFMapa = () => {
-    const cap = viagem.capacidade||44;
-    const rows = [];
-    let s = 1;
-    while(s<=cap){
-      const row = [];
-      if(s<=cap) row.push(s++); else row.push(null);
-      if(s<=cap) row.push(s++); else row.push(null);
-      row.push("aisle");
-      if(s<=cap) row.push(s++); else row.push(null);
-      if(s<=cap) row.push(s++); else row.push(null);
-      rows.push(row);
-    }
-    const seatHTML = rows.map(row => {
-      const cells = row.map(num => {
-        if(num === "aisle") return `<td style="width:20px"></td>`;
-        if(num === null) return `<td style="width:50px;height:44px"></td>`;
-        const r = reservas.find(r=>r.assento===String(num));
-        const nome = r?.nomeAvulso||"";
-        const nomeCurto = nome.split(" ")[0]?.slice(0,8)||"";
-        if(r) return `<td style="width:50px;height:44px;border:1px solid #888;background:#e0e0e0;text-align:center;font-size:9px;padding:2px;vertical-align:middle;border-radius:4px"><strong style="font-size:10px">${num}</strong><br/>${nomeCurto}</td>`;
-        return `<td style="width:50px;height:44px;border:1px solid #ccc;text-align:center;font-size:11px;color:#999;border-radius:4px;vertical-align:middle">${num}</td>`;
-      });
-      return `<tr>${cells.join("")}</tr>`;
-    }).join("");
-
-    const semAssentoHTML = semAssento.length > 0
-      ? `<div style="margin-top:24px;padding:12px 16px;background:#fff0f0;border:1px solid #ffaaaa;border-radius:8px">
-          <div style="font-weight:700;color:#cc0000;font-size:13px;margin-bottom:8px">⚠ Passageiros SEM ASSENTO DEFINIDO (${semAssento.length})</div>
-          ${semAssento.map(r=>`<div style="font-size:12px;color:#cc0000;padding:3px 0">${r.nomeAvulso||"—"}</div>`).join("")}
-        </div>`
-      : `<div style="margin-top:16px;padding:10px 14px;background:#f0fff4;border:1px solid #aaddbb;border-radius:8px;font-size:12px;color:#006600">✓ Todos os passageiros com assento definido</div>`;
-
-    const html = `<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"/><title></title>
-    <style>body{font-family:Arial,sans-serif;color:#111;padding:24px;max-width:600px;margin:0 auto}h1{font-size:18px;margin-bottom:4px}.sub{color:#555;font-size:12px;margin-bottom:20px}table{border-collapse:separate;border-spacing:4px;margin:0 auto}.front{text-align:center;padding:8px;background:#333;color:#fff;font-size:11px;border-radius:4px;margin-bottom:8px;max-width:240px;margin-left:auto;margin-right:auto}.legenda{display:flex;gap:16px;justify-content:center;margin-top:16px;font-size:11px}.leg-item{display:flex;align-items:center;gap:5px}.leg-box{width:14px;height:14px;border-radius:2px;border:1px solid #999}@media print{@page{size:auto;margin:10mm 10mm 10mm 10mm}body{padding:0}td{-webkit-print-color-adjust:exact;print-color-adjust:exact;}}</style>
-    </head><body>
-    <h1>🚌 Mapa do Ônibus — ${viagem.nome}</h1>
-    <div class="sub">${viagem.dataIda ? "Ida: "+new Date(viagem.dataIda+"T12:00:00").toLocaleDateString("pt-BR") : ""} | ${reservas.filter(r=>r.assento).length} alocados · ${semAssento.length} sem assento · Gerado em ${new Date().toLocaleDateString("pt-BR")}</div>
-    <div class="front">⬛ FRENTE DO ÔNIBUS</div>
-    <table>${seatHTML}</table>
-    <div class="legenda">
-      <div class="leg-item"><div class="leg-box" style="background:#e0e0e0"></div>Ocupado</div>
-      <div class="leg-item"><div class="leg-box" style="background:#fff"></div>Livre</div>
-    </div>
-    ${semAssentoHTML}
-    </body></html>`;
-    const win = window.open("","_blank");
-    if(!win) return alert("Permita pop-ups para gerar o PDF");
-    win.document.write(html); win.document.close(); setTimeout(()=>win.print(),600);
+  // ── PDFs de assentos (mesmo visual dos Relatórios) ──
+  const getPaxCad = r => passageiros?.find(x=>x.id===r.passageiroId) || passageiros?.find(x=>x.nome?.toLowerCase()===r.nomeAvulso?.toLowerCase());
+  const resumoAssentos = () => {
+    const alocados = reservas.filter(r=>r.assento).length;
+    return pdfCards([
+      {l:"Passageiros", v:`${reservas.length}<span style="font-size:12px;color:#94a3b8">/${cap}</span>`, s:`${pdfPct(reservas.length,cap)}% de ocupação`, c:"#1b2a4e", pct:pdfPct(reservas.length,cap)},
+      {l:"Com assento", v:alocados, s:`${pdfPct(alocados,reservas.length)}% dos passageiros`, c:"#059669", pct:pdfPct(alocados,reservas.length)},
+      {l:"Sem assento", v:semAssento.length, s:semAssento.length?"precisam de lugar":"todos alocados", c:semAssento.length?"#dc2626":"#059669"},
+      {l:"Lugares livres", v:Math.max(0,cap-alocados), s:`de ${cap} lugares`, c:"#2bbfaa"},
+    ]);
   };
 
-  // ── PDF Lista Embarque ──
+  // ── PDF Mapa do Ônibus ──
+  const gerarPDFMapa = () => {
+    const linhas = [];
+    for(let n=1; n<=cap; n+=4) linhas.push([n, n+1, "corredor", n+2, n+3]);
+    const poltrona = num => {
+      if(num==="corredor") return `<div class="corredor"></div>`;
+      if(num>cap) return `<div></div>`;
+      const r = getBySeat(num);
+      if(!r) return `<div class="poltrona livre"><span class="pn">${num}</span><span class="pnome">livre</span></div>`;
+      const partes = (r.nomeAvulso||"").trim().split(/\s+/);
+      const nome = partes.length>1 ? `${partes[0]} ${partes[partes.length-1][0]}.` : (partes[0]||"✓");
+      return `<div class="poltrona ocupada${r.isento?" isento":""}"><span class="pn">${num}</span><span class="pnome">${escHTML(nome)}</span></div>`;
+    };
+    const mapa = linhas.map(l=>l.map(poltrona).join("")).join("");
+    const semAss = semAssento.length
+      ? `<div class="bloco"><div class="secao">Sem assento definido (${semAssento.length})</div>
+         <div class="sem-lista">${semAssento.map(r=>`<span class="pill pill-falta">${escHTML(r.nomeAvulso||"—")}</span>`).join("")}</div></div>`
+      : `<div class="vazio" style="margin-top:18px">✓ Todos os passageiros com assento definido</div>`;
+    const css = `<style>
+      .onibus{max-width:440px;margin:0 auto;border:2px solid #1b2a4e;border-radius:36px 36px 16px 16px;padding:12px 16px 14px;}
+      .frente{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;padding-bottom:10px;border-bottom:1px dashed #cbd5e1;font-size:10px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.8px;}
+      .volante{width:30px;height:30px;border-radius:50%;border:3px solid #1b2a4e;display:flex;align-items:center;justify-content:center;font-size:9px;color:#1b2a4e;}
+      .assentos{display:grid;grid-template-columns:1fr 1fr 22px 1fr 1fr;gap:4px;}
+      .poltrona{height:32px;border-radius:9px 9px 6px 6px;display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1.15;overflow:hidden;padding:0 3px;}
+      .poltrona .pn{font-size:11px;font-weight:700;}
+      .poltrona .pnome{font-size:8.5px;max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+      .poltrona.ocupada{background:#1b2a4e;color:#fff;}
+      .poltrona.ocupada.isento{background:#1d4ed8;}
+      .poltrona.livre{border:1.5px dashed #cbd5e1;color:#94a3b8;background:#fff;}
+      .legenda{display:flex;gap:16px;justify-content:center;margin-top:12px;font-size:10px;color:#64748b;}
+      .legenda i{display:inline-block;width:12px;height:12px;border-radius:3px;vertical-align:-2px;margin-right:5px;}
+      .sem-lista{display:flex;flex-wrap:wrap;gap:6px;}
+      .bloco{break-inside:avoid;page-break-inside:avoid;}
+    </style>`;
+    const corpo = `${css}${pdfTopo(config, "Mapa do Ônibus")}
+      <div class="titulo">${escHTML(viagem.nome)}</div>
+      ${pdfChipsViagem(viagem)}
+      ${resumoAssentos()}
+      <div class="secao">Disposição dos assentos</div>
+      <div class="onibus">
+        <div class="frente"><span>Frente do ônibus</span><span class="volante">●</span></div>
+        <div class="assentos">${mapa}</div>
+      </div>
+      <div class="legenda"><span><i style="background:#1b2a4e"></i>Ocupado</span>${reservas.some(r=>r.isento&&r.assento)?`<span><i style="background:#1d4ed8"></i>Isento</span>`:""}<span><i style="border:1.5px dashed #cbd5e1"></i>Livre</span></div>
+      ${semAss}`;
+    abrirPDF({titulo:`Mapa do Ônibus - ${viagem.nome}`, corpo, config});
+  };
+
+  // ── PDF Lista de Embarque ──
   const gerarPDFLista = () => {
     const comAssento = reservas.filter(r=>r.assento).sort((a,b)=>Number(a.assento)-Number(b.assento));
-    const semAss = reservas.filter(r=>!r.assento);
-
-    // Buscar CPF/RG por ID ou por nome como fallback
-    const getCpf = (r) => {
-      if(!passageiros) return "—";
-      const p = passageiros.find(x=>x.id===r.passageiroId)
-             || passageiros.find(x=>x.nome?.toLowerCase()===r.nomeAvulso?.toLowerCase());
-      if(!p) return "Avulso";
-      return p.cpf || "Sem CPF/RG";
+    const linha = (r,i) => {
+      const p = getPaxCad(r);
+      const cpf = p ? (p.cpf?escHTML(p.cpf):`<span class="cinza">Sem CPF/RG</span>`) : `<span class="cinza">Avulso</span>`;
+      const tel = r.telefoneResp || p?.telefone || "";
+      return `<tr class="${i%2?"par":""}">
+        <td class="cen"><span class="assento${r.assento?"":" sem"}">${escHTML(r.assento||"—")}</span></td>
+        <td><div class="nome">${escHTML(r.nomeAvulso||"—")}</div>${r.responsavel&&r.responsavel!==r.nomeAvulso?`<div class="mini">Responsável: ${escHTML(r.responsavel)}</div>`:""}</td>
+        <td>${tel?escHTML(tel):`<span class="cinza">—</span>`}</td>
+        <td>${cpf}</td>
+        <td>${r.obs?escHTML(r.obs):`<span class="cinza">—</span>`}</td>
+        <td class="cen"><span class="check"></span></td>
+      </tr>`;
     };
-
-    const linhasComAssento = comAssento.map((r,i)=>`
-      <tr style="background:${i%2===0?"#f9f9f9":"#fff"}">
-        <td style="padding:8px;text-align:center;font-weight:700">${r.assento}</td>
-        <td style="padding:8px;font-weight:500">${r.nomeAvulso||"—"}</td>
-        <td style="padding:8px;color:#555">${r.telefoneResp||""}</td>
-        <td style="padding:8px;color:#555">${getCpf(r)}</td>
-        <td style="padding:8px;color:#555">${r.obs||""}</td>
-      </tr>`).join("");
-
-    const linhasSemAssento = semAss.length > 0
-      ? `<tr><td colspan="5" style="padding:12px 8px;background:#fff0f0;color:#cc0000;font-weight:700;font-size:13px">⚠ SEM ASSENTO DEFINIDO (${semAss.length} passageiro${semAss.length>1?"s":""})</td></tr>`
-        + semAss.map(r=>`<tr style="background:#fff5f5"><td style="padding:8px;text-align:center;color:#cc0000">—</td><td style="padding:8px;color:#cc0000;font-weight:500">${r.nomeAvulso||"—"}</td><td style="padding:8px;color:#cc0000">${r.telefoneResp||""}</td><td style="padding:8px;color:#cc0000">${getCpf(r)}</td><td style="padding:8px;color:#cc0000">${r.obs||""}</td></tr>`).join("")
-      : "";
-
-    const html = `<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"/><title></title>
-    <style>body{font-family:Arial,sans-serif;color:#111;padding:24px;max-width:900px;margin:0 auto}h1{font-size:18px;margin-bottom:4px}.sub{color:#555;font-size:12px;margin-bottom:20px}table{width:100%;border-collapse:collapse}th{background:#1e293b;color:#fff;padding:10px 8px;text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.4px}td{font-size:13px;border-bottom:1px solid #e5e7eb}.total{margin-top:16px;padding:10px 14px;background:#f1f5f9;border-radius:6px;font-size:13px}@media print{@page{size:auto;margin:10mm 10mm 10mm 10mm}body{padding:0}tr{-webkit-print-color-adjust:exact;print-color-adjust:exact;}}</style>
-    </head><body>
-    <h1>Lista de Embarque — ${viagem.nome}</h1>
-    <div class="sub">${viagem.dataIda ? "Ida: "+new Date(viagem.dataIda+"T12:00:00").toLocaleDateString("pt-BR") : ""} | Total: ${reservas.length} passageiros · Gerado em ${new Date().toLocaleDateString("pt-BR")}</div>
-    <table>
-      <thead><tr><th style="width:55px">Assento</th><th>Nome</th><th>Telefone</th><th>CPF / RG</th><th>Obs</th></tr></thead>
-      <tbody>${linhasComAssento}${linhasSemAssento}</tbody>
-    </table>
-    <div class="total">Total com assento: <strong>${comAssento.length}</strong> · Sem assento: <strong style="color:${semAss.length>0?"#cc0000":"#006600"}">${semAss.length}</strong></div>
-    </body></html>`;
-    const win = window.open("","_blank");
-    if(!win) return alert("Permita pop-ups para gerar o PDF");
-    win.document.write(html); win.document.close(); setTimeout(()=>win.print(),600);
+    const cab = `<thead><tr><th class="cen" style="width:60px">Assento</th><th>Passageiro</th><th style="width:130px">Telefone</th><th style="width:130px">CPF / RG</th><th style="width:130px">Obs</th><th class="cen" style="width:72px">Embarcou</th></tr></thead>`;
+    const css = `<style>.check{display:inline-block;width:16px;height:16px;border:1.5px solid #94a3b8;border-radius:4px;background:#fff;}</style>`;
+    const corpo = `${css}${pdfTopo(config, "Lista de Embarque")}
+      <div class="titulo">${escHTML(viagem.nome)}</div>
+      ${pdfChipsViagem(viagem)}
+      ${resumoAssentos()}
+      <div class="secao">Passageiros por assento (${comAssento.length})</div>
+      ${comAssento.length?`<table>${cab}<tbody>${comAssento.map(linha).join("")}</tbody></table>`:`<div class="vazio" style="color:#64748b;border-color:#e2e8f0;background:#f8fafc">Nenhum passageiro com assento definido</div>`}
+      ${semAssento.length?`<div class="secao" style="color:#dc2626">Sem assento definido (${semAssento.length})</div><table>${cab}<tbody>${semAssento.map(linha).join("")}</tbody></table>`:""}`;
+    abrirPDF({titulo:`Lista de Embarque - ${viagem.nome}`, corpo, config});
   };
 
   return (
