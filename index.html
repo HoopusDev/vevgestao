@@ -789,7 +789,7 @@ function App() {
         <div className="page">
           {pageEl()}
         </div>
-        <div className="app-version">v1.16.1</div>
+        <div className="app-version">v1.17.0</div>
         {/* Mobile nav */}
         <nav className="mobile-nav">
           {navItems.map(([id,ic,lb]) => (
@@ -1809,13 +1809,29 @@ function TabMapa({viagem, updViagem, passageiros}) {
   const reservas=viagem.reservas||[];
   const getBySeat=n=>reservas.find(r=>r.assento===String(n));
   const semAssento=reservas.filter(r=>!r.assento);
+  // Coloca o passageiro (rid) no assento num. Se o assento estiver ocupado, quem estava lá vai para o
+  // assento antigo do passageiro (os dois trocam de lugar) ou fica sem assento, se ele não tinha lugar.
   const atribuir = async (num,rid) => {
+    const origem=reservas.find(r=>r.id===rid)?.assento||"";
     const newR=reservas.map(r=>{
       if(r.id===rid)return{...r,assento:String(num)};
-      if(r.assento===String(num))return{...r,assento:""};
+      if(r.assento===String(num))return{...r,assento:origem};
       return r;
     });
     await updViagem({...viagem,reservas:newR});setDrag(null);
+  };
+  const movendo=drag?reservas.find(r=>r.id===drag):null;
+  const clicarAssento = num => {
+    const r=getBySeat(num);
+    if(!drag){ if(r) setInfoSeat(num); return; }
+    if(r?.id===drag) return setDrag(null); // tocou no próprio lugar: cancela
+    if(r){
+      const msg = movendo?.assento
+        ? `Trocar de lugar?\n\n${movendo.nomeAvulso} vai para o assento ${num}\n${r.nomeAvulso} vai para o assento ${movendo.assento}`
+        : `O assento ${num} é de ${r.nomeAvulso}.\n\nColocar ${movendo?.nomeAvulso} no lugar? ${r.nomeAvulso} ficará sem assento.`;
+      if(!confirm(msg)) return;
+    }
+    atribuir(num,drag);
   };
   const desvincular = async num => {
     await updViagem({...viagem,reservas:reservas.map(r=>r.assento===String(num)?{...r,assento:""}:r)});
@@ -1828,8 +1844,8 @@ function TabMapa({viagem, updViagem, passageiros}) {
     rows.push({esq,dir});}
   const reservaModal=infoSeat?getBySeat(infoSeat):null;
   const SeatBtn=({num})=>{
-    const r=getBySeat(num);const isSel=drag&&!r;
-    return <div className={`seat ${r?"seat-occ":isSel?"seat-sel":"seat-free"}`} onClick={()=>{if(drag){if(!r)atribuir(num,drag);else if(r.id!==drag)setInfoSeat(num);}else if(r)setInfoSeat(num);}}>
+    const r=getBySeat(num);const isSel=drag&&r?.id===drag;
+    return <div className={`seat ${isSel?"seat-sel":r?"seat-occ":"seat-free"}`} style={drag&&!r?{borderStyle:"dashed",borderColor:"var(--sky)"}:undefined} onClick={()=>clicarAssento(num)}>
       {r?<span style={{fontSize:9,textAlign:"center",lineHeight:1.2}}>{num}<br/>{(r.nomeAvulso||"").split(" ")[0]?.slice(0,4)||"✓"}</span>:num}
     </div>;
   };
@@ -1937,7 +1953,15 @@ function TabMapa({viagem, updViagem, passageiros}) {
           <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
             {semAssento.map(r=><div key={r.id} onClick={()=>setDrag(drag===r.id?null:r.id)} style={{padding:"6px 14px",borderRadius:20,fontSize:12,fontWeight:700,cursor:"pointer",background:drag===r.id?"var(--sky)":"var(--card)",color:drag===r.id?"#080e1a":"var(--txt)",border:`1.5px solid ${drag===r.id?"var(--sky)":"var(--brd)"}`}}>{r.nomeAvulso}</div>)}
           </div>
-          {drag&&<button className="btn btn-ghost btn-sm" style={{marginTop:8}} onClick={()=>setDrag(null)}>Cancelar seleção</button>}
+        </div>
+      )}
+      {movendo&&(
+        <div style={{margin:"12px 28px 0",padding:"10px 12px",background:"rgba(56,189,248,.08)",border:"1px solid rgba(56,189,248,.3)",borderRadius:10,display:"flex",alignItems:"center",justifyContent:"space-between",gap:10,flexWrap:"wrap"}}>
+          <div style={{fontSize:12,color:"var(--txt)",lineHeight:1.4}}>
+            {movendo.assento?<>Mudando <strong>{movendo.nomeAvulso}</strong> do assento <strong>{movendo.assento}</strong>.</>:<>Escolhendo lugar para <strong>{movendo.nomeAvulso}</strong>.</>}
+            <div style={{color:"var(--dim)"}}>Toque no novo assento. {movendo.assento?"Se estiver ocupado, os dois trocam de lugar.":""}</div>
+          </div>
+          <button className="btn btn-ghost btn-sm" onClick={()=>setDrag(null)}>Cancelar</button>
         </div>
       )}
       <div style={{overflowY:"auto",padding:"16px 28px",borderTop:"1px solid var(--brd)",marginTop:14}}>
@@ -1960,11 +1984,12 @@ function TabMapa({viagem, updViagem, passageiros}) {
       </div>
       {infoSeat&&reservaModal&&(
         <div className="mo" onClick={()=>setInfoSeat(null)}>
-          <div className="md ani" style={{maxHeight:"40vh"}}>
+          <div className="md ani" onClick={e=>e.stopPropagation()}>
             <div className="mhdl"/><div className="mhd"><span className="mtit">Assento {infoSeat}</span><button className="btn btn-ghost btn-icon" onClick={()=>setInfoSeat(null)}>{ICONS.close}</button></div>
             <div style={{padding:"0 20px 20px"}}>
               <div style={{fontSize:16,fontWeight:800,color:"var(--txt)",marginBottom:4}}>{reservaModal.nomeAvulso}</div>
               <div style={{fontSize:13,color:"var(--dim)",marginBottom:16}}>{reservaModal.obs||"Sem observações"}</div>
+              <button className="btn btn-primary btn-full" style={{marginBottom:8}} onClick={()=>{setDrag(reservaModal.id);setInfoSeat(null);}}>{ICONS.seat} Mudar de assento</button>
               <button className="btn btn-danger btn-full" onClick={()=>desvincular(infoSeat)}>Desvincular do assento {infoSeat}</button>
             </div>
           </div>
